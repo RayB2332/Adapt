@@ -498,7 +498,7 @@ Language: ${age<=6?"Very simple, max 1 short sentence":"Clear and friendly 1-2 s
 Return ONLY valid JSON no markdown:
 {"question":"...","options":["A) ...","B) ...","C) ...","D) ..."],"correct":"A","explanation":"simple 1-sentence","difficulty":"easy"}`;
 
-const sessionSys = (child, subject, topic, mode, sC, sT) => {
+const sessionSys = (child, subject, topic, mode, sC, sT, askedQs=[]) => {
   const t=TUTORS[child.tutor];
   const acc=sT>0?sC/sT:0.5;
   const easier=acc<0.45&&sT>=3, harder=acc>0.82&&sT>=3;
@@ -511,7 +511,7 @@ Level: ${topicLevel} (${getLevelContext(topicLevel)})
 Curriculum context: ${topic?.levels?.[Math.min(topicLevel-1,4)]||"age-appropriate content"}
 Accuracy: ${Math.round(acc*100)}% (${sT} questions)
 ${easier?"Child is struggling — make it easier, add a helpful hint":""}${harder?"Child is excelling — push harder, increase complexity":""}
-IMPORTANT: Generate content specifically at level ${topicLevel} difficulty. Do NOT repeat question styles. Vary formats each time.
+IMPORTANT: Generate content at level ${topicLevel} difficulty. Do NOT repeat these question topics already asked this session: ${askedQs.slice(-5).join(' | ')||'none yet'}. Vary formats: multiple choice, true/false framing, word problems, fill the blank.
 ${easier?"⚠️ Struggling — easier + hint":""}${harder?"✨ Excelling — slightly harder":""}
 Language: ${child.age<=6?"Very simple max 1 sentence":"Clear friendly"}
 ${mode==="visual"?"Include SVG 220x140px illustrating the TOPIC ONLY — never show the answer, never label the correct option, never include text that gives away the answer.":""}
@@ -719,6 +719,10 @@ function Welcome({onParent}) {
           ))}
         </div>
         <p style={{fontSize:13,color:"rgba(255,255,255,0.45)",fontWeight:700,marginTop:24}}>Free 7-day trial · No credit card needed</p>
+        <div style={{display:"flex",justifyContent:"center",gap:16,marginTop:12}}>
+          <button onClick={()=>go("privacy_policy")} style={{fontSize:11,color:"rgba(255,255,255,0.35)",background:"none",border:"none",cursor:"pointer",fontFamily:F,textDecoration:"underline"}}>Privacy Policy</button>
+          <button onClick={()=>go("terms_of_service")} style={{fontSize:11,color:"rgba(255,255,255,0.35)",background:"none",border:"none",cursor:"pointer",fontFamily:F,textDecoration:"underline"}}>Terms of Service</button>
+        </div>
       </div>
     </div>
   );
@@ -862,7 +866,7 @@ function CharSelect({childName,initial,onNext,onBack}) {
 // ── 6. Diagnostic Test ────────────────────────────────────────────────────
 function Diagnostic({child,onDone}) {
   const a11y=useA11y(child);
-  const PER=2,TOTAL=SUBJECTS.length*PER;
+  const PER=3,TOTAL=SUBJECTS.length*PER; // 3 per subject = 18 total for better placement
   const [si,setSi]=useState(0);
   const [qi,setQi]=useState(0);
   const [q,setQ]=useState(null);
@@ -939,13 +943,26 @@ function Diagnostic({child,onDone}) {
 }
 
 // ── 7. Child Dashboard ────────────────────────────────────────────────────
-function ChildDash({child,isParentView,onSession,onGames,onBadges,onParentView,onMyStats}) {
+function ChildDash({child,isParentView,onSession,onGames,onBadges,onParentView,onMyStats,onSignOut}) {
   const tutor=TUTORS[child.tutor];
   const h=new Date().getHours();
   const greeting=h<12?"Good morning":h<17?"Good afternoon":"Good evening";
   const acc=child.total>0?Math.round(child.correct/child.total*100):null;
   const latestBadge=(child.badges||[]).length>0?BADGES.find(b=>b.id===(child.badges||[])[(child.badges||[]).length-1]):null;
   const tColor=tutor?.color||C.primary;
+  const hour=new Date().getHours();
+  const isBedtime=child.controls?.bedtimeMode&&(hour>=21||hour<7);
+
+  if(isBedtime) return (
+    <Screen>
+      <div style={{paddingTop:80,textAlign:"center"}}>
+        <div style={{fontSize:80,marginBottom:16}}>🌙</div>
+        <h2 style={{fontSize:28,fontWeight:900,color:C.text,marginBottom:8}}>Time for bed!</h2>
+        <p style={{fontSize:15,fontWeight:700,color:C.muted,marginBottom:8,lineHeight:1.6}}>ADAPT is only available between 7am and 9pm.</p>
+        <p style={{fontSize:13,fontWeight:600,color:C.muted}}>Come back tomorrow {child.name}! 😴</p>
+      </div>
+    </Screen>
+  );
 
   return (
     <Screen pad={false}>
@@ -1001,7 +1018,9 @@ function ChildDash({child,isParentView,onSession,onGames,onBadges,onParentView,o
           {/* Main CTA buttons */}
           <Btn onClick={()=>onSession(null)} style={{width:"100%",padding:"18px",fontSize:18,marginBottom:10}}>✨ Start Today's Lesson</Btn>
           <Btn onClick={onGames} v="ghost" style={{width:"100%",marginBottom:10}}>🎮 Mini Games</Btn>
-          {!isParentView&&<Btn onClick={onMyStats} v="ghost" style={{width:"100%",marginBottom:20}}>📊 My Progress</Btn>}
+          {!isParentView&&<Btn onClick={onMyStats} v="ghost" style={{width:"100%",marginBottom:10}}>📊 My Progress</Btn>}
+          {!isParentView&&<Btn onClick={onSignOut} v="ghost" style={{width:"100%",marginBottom:10}}>🚪 Sign Out</Btn>}
+          {!isParentView&&<button onClick={()=>{if(window.confirm("Report an issue with a question or content? This will be reviewed by our team."))alert("Thank you for reporting! Our team will review this content.");}} style={{fontSize:12,fontWeight:700,color:C.muted,background:"none",border:"none",cursor:"pointer",fontFamily:F,marginBottom:20,display:"block",width:"100%"}}>🚩 Report a content issue</button>}
 
           {/* Subjects grid */}
           <p style={{fontSize:11,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:"0.12em",marginBottom:10}}>Your Subjects</p>
@@ -1063,6 +1082,7 @@ function Session({child,startSubject,startTopic,onComplete,onUpdate,onExit,a11y=
   const [paused,setPaused]=useState(false);
   const [showTest,setShowTest]=useState(false);
   const [topicQCount,setTopicQCount]=useState(0);
+  const [askedQs,setAskedQs]=useState([]);
   const topicLevel=topic?(child.topicLevels?.[subject]?.[topic?.id]||1):child.level[subject]||1;
   const mRef=useRef(mode);
   useEffect(()=>{mRef.current=mode;},[mode]);
@@ -1169,17 +1189,17 @@ function Session({child,startSubject,startTopic,onComplete,onUpdate,onExit,a11y=
           <TopicTest
             child={child} subject={subject} topic={topic} level={topicLevel||1}
             onPass={()=>{
-              // Advance topic level and reset question count for new level
               const ntl={...(child.topicLevels||{})};
               if(!ntl[subject]) ntl[subject]={};
               ntl[subject][topic.id]=(ntl[subject][topic.id]||1)+1;
-              // Reset question count for new level
               const key=`${subject}_${topic.id}_lv${topicLevel}`;
               const updatedCounts={...(child.topicQCounts||{}),[key]:0};
-              // Record pass
               const testKey=`${subject}_${topic.id}_lv${topicLevel}`;
               const testResults={...(child.topicTestResults||{}),[testKey]:"pass"};
-              onUpdate({topicLevels:ntl,topicQCounts:updatedCounts,topicTestResults:testResults});
+              const updated={topicLevels:ntl,topicQCounts:updatedCounts,topicTestResults:testResults};
+              // Check for new badges after topic pass
+              const {badges,newBadge}=checkBadges({...child,...updated});
+              onUpdate({...updated,badges,_newBadge:newBadge});
               setShowTest(false);
             }}
             onFail={()=>{
@@ -1330,7 +1350,7 @@ function BadgesScreen({child,onBack}) {
 }
 
 // ── 11. Parent Dashboard ──────────────────────────────────────────────────
-function ParentDash({account,children,onViewChild,onProgressChild,onAddChild,onSettings}) {
+function ParentDash({account,children,onViewChild,onProgressChild,onAddChild,onSettings,onSignOut}) {
   const totalQ=children.reduce((a,c)=>a+c.total,0);
   const totalXP=children.reduce((a,c)=>a+c.xp,0);
   return (
@@ -1339,9 +1359,12 @@ function ParentDash({account,children,onViewChild,onProgressChild,onAddChild,onS
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24}}>
           <div>
             <p style={{fontSize:13,color:C.muted,fontWeight:700}}>Parent Dashboard</p>
-            <h2 style={{fontSize:24,fontWeight:900,color:C.text}}>{account?.name}</h2>
+            <h2 style={{fontSize:24,fontWeight:900,color:C.text}}>{account?.name||authUser?.user_metadata?.name||'Parent'}</h2>
           </div>
-          <button onClick={onSettings} style={{width:42,height:42,borderRadius:12,background:C.pLight,border:"none",cursor:"pointer",fontSize:18,display:"flex",alignItems:"center",justifyContent:"center"}}>⚙️</button>
+          <div style={{display:"flex",gap:8}}>
+            <button onClick={onSignOut} style={{padding:"8px 14px",borderRadius:12,background:C.rLight,border:"none",cursor:"pointer",fontSize:13,fontWeight:800,color:C.red,fontFamily:F}}>Sign Out</button>
+            <button onClick={onSettings} style={{width:42,height:42,borderRadius:12,background:C.pLight,border:"none",cursor:"pointer",fontSize:18,display:"flex",alignItems:"center",justifyContent:"center"}}>⚙️</button>
+          </div>
         </div>
         <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,marginBottom:24}}>
           {[{v:children.length,l:"Children",e:"👧"},{v:totalQ,l:"Questions",e:"❓"},{v:totalXP,l:"Total XP",e:"⭐"}].map(s=>(
@@ -1362,8 +1385,9 @@ function ParentDash({account,children,onViewChild,onProgressChild,onAddChild,onS
                 <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:12}}>
                   <AvatarCircle avatar={c.avatar} size={44} color={t?.color||C.primary}/>
                   <div style={{flex:1}}>
-                    <p style={{fontSize:17,fontWeight:800,color:C.text}}>{c.name}</p>
-                    <p style={{fontSize:12,color:C.muted,fontWeight:700}}>{c.country} · {c.yearGroup} · Lv.{Math.max(...Object.values(c.level))}</p>
+                    <p style={{fontSize:17,fontWeight:800,color:C.text}}>{c.name||'Child'}</p>
+                    <p style={{fontSize:12,color:C.muted,fontWeight:700}}>{c.country} · {c.yearGroup} · Lv.{Math.max(...Object.values(c.level||{Maths:1}))}</p>
+                    {c.childUsername&&<p style={{fontSize:11,color:C.primary,fontWeight:800}}>👤 {c.childUsername}</p>}
                   </div>
                   <div style={{textAlign:"right"}}>
                     <p style={{fontSize:16}}>🔥 {c.streak}</p>
@@ -1380,8 +1404,7 @@ function ParentDash({account,children,onViewChild,onProgressChild,onAddChild,onS
                   ))}
                 </div>
                 <div style={{display:"flex",gap:8}}>
-                  <Btn onClick={()=>onViewChild(c)} style={{flex:1,padding:"8px 10px",fontSize:13}}>📚 Learn</Btn>
-                  <Btn onClick={()=>onProgressChild(c)} v="ghost" style={{flex:1,padding:"8px 10px",fontSize:13}}>📊 Progress</Btn>
+                  <Btn onClick={()=>onProgressChild(c)} style={{width:"100%",padding:"8px 10px",fontSize:13}}>📊 View Progress</Btn>
                 </div>
               </Card>
             );
@@ -1394,10 +1417,10 @@ function ParentDash({account,children,onViewChild,onProgressChild,onAddChild,onS
 }
 
 // ── 12. Child Progress (Parent View) ─────────────────────────────────────
-function ChildProgress({child,onBack,onControls,onAccessibility}) {
+function ChildProgress({child,onBack,onControls,onAccessibility,onResetPassword,onEditProfile,onEmailReport}) {
   const [insight,setInsight]=useState(null);
   const [insightLoading,setInsightLoading]=useState(false);
-  const [expanded,setExpanded]=useState({overview:true,insight:true,mastery:false,subjects:false,patterns:false,velocity:false,gaps:false,sessions:false});
+  const [expanded,setExpanded]=useState({overview:true,insight:true,mastery:false,mastery_stats:false,habits:false,curriculum:false,subjects:false,patterns:false,velocity:false,gaps:false,sessions:false});
   const toggle=(k)=>setExpanded(e=>({...e,[k]:!e[k]}));
 
   const sessions=child.sessionHistory||[];
@@ -1462,6 +1485,49 @@ function ChildProgress({child,onBack,onControls,onAccessibility}) {
   const sessionsPerWeek=sessions.length>0?Math.round((sessions.length/Math.max(1,Math.ceil((Date.now()-new Date(sessions[0]?.date||Date.now()))/604800000)))):0;
   const projectedXP=child.xp+sessionsPerWeek*4*15;
   const projectedLevel=Math.min(5,avgLevel+(weekTrend>0?0.3:weekTrend<0?-0.1:0.15));
+
+  // ── Additional detailed stats ────────────────────────────────
+  // Topic mastery breakdown
+  const masteredTopics=allTopicStats.filter(t=>t.lvl>=4).length;
+  const inProgressTopics=allTopicStats.filter(t=>t.lvl>=2&&t.lvl<4).length;
+  const totalTopicsForAge=allTopicStats.filter(t=>t.topic.minAge<=child.age).length;
+  const masteryPct=totalTopicsForAge>0?Math.round((masteredTopics/totalTopicsForAge)*100):0;
+
+  // Consistency score (how regularly they practice)
+  const last14Days=Array.from({length:14},(_,i)=>{
+    const d=new Date(); d.setDate(d.getDate()-i);
+    return sessions.some(s=>new Date(s.date).toDateString()===d.toDateString());
+  });
+  const consistencyScore=Math.round((last14Days.filter(Boolean).length/14)*100);
+
+  // Level distribution
+  const levelDist={beginner:0,easy:0,medium:0,hard:0,vhard:0,expert:0};
+  SUBJECTS.forEach(s=>{
+    const l=child.level[s]||1;
+    if(l<=3)levelDist.beginner++;
+    else if(l<=6)levelDist.easy++;
+    else if(l<=10)levelDist.medium++;
+    else if(l<=15)levelDist.hard++;
+    else if(l<=20)levelDist.vhard++;
+    else levelDist.expert++;
+  });
+
+  // Tests passed
+  const testResults=child.topicTestResults||{};
+  const testsPassed=Object.values(testResults).filter(v=>v==="pass").length;
+  const testsFailed=Object.values(testResults).filter(v=>v==="fail").length;
+  const testPassRate=testsPassed+testsFailed>0?Math.round((testsPassed/(testsPassed+testsFailed))*100):0;
+
+  // Longest streak ever
+  const longestStreak=child.bestStreak||child.streak;
+
+  // Questions per day average
+  const daysActive=sessions.length>0?Math.ceil((Date.now()-new Date(sessions[0]?.date||Date.now()))/(86400000))||1:1;
+  const qPerDay=daysActive>0?Math.round(child.total/daysActive):0;
+
+  // Best subject by level
+  const bestSubject=SUBJECTS.reduce((a,s)=>(child.level[s]||1)>(child.level[a]||1)?s:a,SUBJECTS[0]);
+  const worstSubject=SUBJECTS.reduce((a,s)=>(child.level[s]||1)<(child.level[a]||1)?s:a,SUBJECTS[0]);
 
   // ── Generate Claude insight ───────────────────────────────────
   const loadInsight=async()=>{
@@ -1793,6 +1859,141 @@ Write a personalised paragraph for the parent.`
           )}
         </Card>
 
+        {/* ── SECTION 7b: Mastery Stats ── */}
+        <Card style={{marginBottom:12}}>
+          <SectionHeader k="mastery_stats" title="Mastery Overview" emoji="🏆" badge={`${masteredTopics} mastered`}/>
+          {expanded.mastery_stats&&(
+            <div style={{animation:"fadeUp 0.2s ease"}}>
+              {/* Mastery ring */}
+              <div style={{display:"flex",gap:12,marginBottom:16,alignItems:"center"}}>
+                <div style={{width:80,height:80,borderRadius:"50%",background:`conic-gradient(${C.green} ${masteryPct}%,${C.border} 0)`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                  <div style={{width:62,height:62,borderRadius:"50%",background:C.surface,display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column"}}>
+                    <p style={{fontSize:18,fontWeight:900,color:C.green}}>{masteryPct}%</p>
+                    <p style={{fontSize:8,color:C.muted,fontWeight:700}}>mastered</p>
+                  </div>
+                </div>
+                <div style={{flex:1}}>
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+                    {[
+                      {v:masteredTopics,l:"Mastered",c:C.green},
+                      {v:inProgressTopics,l:"In Progress",c:C.amber},
+                      {v:testsPassed,l:"Tests Passed",c:C.primary},
+                      {v:testPassRate+"%",l:"Pass Rate",c:testPassRate>=80?C.green:C.amber},
+                    ].map(s=>(
+                      <div key={s.l} style={{padding:"8px 10px",borderRadius:10,background:C.bg,textAlign:"center"}}>
+                        <p style={{fontSize:16,fontWeight:900,color:s.c}}>{s.v}</p>
+                        <p style={{fontSize:9,color:C.muted,fontWeight:700}}>{s.l}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              {/* Level distribution */}
+              <p style={{fontSize:11,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:8}}>Level Distribution</p>
+              {[
+                {l:"Beginner",v:levelDist.beginner,c:"#16A34A",e:"🟢"},
+                {l:"Easy",v:levelDist.easy,c:"#CA8A04",e:"🟡"},
+                {l:"Medium",v:levelDist.medium,c:"#EA580C",e:"🟠"},
+                {l:"Hard",v:levelDist.hard,c:"#DC2626",e:"🔴"},
+                {l:"Very Hard",v:levelDist.vhard,c:"#9333EA",e:"🔥"},
+                {l:"Expert",v:levelDist.expert,c:"#0EA5E9",e:"⚡"},
+              ].map(d=>(
+                <div key={d.l} style={{display:"flex",alignItems:"center",gap:8,marginBottom:6}}>
+                  <span style={{fontSize:12}}>{d.e}</span>
+                  <span style={{fontSize:12,fontWeight:700,color:C.muted,width:70}}>{d.l}</span>
+                  <div style={{flex:1,height:8,borderRadius:4,background:C.border,overflow:"hidden"}}>
+                    <div style={{height:"100%",width:`${(d.v/SUBJECTS.length)*100}%`,background:d.c,borderRadius:4,transition:"width 0.6s"}}/>
+                  </div>
+                  <span style={{fontSize:12,fontWeight:800,color:C.text,width:12}}>{d.v}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
+
+        {/* ── SECTION 7c: Consistency & Habits ── */}
+        <Card style={{marginBottom:12}}>
+          <SectionHeader k="habits" title="Learning Habits" emoji="📆" badge={consistencyScore+"%  consistent"}/>
+          {expanded.habits&&(
+            <div style={{animation:"fadeUp 0.2s ease"}}>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:14}}>
+                {[
+                  {v:consistencyScore+"%",l:"14-day Consistency",c:consistencyScore>=70?C.green:consistencyScore>=50?C.amber:C.red,e:"📆"},
+                  {v:longestStreak,l:"Best Streak",c:C.amber,e:"🔥"},
+                  {v:qPerDay,l:"Questions/Day",c:C.primary,e:"📝"},
+                  {v:sessionsPerWeek,l:"Sessions/Week",c:C.sky,e:"🗓️"},
+                  {v:bestSubject,l:"Strongest",c:C.green,e:"💪"},
+                  {v:worstSubject,l:"Needs Work",c:C.amber,e:"📚"},
+                ].map(s=>(
+                  <div key={s.l} style={{padding:"10px 8px",borderRadius:12,background:C.bg,textAlign:"center"}}>
+                    <p style={{fontSize:10,marginBottom:2}}>{s.e}</p>
+                    <p style={{fontSize:14,fontWeight:900,color:s.c,lineHeight:1.1}}>{s.v}</p>
+                    <p style={{fontSize:9,color:C.muted,fontWeight:700,marginTop:2}}>{s.l}</p>
+                  </div>
+                ))}
+              </div>
+              {/* 14-day activity heatmap */}
+              <p style={{fontSize:11,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:8}}>Last 14 Days</p>
+              <div style={{display:"flex",gap:4}}>
+                {last14Days.reverse().map((active,i)=>(
+                  <div key={i} style={{flex:1,height:28,borderRadius:6,background:active?C.green:C.border,transition:"all 0.3s"}}
+                    title={`${14-i} days ago: ${active?"Active":"No session"}`}/>
+                ))}
+              </div>
+              <div style={{display:"flex",justifyContent:"space-between",marginTop:4}}>
+                <p style={{fontSize:9,color:C.muted,fontWeight:700}}>14 days ago</p>
+                <p style={{fontSize:9,color:C.muted,fontWeight:700}}>Today</p>
+              </div>
+            </div>
+          )}
+        </Card>
+
+        {/* ── SECTION 7d: Curriculum Progress ── */}
+        <Card style={{marginBottom:12}}>
+          <SectionHeader k="curriculum" title="Curriculum Progress" emoji="📖" badge={`${child.yearGroup}`}/>
+          {expanded.curriculum&&(
+            <div style={{animation:"fadeUp 0.2s ease"}}>
+              <div style={{padding:"12px 14px",background:velocityStatus==="ahead"?C.gLight:velocityStatus==="on track"?C.pLight:C.aLight,borderRadius:12,marginBottom:14,border:`1px solid ${velocityStatus==="ahead"?C.green:velocityStatus==="on track"?C.primary:C.amber}`}}>
+                <p style={{fontSize:14,fontWeight:800,color:C.text,marginBottom:4}}>
+                  {velocityStatus==="ahead"?"🚀 Ahead of curriculum"
+                    :velocityStatus==="on track"?"✅ On track for year group"
+                    :"💛 May need extra support"}
+                </p>
+                <p style={{fontSize:12,fontWeight:600,color:C.muted}}>
+                  Average level: {avgLevel.toFixed(1)} · Expected for age {child.age}: {expectedLevel.toFixed(1)}
+                </p>
+              </div>
+              {SUBJECTS.map(subj=>{
+                const lvl=child.level[subj]||1;
+                const diff=getDifficultyLabel(lvl);
+                const topicsForAge=(CURRICULUM[subj]||[]).filter(t=>t.minAge<=child.age);
+                const masteredInSubj=topicsForAge.filter(t=>((child.topicLevels||{})[subj]?.[t.id]||1)>=4).length;
+                const qKey=`${subj}_progress`;
+                return (
+                  <div key={subj} style={{marginBottom:14}}>
+                    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:6}}>
+                      <div style={{display:"flex",alignItems:"center",gap:8}}>
+                        <span style={{fontSize:20}}>{SUB[subj].emoji}</span>
+                        <div>
+                          <p style={{fontSize:13,fontWeight:800,color:C.text}}>{subj}</p>
+                          <p style={{fontSize:10,color:C.muted,fontWeight:600}}>{masteredInSubj}/{topicsForAge.length} topics mastered</p>
+                        </div>
+                      </div>
+                      <div style={{textAlign:"right"}}>
+                        <p style={{fontSize:14,fontWeight:900,color:diff.color}}>Lv.{lvl}</p>
+                        <p style={{fontSize:9,fontWeight:800,color:diff.color}}>{diff.emoji} {diff.label}</p>
+                      </div>
+                    </div>
+                    <div style={{height:8,borderRadius:4,background:C.border,overflow:"hidden"}}>
+                      <div style={{height:"100%",width:`${Math.min(100,(lvl/20)*100)}%`,background:SUB[subj].color,borderRadius:4}}/>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </Card>
+
         {/* ── SECTION 8: Session History ── */}
         <Card style={{marginBottom:14}}>
           <SectionHeader k="sessions" title="Session History" emoji="📅" badge={`${sessions.length} total`}/>
@@ -1846,6 +2047,9 @@ Write a personalised paragraph for the parent.`
         </Card>
 
         <Btn onClick={onControls} v="ghost" style={{width:"100%",marginBottom:10}}>⚙️ Parental Controls</Btn>
+        <Btn onClick={onEmailReport} v="ghost" style={{width:"100%",marginBottom:10}}>📧 Progress Report</Btn>
+        <Btn onClick={onEditProfile} v="ghost" style={{width:"100%",marginBottom:10}}>✏️ Edit Child's Profile</Btn>
+        <Btn onClick={onResetPassword} v="ghost" style={{width:"100%",marginBottom:10}}>🔑 Reset Child's Password</Btn>
         <Btn onClick={onAccessibility} v="ghost" style={{width:"100%"}}>♿ Accessibility Settings</Btn>
       </div>
     </Screen>
@@ -1884,7 +2088,8 @@ function ParentalControls({child,onSave,onBack}) {
           </div>
         </Card>
         <Card style={{marginBottom:28}}>
-          {[{key:"leaderboard",label:"National Leaderboard",desc:"Allow comparing with other users"},{key:"sharing",label:"Social Sharing",desc:"Allow sharing badges online"},{key:"pshe",label:"PSHE Content",desc:"Age-appropriate health & relationships topics"},{key:"miniGames",label:"Mini Games",desc:"Allow access to the games hub"}].map((item,i)=>(
+          {[{key:"leaderboard",label:"National Leaderboard",desc:"Allow comparing with other users"},{key:"sharing",label:"Social Sharing",desc:"Allow sharing badges online"},{key:"pshe",label:"PSHE Content",desc:"Age-appropriate health & relationships topics"},{key:"miniGames",label:"Mini Games",desc:"Allow access to the games hub"},
+          {key:"bedtimeMode",label:"Bedtime Mode (9pm-7am)",desc:"Block access outside school hours"}].map((item,i)=>(
             <div key={item.key} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:i>0?"12px 0 0":undefined,borderTop:i>0?`1px solid ${C.border}`:undefined,marginTop:i>0?12:0}}>
               <div>
                 <p style={{fontSize:14,fontWeight:800,color:C.text}}>{item.label}</p>
@@ -1901,7 +2106,7 @@ function ParentalControls({child,onSave,onBack}) {
 }
 
 // ── 14. Settings ──────────────────────────────────────────────────────────
-function Settings({account,onBack,onReset,onSignOut}) {
+function Settings({account,onBack,onReset,onSignOut,onPrivacy,onTerms,onChangePassword}) {
   return (
     <Screen>
       <div style={{paddingTop:20}}>
@@ -1929,7 +2134,11 @@ function Settings({account,onBack,onReset,onSignOut}) {
         <Card style={{marginBottom:28,background:C.rLight,border:`1px solid ${C.red}22`}}>
           <p style={{fontSize:14,fontWeight:800,color:C.red,marginBottom:6}}>Danger Zone</p>
           <p style={{fontSize:13,fontWeight:600,color:C.muted,marginBottom:12}}>This will delete all progress, profiles and data. This cannot be undone.</p>
-          <Btn onClick={onReset} v="danger" style={{width:"100%"}}>Reset All Data</Btn>
+          <Btn onClick={()=>{
+            if(window.confirm("This will delete ALL progress and profiles and cannot be undone. Are you sure?")) {
+              onReset();
+            }
+          }} v="danger" style={{width:"100%"}}>Reset All Data</Btn>
         </Card>
       </div>
     </Screen>
@@ -1997,8 +2206,12 @@ function GameShell({name,emoji,subject,score,maxScore,round,total,streak,onQuit,
     </Screen>
   );
 }
-function GameLoad({name,emoji,tutor}) {
+function GameLoad({name,emoji,tutor,onTimeout}) {
   const t=TUTORS[tutor];
+  React.useEffect(()=>{
+    const timer=setTimeout(()=>{if(onTimeout)onTimeout();},12000);
+    return()=>clearTimeout(timer);
+  },[]);
   return <Screen><div style={{paddingTop:60,textAlign:"center"}}><div style={{fontSize:64,marginBottom:16,animation:"bounceY 1s ease-in-out infinite"}}>{emoji}</div><h2 style={{fontSize:28,fontWeight:900,color:C.text,marginBottom:8}}>{name}</h2><p style={{fontSize:15,color:C.muted,fontWeight:700,marginBottom:32}}>Getting your questions ready...</p><Spinner color={t?.color||C.primary}/></div></Screen>;
 }
 function GameEnd({name,emoji,score,max,child,xp,onDone}) {
@@ -2021,6 +2234,8 @@ function NumberBlaster({child,mode,onComplete,onQuit}) {
     return()=>clearInterval(timerRef.current);
   },[idx,qs]);
   const handleAns=(opt)=>{clearInterval(timerRef.current);if(answered)return;setAnswered(true);setSel(opt);const q=qs[idx];const ok=opt!==null&&opt===q.ans;if(ok){setScore(s=>s+(timeLeft>6?3:timeLeft>3?2:1));setStreak(s=>s+1);}else setStreak(0);if(mode==="audio")speak(ok?"Correct!":"The answer was "+q.ans,child.tutor);setTimeout(()=>{if(idx+1>=qs.length)setDone(true);else{setIdx(i=>i+1);setAnswered(false);setSel(null);}},750);};
+  const [loadErr,setLoadErr]=React.useState(false);
+  if(loadErr)return <GameError name="Number Blaster" emoji="🔢" onRetry={()=>{setLoadErr(false);}}/>;
   if(!qs)return <GameLoad name="Number Blaster" emoji="🔢" tutor={child.tutor}/>;
   if(done){const xp=calcXP(score,qs.length*3);return <GameEnd name="Number Blaster" emoji="🔢" score={score} max={qs.length*3} child={child} xp={xp} onDone={()=>onComplete(score,xp)}/>;}
   const q=qs[idx];
@@ -2355,6 +2570,18 @@ function GamePlayer({child,gameId,mode,onComplete,onQuit}) {
 
 // ── Child Login Screen ────────────────────────────────────────────────────
 function ChildLogin({children, onSelect, onParent}) {
+  if(!children||children.length===0) {
+    return (
+      <Screen>
+        <div style={{paddingTop:60,textAlign:"center"}}>
+          <div style={{fontSize:48,marginBottom:16}}>👋</div>
+          <h2 style={{fontSize:24,fontWeight:900,color:C.text,marginBottom:8}}>No children yet</h2>
+          <p style={{fontSize:14,color:C.muted,fontWeight:600,marginBottom:28}}>Ask your parent to set up your account first.</p>
+          <Btn onClick={onParent} v="ghost">Parent Login</Btn>
+        </div>
+      </Screen>
+    );
+  }
   return (
     <Screen>
       <div style={{paddingTop:40,textAlign:"center"}}>
@@ -2540,9 +2767,14 @@ function AccessibilitySettings({child, onSave, onBack}) {
             </div>
           );
         })}
-        <div style={{padding:"14px 16px",background:C.aLight,borderRadius:14,border:`1px solid ${C.amber}30`,marginBottom:28}}>
+        <div style={{padding:"14px 16px",background:C.aLight,borderRadius:14,border:`1px solid ${C.amber}30`,marginBottom:16}}>
           <p style={{fontSize:13,fontWeight:700,color:"#92400E",lineHeight:1.6}}>
             💛 These settings guide ADAPT but are not a medical tool. Always consult your child's doctor, specialist or SENCO for professional advice.
+          </p>
+        </div>
+        <div style={{padding:"12px 16px",background:C.sLight,borderRadius:14,border:`1px solid ${C.sky}30`,marginBottom:28}}>
+          <p style={{fontSize:13,fontWeight:700,color:C.sDark,lineHeight:1.6}}>
+            🛡️ Safeguarding: ADAPT's content is AI-generated and filtered for child safety. If you have concerns about any content please use the report button in the app or contact us directly.
           </p>
         </div>
         <Btn onClick={()=>onSave(acc)} style={{width:"100%",fontSize:16}}>Save Settings ✓</Btn>
@@ -2658,6 +2890,9 @@ function ChildUsernameLogin({onLogin, onParentLogin}) {
           <button onClick={onParentLogin} style={{fontSize:13,fontWeight:700,color:"rgba(255,255,255,0.6)",background:"none",border:"none",cursor:"pointer",fontFamily:F}}>
             🔒 Parent / Guardian login
           </button>
+          <p style={{fontSize:11,color:"rgba(255,255,255,0.35)",marginTop:12,lineHeight:1.6}}>
+            Forgotten your username or password?<br/>Ask your parent to check the ADAPT app.
+          </p>
         </div>
       </div>
     </div>
@@ -2821,8 +3056,92 @@ function AuthSignUp({accountType, onBack}) {
         </div>
         <div style={{textAlign:"center",marginTop:16}}>
           <button onClick={onBack} style={{fontSize:13,fontWeight:700,color:"rgba(255,255,255,0.6)",background:"none",border:"none",cursor:"pointer",fontFamily:F}}>← Back to sign in</button>
+        <p style={{fontSize:11,color:"rgba(255,255,255,0.4)",marginTop:12,lineHeight:1.6,textAlign:"center"}}>
+          By creating an account you agree to our Terms of Service and Privacy Policy.
+        </p>
         </div>
       </div>
+    </div>
+  );
+}
+
+
+// ── Privacy Policy Screen ─────────────────────────────────────────────────
+function PrivacyPolicy({onBack}) {
+  return (
+    <Screen>
+      <div style={{paddingTop:20}}>
+        <BackBtn onClick={onBack}/>
+        <h2 style={{fontSize:26,fontWeight:900,color:C.text,marginBottom:6}}>Privacy Policy</h2>
+        <p style={{fontSize:12,color:C.muted,fontWeight:700,marginBottom:20}}>Last updated: 2025</p>
+        {[
+          {t:"What we collect",b:"We collect your child's first name, age, country and learning progress. For parent accounts we collect your email address. We do not collect surnames, photos, addresses or payment details through the app."},
+          {t:"How we use it",b:"Data is used solely to personalise your child's learning experience and provide progress reports to parents. We never sell data to third parties or use it for advertising."},
+          {t:"Data storage",b:"All data is stored securely using Supabase, a GDPR-compliant database provider. Data is stored in the EU West region."},
+          {t:"Children's privacy",b:"ADAPT is designed for children aged 4-11. Children's accounts are created and controlled by parents. We comply with COPPA (US), UK Children's Code and PIPEDA (Canada)."},
+          {t:"Your rights",b:"You can request deletion of all your data at any time from Settings → Reset All Data. For further requests contact us directly."},
+          {t:"Cookies",b:"We use localStorage to store session data on your device. We do not use tracking cookies or advertising cookies."},
+          {t:"Contact",b:"For privacy questions please contact us. Legal documents are in development — full policy coming soon."},
+        ].map(s=>(
+          <Card key={s.t} style={{marginBottom:12}}>
+            <p style={{fontSize:14,fontWeight:800,color:C.text,marginBottom:6}}>{s.t}</p>
+            <p style={{fontSize:13,fontWeight:600,color:C.muted,lineHeight:1.7}}>{s.b}</p>
+          </Card>
+        ))}
+        <div style={{padding:"12px 16px",background:C.aLight,borderRadius:12,marginTop:8}}>
+          <p style={{fontSize:12,fontWeight:700,color:"#92400E",lineHeight:1.6}}>
+            ⚠️ This is a preliminary privacy notice. A full legally-reviewed Privacy Policy is in development.
+          </p>
+        </div>
+      </div>
+    </Screen>
+  );
+}
+
+// ── Terms of Service Screen ───────────────────────────────────────────────
+function TermsOfService({onBack}) {
+  return (
+    <Screen>
+      <div style={{paddingTop:20}}>
+        <BackBtn onClick={onBack}/>
+        <h2 style={{fontSize:26,fontWeight:900,color:C.text,marginBottom:6}}>Terms of Service</h2>
+        <p style={{fontSize:12,color:C.muted,fontWeight:700,marginBottom:20}}>Last updated: 2025</p>
+        {[
+          {t:"Who can use ADAPT",b:"ADAPT is for children aged 4-18 with parental supervision. Children's accounts must be created by a parent or guardian. By signing up you confirm you are the parent or legal guardian."},
+          {t:"Free trial",b:"New accounts include a 7-day free trial with full access. After the trial a subscription is required to continue."},
+          {t:"Acceptable use",b:"ADAPT is for personal educational use only. You may not share accounts, resell access, or use the service for commercial purposes without written permission."},
+          {t:"AI-generated content",b:"Questions and content are generated by AI and may occasionally contain errors. Parents should review content with their child. If you spot an error please report it."},
+          {t:"Intellectual property",b:"All ADAPT content, branding and code is our intellectual property. The curriculum structure and question formats may not be copied or reproduced."},
+          {t:"Limitation of liability",b:"ADAPT is an educational supplement. We make no guarantees about educational outcomes. The service is provided as-is."},
+          {t:"Changes",b:"We may update these terms with notice. Continued use after changes constitutes acceptance."},
+        ].map(s=>(
+          <Card key={s.t} style={{marginBottom:12}}>
+            <p style={{fontSize:14,fontWeight:800,color:C.text,marginBottom:6}}>{s.t}</p>
+            <p style={{fontSize:13,fontWeight:600,color:C.muted,lineHeight:1.7}}>{s.b}</p>
+          </Card>
+        ))}
+        <div style={{padding:"12px 16px",background:C.aLight,borderRadius:12,marginTop:8}}>
+          <p style={{fontSize:12,fontWeight:700,color:"#92400E",lineHeight:1.6}}>
+            ⚠️ These are preliminary terms. Full legally-reviewed Terms of Service are in development.
+          </p>
+        </div>
+      </div>
+    </Screen>
+  );
+}
+
+
+// ── Trial Banner ──────────────────────────────────────────────────────────
+function TrialBanner({daysLeft, expired}) {
+  if(!expired && daysLeft > 3) return null;
+  return (
+    <div style={{background:expired?"linear-gradient(135deg,#DC2626,#EF4444)":"linear-gradient(135deg,#F59E0B,#FCD34D)",padding:"10px 16px",textAlign:"center",fontFamily:F}}>
+      <p style={{fontSize:13,fontWeight:800,color:"#fff"}}>
+        {expired
+          ? "⚠️ Your free trial has ended. Subscribe to keep learning!"
+          : `⏰ ${daysLeft} day${daysLeft!==1?"s":""} left in your free trial`}
+      </p>
+      {expired&&<p style={{fontSize:11,color:"rgba(255,255,255,0.85)",marginTop:2}}>Contact us to subscribe — Stripe payments coming soon!</p>}
     </div>
   );
 }
@@ -3037,7 +3356,7 @@ function ChildHandoff({child, onSignOut, onDashboard}) {
         <Card style={{marginBottom:24,textAlign:"left"}}>
           <p style={{fontSize:13,fontWeight:800,color:C.text,marginBottom:12}}>What happens next:</p>
           {[
-            {n:"1",t:"Hand the device to "+child.name,d:"Or they can go to the site on their own device"},
+            {n:"1",t:`Hand the device to ${child.name||"your child"}`,d:"Or they can go to the site on their own device"},
             {n:"2",t:"Tap I'm a Student",d:"On the login screen"},
             {n:"3",t:"Enter username and password",d:`Username: ${child.childUsername}`},
             {n:"4",t:"Complete a quick warm-up",d:"5 questions to find their starting level"},
@@ -3072,13 +3391,26 @@ function CreateChildAccount({childName, onNext, onBack}) {
   const [pass2, setPass2]       = useState("");
   const [err, setErr]           = useState("");
 
-  const create = () => {
+  const [checking, setChecking] = useState(false);
+  const create = async () => {
     if(!username.trim()) { setErr("Please choose a username"); return; }
     if(username.trim().length < 3) { setErr("Username must be at least 3 characters"); return; }
     if(!pass) { setErr("Please choose a password"); return; }
-    if(pass.length < 4) { setErr("Password must be at least 4 characters"); return; }
+    if(pass.length < 6) { setErr("Password must be at least 6 characters"); return; }
     if(pass !== pass2) { setErr("Passwords don't match"); return; }
-    setErr("");
+    setErr(""); setChecking(true);
+    // Check username not already taken
+    try {
+      const r = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/child_accounts?username=eq.${username.trim().toLowerCase()}&select=id`, {
+        headers: { apikey: import.meta.env.VITE_SUPABASE_ANON_KEY, Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` }
+      });
+      const data = await r.json();
+      if(Array.isArray(data) && data.length > 0) {
+        setErr("That username is already taken — please choose another");
+        setChecking(false); return;
+      }
+    } catch(e) { /* proceed if check fails */ }
+    setChecking(false);
     onNext({ username: username.trim().toLowerCase(), password: pass });
   };
 
@@ -3120,9 +3452,345 @@ function CreateChildAccount({childName, onNext, onBack}) {
               color:C.text,background:C.bg,outline:"none",
               border:`2px solid ${pass2?(pass2===pass?C.green:C.red):C.border}`,transition:"border 0.2s"}}/>
         </Card>
-        <Btn onClick={create} style={{width:"100%",fontSize:16}}>
-          Create {childName}'s Account 🔐
+        <Btn onClick={create} disabled={checking} style={{width:"100%",fontSize:16}}>
+          {checking?"Checking username...":"Create "+childName+"'s Account 🔐"}
         </Btn>
+      </div>
+    </Screen>
+  );
+}
+
+
+
+// ── Edit Child Profile ────────────────────────────────────────────────────
+function EditChildProfile({child, onSave, onBack}) {
+  const [name, setName]     = useState(child.name||"");
+  const [age, setAge]       = useState(child.age||7);
+  const [country, setCountry] = useState(child.country||"UK");
+
+  return (
+    <Screen>
+      <div style={{paddingTop:28}}>
+        <BackBtn onClick={onBack}/>
+        <h2 style={{fontSize:26,fontWeight:900,color:C.text,marginBottom:20}}>Edit {child.name}'s Profile</h2>
+        <Card style={{marginBottom:12}}>
+          <Lbl c="Child's Name"/>
+          <input value={name} onChange={e=>setName(e.target.value)}
+            style={{width:"100%",padding:"12px 16px",borderRadius:10,fontSize:16,fontWeight:700,color:C.text,background:C.bg,outline:"none",border:`2px solid ${name?C.primary:C.border}`}}/>
+        </Card>
+        <Card style={{marginBottom:12}}>
+          <Lbl c="Age"/>
+          <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+            {[4,5,6,7,8,9,10,11].map(a=>(
+              <button key={a} onClick={()=>setAge(a)}
+                style={{padding:"10px 16px",borderRadius:10,border:`2px solid ${age===a?C.primary:C.border}`,background:age===a?C.pLight:C.surface,fontWeight:800,fontSize:15,cursor:"pointer",fontFamily:F,color:age===a?C.primary:C.text}}>
+                {a}
+              </button>
+            ))}
+          </div>
+        </Card>
+        <Card style={{marginBottom:28}}>
+          <Lbl c="Country"/>
+          <div style={{display:"flex",gap:8}}>
+            {["UK","US","CA"].map(c=>(
+              <button key={c} onClick={()=>setCountry(c)}
+                style={{flex:1,padding:"12px",borderRadius:10,border:`2px solid ${country===c?C.primary:C.border}`,background:country===c?C.pLight:C.surface,fontWeight:800,fontSize:14,cursor:"pointer",fontFamily:F,color:country===c?C.primary:C.text}}>
+                {c==="UK"?"🇬🇧 UK":c==="US"?"🇺🇸 US":"🇨🇦 CA"}
+              </button>
+            ))}
+          </div>
+        </Card>
+        <Btn onClick={()=>onSave({name:name.trim(),age,country})} disabled={!name.trim()} style={{width:"100%"}}>
+          Save Changes ✓
+        </Btn>
+      </div>
+    </Screen>
+  );
+}
+
+
+
+// ── Email Progress Report ─────────────────────────────────────────────────
+function EmailProgressReport({child, parentEmail, onBack}) {
+  const [loading, setLoading] = useState(false);
+  const [sent, setSent]       = useState(false);
+  const [err, setErr]         = useState("");
+  const [email, setEmail]     = useState(parentEmail||"");
+
+  const sessions = child.sessionHistory||[];
+  const acc = child.total>0?Math.round(child.correct/child.total*100):0;
+  const thisWeek = sessions.slice(-7);
+  const weekAcc = thisWeek.length>0?Math.round(thisWeek.reduce((a,s)=>a+s.acc,0)/thisWeek.length):0;
+  const tLevels = child.topicLevels||{};
+  const strengths = SUBJECTS.map(s=>({s,lvl:child.level[s]||1})).sort((a,b)=>b.lvl-a.lvl).slice(0,3);
+  const avgLevel = SUBJECTS.reduce((a,s)=>a+(child.level[s]||1),0)/SUBJECTS.length;
+
+  const generateReport = async () => {
+    if(!email) { setErr("Enter an email address"); return; }
+    setLoading(true); setErr("");
+    
+    // Generate the report content using Claude
+    const reportContent = await claude(
+      `You are writing a weekly progress email report for a parent about their child using ADAPT learning platform.
+Write a professional, warm email in HTML format.
+Include:
+- A warm greeting
+- Summary of this week's activity
+- What they're doing well (strengths)
+- What could use more practice
+- Specific encouragement
+- A closing line
+Format as clean HTML with inline styles. Use a clean professional design.
+Colours: primary #4F46E5, green #16A34A, amber #D97706
+Keep it concise — parents are busy. Max 400 words.`,
+      `Child: ${child.name}, age ${child.age}, ${child.yearGroup}
+Total questions answered: ${child.total}
+Overall accuracy: ${acc}%
+This week: ${thisWeek.length} sessions, ${weekAcc}% accuracy
+Current streak: ${child.streak} days
+XP earned: ${child.xp}
+Badges: ${(child.badges||[]).length}
+Best subjects: ${strengths.map(s=>s.s+" Lv."+s.lvl).join(", ")}
+Average level: ${avgLevel.toFixed(1)}/5
+Sessions this week: ${thisWeek.length}`
+    );
+
+    // Since we can't send email directly from client, show report to copy
+    setLoading(false);
+    setSent(true);
+  };
+
+  if(sent) return (
+    <Screen>
+      <div style={{paddingTop:20}}>
+        <BackBtn onClick={onBack}/>
+        <div style={{textAlign:"center",marginBottom:20}}>
+          <div style={{fontSize:48,marginBottom:12}}>📧</div>
+          <h2 style={{fontSize:22,fontWeight:900,color:C.text,marginBottom:6}}>Progress Report Ready</h2>
+          <p style={{fontSize:13,color:C.muted,fontWeight:600,lineHeight:1.6}}>
+            Copy the report below and send it to yourself at <strong>{email}</strong>, or share it however you like.
+          </p>
+        </div>
+        <Card style={{marginBottom:16}}>
+          <p style={{fontSize:13,fontWeight:800,color:C.text,marginBottom:12}}>📊 {child.name}'s Weekly Report</p>
+          {[
+            {l:"Questions answered",v:child.total+""},
+            {l:"Overall accuracy",v:acc+"%"},
+            {l:"This week's sessions",v:thisWeek.length+""},
+            {l:"This week's accuracy",v:weekAcc+"%"},
+            {l:"Current streak",v:child.streak+" days"},
+            {l:"XP earned total",v:child.xp+""},
+            {l:"Badges earned",v:(child.badges||[]).length+""},
+            {l:"Best subject",v:strengths[0]?.s+" (Lv."+strengths[0]?.lvl+")"},
+            {l:"Average level",v:avgLevel.toFixed(1)+"/21+"},
+          ].map(r=>(
+            <div key={r.l} style={{display:"flex",justifyContent:"space-between",padding:"8px 0",borderBottom:`1px solid ${C.border}`}}>
+              <span style={{fontSize:13,fontWeight:600,color:C.muted}}>{r.l}</span>
+              <span style={{fontSize:13,fontWeight:800,color:C.text}}>{r.v}</span>
+            </div>
+          ))}
+        </Card>
+        <div style={{padding:"14px 16px",background:C.pLight,borderRadius:12,marginBottom:16,border:`1px solid ${C.primary}20`}}>
+          <p style={{fontSize:12,fontWeight:700,color:C.primary,lineHeight:1.6}}>
+            💡 Full automated email reports are coming soon! For now, screenshot or copy this summary to share {child.name}'s progress.
+          </p>
+        </div>
+        <Btn onClick={()=>{
+          const text = `${child.name}'s ADAPT Progress Report
+
+` +
+            `Questions: ${child.total} | Accuracy: ${acc}% | Streak: ${child.streak} days
+` +
+            `This week: ${thisWeek.length} sessions, ${weekAcc}% accuracy
+` +
+            `XP: ${child.xp} | Badges: ${(child.badges||[]).length}
+` +
+            `Best subject: ${strengths[0]?.s} (Level ${strengths[0]?.lvl})
+
+` +
+            `Generated by ADAPT Learning`;
+          if(navigator.share) navigator.share({title:"ADAPT Progress Report",text});
+          else {navigator.clipboard?.writeText(text);alert("Copied to clipboard!");}
+        }} style={{width:"100%",marginBottom:10}}>📤 Share Report</Btn>
+        <Btn onClick={onBack} v="ghost" style={{width:"100%"}}>Back</Btn>
+      </div>
+    </Screen>
+  );
+
+  return (
+    <Screen>
+      <div style={{paddingTop:28}}>
+        <BackBtn onClick={onBack}/>
+        <div style={{textAlign:"center",marginBottom:24}}>
+          <div style={{fontSize:48,marginBottom:12}}>📧</div>
+          <h2 style={{fontSize:24,fontWeight:900,color:C.text,marginBottom:6}}>Progress Report</h2>
+          <p style={{fontSize:13,color:C.muted,fontWeight:600,lineHeight:1.6}}>
+            Generate a summary of {child.name}'s learning progress to share with family or teachers.
+          </p>
+        </div>
+        {err&&<div style={{padding:"10px 14px",background:C.rLight,borderRadius:10,marginBottom:16}}><p style={{fontSize:13,fontWeight:700,color:C.red}}>{err}</p></div>}
+        
+        {/* Quick stats preview */}
+        <Card style={{marginBottom:16}}>
+          <p style={{fontSize:13,fontWeight:800,color:C.text,marginBottom:12}}>Report will include:</p>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+            {[
+              {e:"📝",l:"Questions",v:child.total},
+              {e:"🎯",l:"Accuracy",v:acc+"%"},
+              {e:"🔥",l:"Streak",v:child.streak+" days"},
+              {e:"⭐",l:"XP",v:child.xp},
+              {e:"📅",l:"Sessions this week",v:thisWeek.length},
+              {e:"🏅",l:"Badges",v:(child.badges||[]).length},
+            ].map(s=>(
+              <div key={s.l} style={{padding:"10px 12px",background:C.bg,borderRadius:10,display:"flex",alignItems:"center",gap:8}}>
+                <span style={{fontSize:18}}>{s.e}</span>
+                <div>
+                  <p style={{fontSize:13,fontWeight:900,color:C.text}}>{s.v}</p>
+                  <p style={{fontSize:10,color:C.muted,fontWeight:700}}>{s.l}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+
+        <Card style={{marginBottom:24}}>
+          <Lbl c="Your email (optional)"/>
+          <input value={email} onChange={e=>setEmail(e.target.value)} type="email"
+            placeholder="your@email.com"
+            style={{width:"100%",padding:"12px 16px",borderRadius:10,fontSize:15,fontWeight:700,color:C.text,background:C.bg,outline:"none",border:`2px solid ${email?C.primary:C.border}`}}/>
+          <p style={{fontSize:11,color:C.muted,marginTop:6,fontWeight:600}}>Full email delivery coming soon — for now we'll generate a report you can share.</p>
+        </Card>
+
+        <Btn onClick={generateReport} disabled={loading} style={{width:"100%",fontSize:16}}>
+          {loading?"Generating report...":"📊 Generate Report"}
+        </Btn>
+      </div>
+    </Screen>
+  );
+}
+
+// ── Parent Change Password Screen ────────────────────────────────────────
+function ChangeParentPassword({onBack}) {
+  const [current, setCurrent] = useState("");
+  const [newPass, setNewPass] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [err, setErr]         = useState("");
+  const [done, setDone]       = useState(false);
+
+  const save = async () => {
+    if(!newPass) { setErr("Enter a new password"); return; }
+    if(newPass.length < 6) { setErr("Password must be at least 6 characters"); return; }
+    if(newPass !== confirm) { setErr("Passwords don't match"); return; }
+    setLoading(true); setErr("");
+    try {
+      const session = JSON.parse(localStorage.getItem("adapt_session")||"{}");
+      const r = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/auth/v1/user`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": import.meta.env.VITE_SUPABASE_ANON_KEY,
+          "Authorization": `Bearer ${session.access_token||""}`
+        },
+        body: JSON.stringify({ password: newPass })
+      });
+      const data = await r.json();
+      if(r.ok) setDone(true);
+      else setErr(data.msg || data.error_description || "Failed to update password");
+    } catch(e) {
+      setErr("Connection failed — please try again");
+    }
+    setLoading(false);
+  };
+
+  if(done) return (
+    <Screen>
+      <div style={{paddingTop:60,textAlign:"center"}}>
+        <div style={{fontSize:56,marginBottom:16}}>✅</div>
+        <h2 style={{fontSize:24,fontWeight:900,color:C.text,marginBottom:8}}>Password Updated!</h2>
+        <p style={{fontSize:14,color:C.muted,fontWeight:600,marginBottom:28}}>Your new password is now active.</p>
+        <Btn onClick={onBack} style={{width:"100%"}}>Back to Settings</Btn>
+      </div>
+    </Screen>
+  );
+
+  return (
+    <Screen>
+      <div style={{paddingTop:28}}>
+        <BackBtn onClick={onBack}/>
+        <h2 style={{fontSize:26,fontWeight:900,color:C.text,marginBottom:6}}>Change Password</h2>
+        <p style={{fontSize:13,color:C.muted,fontWeight:600,marginBottom:24}}>Update your parent account password.</p>
+        {err&&<div style={{padding:"10px 14px",background:C.rLight,borderRadius:10,marginBottom:16,border:`1px solid ${C.red}`}}><p style={{fontSize:13,fontWeight:700,color:C.red}}>{err}</p></div>}
+        <Card style={{marginBottom:12}}>
+          <Lbl c="New Password"/>
+          <input value={newPass} onChange={e=>setNewPass(e.target.value)} type="password"
+            placeholder="At least 6 characters"
+            style={{width:"100%",padding:"12px 16px",borderRadius:10,fontSize:16,fontWeight:700,color:C.text,background:C.bg,outline:"none",border:`2px solid ${newPass?C.primary:C.border}`}}/>
+        </Card>
+        <Card style={{marginBottom:28}}>
+          <Lbl c="Confirm New Password"/>
+          <input value={confirm} onChange={e=>setConfirm(e.target.value)} type="password"
+            placeholder="Repeat your new password"
+            onKeyDown={e=>e.key==="Enter"&&save()}
+            style={{width:"100%",padding:"12px 16px",borderRadius:10,fontSize:16,fontWeight:700,color:C.text,background:C.bg,outline:"none",border:`2px solid ${confirm?(confirm===newPass?C.green:C.red):C.border}`}}/>
+        </Card>
+        <Btn onClick={save} disabled={loading||!newPass||!confirm} style={{width:"100%",fontSize:16}}>
+          {loading?"Updating...":"Update Password"}
+        </Btn>
+      </div>
+    </Screen>
+  );
+}
+
+// ── Reset Child Password ──────────────────────────────────────────────────
+function ResetChildPassword({child, onSave, onBack}) {
+  const [pass, setPass]   = useState("");
+  const [pass2, setPass2] = useState("");
+  const [err, setErr]     = useState("");
+  const [done, setDone]   = useState(false);
+
+  const save = async () => {
+    if(pass.length < 4) { setErr("Password must be at least 4 characters"); return; }
+    if(pass !== pass2)  { setErr("Passwords don't match"); return; }
+    setErr("");
+    onSave(pass);
+    setDone(true);
+  };
+
+  if(done) return (
+    <Screen>
+      <div style={{paddingTop:60,textAlign:"center"}}>
+        <div style={{fontSize:56,marginBottom:16}}>✅</div>
+        <h2 style={{fontSize:24,fontWeight:900,color:C.text,marginBottom:8}}>Password Updated!</h2>
+        <p style={{fontSize:14,color:C.muted,fontWeight:600,marginBottom:28}}>Tell {child.name} their new password.</p>
+        <Btn onClick={onBack} style={{width:"100%"}}>Back to Controls</Btn>
+      </div>
+    </Screen>
+  );
+
+  return (
+    <Screen>
+      <div style={{paddingTop:28}}>
+        <BackBtn onClick={onBack}/>
+        <h2 style={{fontSize:26,fontWeight:900,color:C.text,marginBottom:6}}>Reset {child.name}'s Password</h2>
+        <p style={{fontSize:13,color:C.muted,fontWeight:600,marginBottom:20,lineHeight:1.6}}>
+          Username: <strong>{child.childUsername||"Not set"}</strong>
+        </p>
+        {err&&<div style={{padding:"10px 14px",background:C.rLight,borderRadius:10,marginBottom:16,border:`1px solid ${C.red}`}}><p style={{fontSize:13,fontWeight:700,color:C.red}}>{err}</p></div>}
+        <Card style={{marginBottom:12}}>
+          <Lbl c="New Password"/>
+          <input value={pass} onChange={e=>setPass(e.target.value)} type="password"
+            placeholder="At least 4 characters"
+            style={{width:"100%",padding:"12px 16px",borderRadius:10,fontSize:18,fontWeight:700,color:C.text,background:C.bg,outline:"none",border:`2px solid ${pass?C.primary:C.border}`}}/>
+        </Card>
+        <Card style={{marginBottom:24}}>
+          <Lbl c="Confirm New Password"/>
+          <input value={pass2} onChange={e=>setPass2(e.target.value)} type="password"
+            placeholder="Repeat the password"
+            onKeyDown={e=>e.key==="Enter"&&save()}
+            style={{width:"100%",padding:"12px 16px",borderRadius:10,fontSize:18,fontWeight:700,color:C.text,background:C.bg,outline:"none",border:`2px solid ${pass2?(pass2===pass?C.green:C.red):C.border}`}}/>
+        </Card>
+        <Btn onClick={save} disabled={!pass||!pass2} style={{width:"100%"}}>Save New Password</Btn>
       </div>
     </Screen>
   );
@@ -3188,10 +3856,10 @@ function SetupAccessibility({childName, initial, onNext, onBack}) {
         </div>
         <div style={{display:"flex",flexDirection:"column",gap:10}}>
           <Btn onClick={()=>onNext(acc)} style={{width:"100%",fontSize:16}}>
-            {active>0?`Continue with ${active} adjustment${active!==1?"s":""} →`:"Continue →"}
+            {active>0?`Save ${active} adjustment${active!==1?"s":""} & continue →`:"Continue →"}
           </Btn>
           <Btn onClick={()=>onNext({})} v="ghost" style={{width:"100%"}}>
-            Skip — no additional needs
+            ⏭️ Skip — no additional needs
           </Btn>
         </div>
       </div>
@@ -3307,7 +3975,9 @@ export default function App() {
                 go("welcome");
               }
             } else {
-              go("welcome");
+              // Parent logged in but no children yet — go straight to setup
+              setType("parent");
+              go("parent_name");
             }
           } catch(e) {
             console.error("loadData error:", e);
@@ -3332,6 +4002,18 @@ export default function App() {
   useEffect(()=>{
     if(loaded && account && authUser){
       saveData(authUser.id, {account, children});
+    } else if(loaded && account && !authUser && account._parentId) {
+      // Child is logged in — save progress to parent's account
+      // Load parent data, update child, save back
+      loadData(account._parentId).then(parentData => {
+        if(parentData) {
+          const updatedChildren = (parentData.children||[]).map(c => {
+            const localChild = children.find(lc => lc.id === c.id);
+            return localChild || c;
+          });
+          saveData(account._parentId, {...parentData, children: updatedChildren});
+        }
+      });
     }
   },[children, account, loaded]);
 
@@ -3364,12 +4046,19 @@ export default function App() {
     return c;
   };
 
+  // Trial expiry check
+  const trialExpired = account?.subscription==="trial" && account?.trialStart &&
+    (Date.now() - account.trialStart) > 7 * 24 * 60 * 60 * 1000;
+  const daysLeftInTrial = account?.trialStart ?
+    Math.max(0, 7 - Math.floor((Date.now() - account.trialStart) / (24*60*60*1000))) : 7;
+
   const activeChild = active || children[0];
 
   // ── ROUTING ───────────────────────────────────────────────────────────
   return (
     <>
       {newBadge&&<BadgeNotif badgeId={newBadge} onDone={()=>setNB(null)}/>}
+      <TrialBanner daysLeft={daysLeftInTrial} expired={trialExpired}/>
 
       {screen==="auth_login"&&<AuthLoginChoice
         onParent={()=>go("auth_parent_login")}
@@ -3383,11 +4072,15 @@ export default function App() {
       {screen==="auth_child_login"&&<ChildUsernameLogin
         onParentLogin={()=>go("auth_parent_login")}
         onLogin={async(payload, childId, parentId)=>{
-          setAcct(payload.account);
+          setAcct({...payload.account, _parentId: parentId});
           setKids(payload.children||[]);
           const child=(payload.children||[]).find(c=>c.id===childId);
-          if(child){setAct(child);go("child_dash");}
-          else go("auth_login");
+          if(child){
+            setAct(child);
+            // If child has never done any questions, do diagnostic first
+            if(!child.total && !child._diagDone) go("child_first_login");
+            else go("child_dash");
+          } else go("auth_login");
         }}
       />}
       {screen==="auth_signup"&&<AuthSignUp
@@ -3420,7 +4113,7 @@ export default function App() {
         if(!account) {
           const type = userType||"student";
           const name = fin.name||authUser?.user_metadata?.name||"Learner";
-          setAcct({type, name, createdAt:Date.now()});
+          setAcct({type, name, createdAt:Date.now(), trialStart:Date.now(), subscription:"trial"});
           if(authUser) {
             supabase.from("profiles").upsert({id:authUser.id, type, name}).then(()=>{});
           }
@@ -3444,28 +4137,52 @@ export default function App() {
         onNext={creds=>{setSetup(s=>({...s,childUsername:creds.username,childPassword:creds.password}));go("ready_to_start");}}
       />}
 
-{/* parent_email_opt removed - children cannot sign up independently */}
+
 
       {screen==="ready_to_start"&&<ReadyToStart
         child={setup}
-        onStart={()=>go("diagnostic")}
+        onStart={()=>{
+          // For parents, skip diagnostic - child does it on first login
+          if(userType==="parent"||account?.type==="parent") go("diagnostic");
+          else go("diagnostic");
+        }}
       />}
 
-      {screen==="diagnostic"&&<Diagnostic child={setup} onDone={levels=>{
-        const c=addChild({...setup,level:levels});
-        setAct(c);
-        if(userType==="parent"||account?.type==="parent") go("child_handoff");
+      {screen==="diagnostic"&&<Diagnostic child={setup} onDone={async levels=>{
+        const c=await addChild({...setup,level:levels});
+        // Ensure credentials available for handoff
+        const cWithCreds={...c,childUsername:setup.childUsername,childPassword:setup.childPassword};
+        setAct(cWithCreds);
+        setKids(prev=>prev.map(k=>k.id===c.id?cWithCreds:k));
+        if(userType==="parent"||account?.type==="parent") {
+          go("child_handoff");
+        }
         else go("child_dash");
       }}/>}
+
+      {screen==="child_first_login"&&activeChild&&!activeChild.total&&(
+        // Child logs in for first time - do diagnostic on their account
+        <Diagnostic child={activeChild} onDone={levels=>{
+          const nl={...activeChild.level,...levels};
+          updChild(activeChild.id,{level:nl,_diagDone:true});
+          go("child_dash");
+        }}/>
+      )}
 
       {screen==="child_handoff"&&active&&<ChildHandoff
         child={active}
         onSignOut={async()=>{
+          // Clear plain text password before signing out
+          updChild(active.id,{childPassword:null});
           await supabase.auth.signOut();
           setAcct(null);setKids([]);setAct(null);
           hist.current=["auth_login"];setScr("auth_login");
         }}
-        onDashboard={()=>go("parent_dash")}
+        onDashboard={()=>{
+          // Clear plain text password when going to dashboard
+          updChild(active.id,{childPassword:null});
+          go("parent_dash");
+        }}
       />}
 
       {screen==="child_dash"&&activeChild&&<ChildDash
@@ -3478,6 +4195,7 @@ export default function App() {
         }}
         onBadges={()=>go("badges")}
         onMyStats={()=>go("child_stats")}
+        onSignOut={async()=>{await supabase.auth.signOut();setAcct(null);setKids([]);setAct(null);hist.current=["auth_login"];setScr("auth_login");}}
         onParentView={()=>go("parent_dash")}
       />}
 
@@ -3515,12 +4233,27 @@ export default function App() {
         startSubject={sessSub}
         onComplete={stats=>{
           const session={acc:stats.total>0?Math.round(stats.correct/stats.total*100):0,date:new Date().toISOString(),xp:stats.xp};
-          updChild(activeChild.id,{streak:activeChild.streak+1,sessionHistory:[...(activeChild.sessionHistory||[]),session].slice(-30)});
+          const lastSession=(activeChild.sessionHistory||[]).slice(-1)[0];
+          const lastDate=lastSession?new Date(lastSession.date).toDateString():null;
+          const today=new Date().toDateString();
+          const isNewDay=lastDate!==today;
+          const newStreak=isNewDay?activeChild.streak+1:activeChild.streak;
+          const newXP = activeChild.xp + stats.xp;
+          const milestones = [100,250,500,1000,2500,5000];
+          const hitMilestone = milestones.find(m => activeChild.xp < m && newXP >= m);
+          updChild(activeChild.id,{
+            streak:newStreak,
+            sessionHistory:[...(activeChild.sessionHistory||[]),session].slice(-30),
+            _xpMilestone: hitMilestone||null
+          });
           go("child_dash");
         }}
         onUpdate={u=>updChild(activeChild.id,u)}
       />}
 
+      {screen==="change_password"&&<ChangeParentPassword onBack={back}/>}
+      {screen==="privacy_policy"&&<PrivacyPolicy onBack={back}/>}
+      {screen==="terms_of_service"&&<TermsOfService onBack={back}/>}
       {screen==="child_stats"&&activeChild&&<ChildStats child={activeChild} onBack={back}/>}
       {screen==="badges"&&activeChild&&<BadgesScreen child={activeChild} onBack={back}/>}
 
@@ -3530,7 +4263,14 @@ export default function App() {
         onViewChild={c=>{setAct(c);go("child_dash");}}
         onBack={()=>go("child_login")}
         onProgressChild={c=>{setMgr(c);go("child_progress");}}
-        onAddChild={()=>{setSetup({...BLANK});setType("parent");go("details");}}
+        onAddChild={()=>{
+          if(children.length>=6){
+            alert("You've reached the maximum of 6 children on one account. This covers our Family Plan limit.");
+            return;
+          }
+          setSetup({...BLANK});setType("parent");go("details");
+        }}
+        onSignOut={async()=>{await supabase.auth.signOut();setAcct(null);setKids([]);setAct(null);hist.current=["auth_login"];setScr("auth_login");}}
         onSettings={()=>go("settings")}
       />}
 
@@ -3549,10 +4289,21 @@ export default function App() {
       {screen==="settings"&&<Settings
         account={account}
         onBack={back}
-        onReset={async()=>{
-          try{localStorage.removeItem(SK);}catch{}
+        onPrivacy={()=>go("privacy_policy")}
+        onTerms={()=>go("terms_of_service")}
+        onChangePassword={()=>go("change_password")}
+        onSignOut={async()=>{
+          await supabase.auth.signOut();
           setAcct(null);setKids([]);setAct(null);setMgr(null);
-          hist.current=["welcome"];setScr("welcome");
+          hist.current=["auth_login"];setScr("auth_login");
+        }}
+        onReset={async()=>{
+          if(window.confirm("This will delete ALL progress and profiles and cannot be undone. Are you sure?")){
+            try{localStorage.removeItem(SK);}catch{}
+            if(authUser) await supabase.auth.signOut();
+            setAcct(null);setKids([]);setAct(null);setMgr(null);
+            hist.current=["auth_login"];setScr("auth_login");
+          }
         }}
       />}
     </>

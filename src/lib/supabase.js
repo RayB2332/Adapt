@@ -166,9 +166,38 @@ const auth = {
   },
 
   resetPasswordForEmail: async (email) => {
-    const data = await authFetch('recover', { email })
+    const siteUrl = typeof window !== 'undefined' ? window.location.origin : ''
+    const data = await authFetch('recover', { email, options: { redirectTo: siteUrl } })
     return data.error ? { error: data } : { error: null }
   }
 }
 
 export const supabase = { auth, from }
+
+// ── Token refresh ─────────────────────────────────────────────────────────
+async function refreshSession() {
+  const session = getSession()
+  if(!session?.refresh_token) return null
+  try {
+    const r = await fetch(`${URL}/auth/v1/token?grant_type=refresh_token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': KEY },
+      body: JSON.stringify({ refresh_token: session.refresh_token })
+    })
+    const data = await r.json()
+    if(data.access_token) {
+      const newSession = { access_token: data.access_token, refresh_token: data.refresh_token, user: data.user }
+      setSession(newSession)
+      return newSession
+    }
+  } catch(e) {}
+  return null
+}
+
+// Auto-refresh token every 50 minutes (tokens expire after 1 hour)
+if(typeof window !== 'undefined') {
+  setInterval(async () => {
+    const session = getSession()
+    if(session?.refresh_token) await refreshSession()
+  }, 50 * 60 * 1000)
+}
