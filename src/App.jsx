@@ -1350,7 +1350,7 @@ function BadgesScreen({child,onBack}) {
 }
 
 // ── 11. Parent Dashboard ──────────────────────────────────────────────────
-function ParentDash({account,children,onViewChild,onProgressChild,onAddChild,onSettings,onSignOut}) {
+function ParentDash({account,children,onProgressChild,onAddChild,onSettings,onSignOut}) {
   const totalQ=children.reduce((a,c)=>a+c.total,0);
   const totalXP=children.reduce((a,c)=>a+c.xp,0);
   return (
@@ -1404,7 +1404,7 @@ function ParentDash({account,children,onViewChild,onProgressChild,onAddChild,onS
                   ))}
                 </div>
                 <div style={{display:"flex",gap:8}}>
-                  <Btn onClick={()=>onProgressChild(c)} style={{width:"100%",padding:"8px 10px",fontSize:13}}>📊 View Progress</Btn>
+                  <Btn onClick={()=>onProgressChild(c)} style={{width:"100%",padding:"10px",fontSize:14}}>📊 View {c.name}'s Progress →</Btn>
                 </div>
               </Card>
             );
@@ -2825,7 +2825,7 @@ function AuthLoginChoice({onParent, onChild}) {
 }
 
 // ── Child Login Screen (username + password) ─────────────────────────────
-function ChildUsernameLogin({onLogin, onParentLogin}) {
+function ChildUsernameLogin({onLogin, onParentLogin, onBack}) {
   const [username, setUsername] = useState("");
   const [pass, setPass]         = useState("");
   const [loading, setLoading]   = useState(false);
@@ -2864,6 +2864,7 @@ function ChildUsernameLogin({onLogin, onParentLogin}) {
     <div style={{minHeight:"100vh",background:"linear-gradient(160deg,#312E81 0%,#4F46E5 40%,#7C3AED 100%)",fontFamily:F,display:"flex",justifyContent:"center",alignItems:"center",padding:"20px 16px"}}>
       <div style={{maxWidth:420,width:"100%"}}>
         <div style={{textAlign:"center",marginBottom:28}}>
+          {onBack&&<button onClick={onBack} style={{fontSize:13,fontWeight:700,color:"rgba(255,255,255,0.6)",background:"none",border:"none",cursor:"pointer",fontFamily:F,marginBottom:12,display:"block",margin:"0 auto 12px"}}>← Back</button>}
           <div style={{fontSize:56,marginBottom:8}}>🎒</div>
           <h1 style={{fontSize:36,fontWeight:900,color:"#fff",letterSpacing:-1,marginBottom:4}}>Student Login</h1>
           <p style={{fontSize:14,color:"rgba(255,255,255,0.7)",fontWeight:700}}>Use your username and password</p>
@@ -2872,7 +2873,7 @@ function ChildUsernameLogin({onLogin, onParentLogin}) {
           {err&&<div style={{padding:"10px 14px",background:"rgba(220,38,38,0.2)",borderRadius:10,marginBottom:16,border:"1px solid rgba(220,38,38,0.4)"}}><p style={{fontSize:13,fontWeight:700,color:"#FCA5A5"}}>{err}</p></div>}
           <div style={{marginBottom:14}}>
             <p style={{fontSize:11,fontWeight:800,color:"rgba(255,255,255,0.7)",marginBottom:6}}>USERNAME</p>
-            <input value={username} onChange={e=>setUsername(e.target.value)} placeholder="your username"
+            <input value={username} onChange={e=>setUsername(e.target.value.replace(/\s/g,"").toLowerCase())} placeholder="e.g. ella2015 (not your email)"
               style={{width:"100%",padding:"13px 16px",borderRadius:12,fontSize:15,fontWeight:700,background:"rgba(255,255,255,0.1)",border:`2px solid ${username?"rgba(255,255,255,0.4)":"rgba(255,255,255,0.2)"}`,color:"#fff",outline:"none",fontFamily:F}}/>
           </div>
           <div style={{marginBottom:20}}>
@@ -4070,6 +4071,7 @@ export default function App() {
         onBack={()=>go("auth_login")}
       />}
       {screen==="auth_child_login"&&<ChildUsernameLogin
+        onBack={()=>go("auth_login")}
         onParentLogin={()=>go("auth_parent_login")}
         onLogin={async(payload, childId, parentId)=>{
           setAcct({...payload.account, _parentId: parentId});
@@ -4260,7 +4262,6 @@ export default function App() {
       {screen==="parent_dash"&&<ParentDash
         account={account}
         children={children}
-        onViewChild={c=>{setAct(c);go("child_dash");}}
         onBack={()=>go("child_login")}
         onProgressChild={c=>{setMgr(c);go("child_progress");}}
         onAddChild={()=>{
