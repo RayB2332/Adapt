@@ -2569,7 +2569,7 @@ function GamePlayer({child,gameId,mode,onComplete,onQuit}) {
 
 
 // ── Child Login Screen ────────────────────────────────────────────────────
-function ChildLogin({children, onSelect, onParent}) {
+function ChildLogin({children, onSelect, onParent}) { // onSelect goes to progress for parents
   if(!children||children.length===0) {
     return (
       <Screen>
@@ -4095,7 +4095,7 @@ export default function App() {
       />}
       {screen==="child_login"&&<ChildLogin
         children={children}
-        onSelect={c=>{setAct(c);go("child_dash");}}
+        onSelect={c=>{setMgr(c);go("child_progress");}}
         onParent={()=>go("parent_dash")}
       />}
 
