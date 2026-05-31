@@ -973,7 +973,7 @@ function ChildDash({child,isParentView,onSession,onGames,onBadges,onParentView,o
     <Screen pad={false}>
       <div>
         {/* Hero banner */}
-        <div style={{background:`linear-gradient(135deg,${tColor} 0%,${tColor}CC 100%)`,padding:"24px 20px 72px",position:"relative",overflow:"hidden"}}>
+        <div style={{background:`linear-gradient(135deg,${tColor} 0%,${tColor}CC 100%)`,padding:"24px 20px 96px",position:"relative",overflow:"hidden"}}>
           <div style={{position:"absolute",top:-30,right:-30,width:120,height:120,borderRadius:"50%",background:"rgba(255,255,255,0.1)"}}/>
           <div style={{position:"absolute",bottom:-20,left:-20,width:100,height:100,borderRadius:"50%",background:"rgba(255,255,255,0.07)"}}/>
           {isParentView&&(
@@ -1008,7 +1008,7 @@ function ChildDash({child,isParentView,onSession,onGames,onBadges,onParentView,o
         </div>
 
         {/* Content lifted over hero */}
-        <div style={{padding:"0 16px 60px",marginTop:-52}}>
+        <div style={{padding:"0 16px 60px",marginTop:-64}}>
           {/* Tutor card floating over hero */}
           <div style={{background:C.surface,borderRadius:22,padding:"16px 18px",boxShadow:"0 8px 32px rgba(0,0,0,0.12)",marginBottom:14,display:"flex",gap:12,alignItems:"flex-start"}}>
             <TutorChar name={child.tutor} size={52}/>
@@ -4262,6 +4262,7 @@ export default function App() {
         subject={sessSub}
         onBack={()=>go("child_dash")}
         onStart={topic=>{setTopic(topic);go("session");}}
+        onSignOut={async()=>{await supabase.auth.signOut();setAcct(null);setKids([]);setAct(null);hist.current=["auth_login"];setScr("auth_login");}}
       />}
 
       {screen==="session"&&activeChild&&<Session
@@ -4285,6 +4286,7 @@ export default function App() {
           go("child_dash");
         }}
         onUpdate={u=>updChild(activeChild.id,u)}
+        onExit={()=>go("child_dash")}
       />}
 
       {screen==="change_password"&&<ChangeParentPassword onBack={back}/>}
