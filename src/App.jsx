@@ -511,7 +511,12 @@ Level: ${topicLevel} (${getLevelContext(topicLevel)})
 Curriculum context: ${topic?.levels?.[Math.min(topicLevel-1,4)]||"age-appropriate content"}
 Accuracy: ${Math.round(acc*100)}% (${sT} questions)
 ${easier?"Child is struggling — make it easier, add a helpful hint":""}${harder?"Child is excelling — push harder, increase complexity":""}
-IMPORTANT: Generate content at level ${topicLevel} difficulty. Do NOT repeat these question topics already asked this session: ${askedQs.slice(-5).join(' | ')||'none yet'}. Vary formats: multiple choice, true/false framing, word problems, fill the blank.
+IMPORTANT: 
+- Generate ONE question at level ${topicLevel} difficulty
+- These EXACT questions have already been asked — DO NOT repeat them: ${askedQs.slice(-10).join(' ||| ')||'none yet'}
+- You MUST generate a completely different question on a different aspect of the topic
+- Vary the format each time: multiple choice, true/false, fill the blank, word problems, what-comes-next
+- If stuck, approach the topic from a completely different angle
 ${easier?"⚠️ Struggling — easier + hint":""}${harder?"✨ Excelling — slightly harder":""}
 Language: ${child.age<=6?"Very simple max 1 sentence":"Clear friendly"}
 ${mode==="visual"?"Include SVG 220x140px illustrating the TOPIC ONLY — never show the answer, never label the correct option, never include text that gives away the answer.":""}
@@ -968,11 +973,11 @@ function ChildDash({child,isParentView,onSession,onGames,onBadges,onParentView,o
     <Screen pad={false}>
       <div>
         {/* Hero banner */}
-        <div style={{background:`linear-gradient(135deg,${tColor} 0%,${tColor}CC 100%)`,padding:"24px 20px 80px",position:"relative",overflow:"hidden"}}>
+        <div style={{background:`linear-gradient(135deg,${tColor} 0%,${tColor}CC 100%)`,padding:"24px 20px 72px",position:"relative",overflow:"hidden"}}>
           <div style={{position:"absolute",top:-30,right:-30,width:120,height:120,borderRadius:"50%",background:"rgba(255,255,255,0.1)"}}/>
           <div style={{position:"absolute",bottom:-20,left:-20,width:100,height:100,borderRadius:"50%",background:"rgba(255,255,255,0.07)"}}/>
           {isParentView&&(
-            <div style={{marginBottom:12,padding:"6px 12px",background:"rgba(0,0,0,0.2)",borderRadius:8,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+            <div style={{marginBottom:12,padding:"6px 12px",background:"rgba(0,0,0,0.2)",borderRadius:8,display:"flex",alignItems:"center",justifyContent:"space-between",position:"relative",zIndex:2}}>
               <span style={{fontSize:12,fontWeight:800,color:"rgba(255,255,255,0.9)"}}>👁️ Viewing as {child.name||"Child"}</span>
               <button onClick={onParentView} style={{fontSize:12,fontWeight:800,color:"rgba(255,255,255,0.9)",background:"transparent",border:"none",cursor:"pointer",fontFamily:F}}>← Parent view</button>
             </div>
@@ -1092,8 +1097,15 @@ function Session({child,startSubject,startTopic,onComplete,onUpdate,onExit,a11y=
   const load=async(sub,m)=>{
     setLoading(true);setSel(null);setAns(false);
     const cm=m??mRef.current;
-    const r=await claude(sessionSys({...child,level:child.level},sub,topic,cm,sC,sT),"Generate the next question.");
-    setQ(r);setLoading(false);
+    const r=await claude(sessionSys({...child,level:child.level},sub,topic,cm,sC,sT,askedQs),"Generate the next question. Make sure it is completely different from previous questions.");
+    // If question already asked this session, request a new one
+    if(r?.question && askedQs.includes(r.question)) {
+      const r2=await claude(sessionSys({...child,level:child.level},sub,topic,cm,sC,sT,askedQs),"Generate a DIFFERENT question. The previous one was repeated. Make it completely new.");
+      setQ(r2||r);
+    } else {
+      setQ(r);
+    }
+    setLoading(false);
     if(cm==="audio"&&r) setTimeout(()=>speak(r.question,child.tutor),400);
   };
   useEffect(()=>{load(subject,mode);},[]);
@@ -1134,6 +1146,8 @@ function Session({child,startSubject,startTopic,onComplete,onUpdate,onExit,a11y=
     const {badges,newBadge}=checkBadges({...child,...updated});
     onUpdate({...updated,badges,_newBadge:newBadge});
     if(mode==="audio") speak(ok?(q?.encouragement||"Correct!"):"Not quite. "+(q?.explanation||""),child.tutor);
+    // Track question to prevent repeats
+    if(q?.question) setAskedQs(prev=>[...prev, q.question].slice(-20));
   };
 
   const goNext=()=>{
@@ -4082,8 +4096,9 @@ export default function App() {
           const child=(payload.children||[]).find(c=>c.id===childId);
           if(child){
             setAct(child);
-            // If child has never done any questions, do diagnostic first
-            if(!child.total && !child._diagDone) go("child_first_login");
+            // Diagnostic only runs ONCE - check _diagDone flag
+            // Once done, never runs again even if total is 0
+            if(!child._diagDone) go("child_first_login");
             else go("child_dash");
           } else go("auth_login");
         }}
@@ -4185,7 +4200,7 @@ export default function App() {
         // Child logs in for first time - do diagnostic on their account
         <Diagnostic child={activeChild} onDone={levels=>{
           const nl={...activeChild.level,...levels};
-          updChild(activeChild.id,{level:nl,_diagDone:true});
+          updChild(activeChild.id,{level:nl,_diagDone:true,_diagDate:new Date().toISOString()});
           go("child_dash");
         }}/>
       )}
@@ -4208,7 +4223,7 @@ export default function App() {
 
       {screen==="child_dash"&&activeChild&&<ChildDash
         child={activeChild}
-        isParentView={account?.type==="parent"}
+        isParentView={account?.type==="parent"&&!!authUser}
         onSession={sub=>{setSub(sub);go("topic_pick");}}
         onGames={()=>{
           if(activeChild.controls?.miniGames===false){alert("Mini games are turned off by your parent.");return;}
