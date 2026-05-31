@@ -4144,11 +4144,15 @@ export default function App() {
           setSetup(updatedSetup);
           if(userType==="parent"||account?.type==="parent"){
             // Parent flow: add child with default levels, skip diagnostic
-            // Child will do diagnostic on their first login
             const c = await addChild({...updatedSetup});
             const cWithCreds={...c,childUsername:creds.username,childPassword:creds.password};
             setAct(cWithCreds);
-            setKids(prev=>prev.map(k=>k.id===c.id?cWithCreds:k));
+            const newKids = [...children.filter(k=>k.id!==c.id), cWithCreds];
+            setKids(newKids);
+            // Explicitly save to Supabase immediately so child can log in
+            if(authUser) {
+              await saveData(authUser.id, {account, children: newKids});
+            }
             go("child_handoff");
           } else {
             go("ready_to_start");
