@@ -1417,10 +1417,10 @@ function ParentDash({account,children,onProgressChild,onAddChild,onSettings,onSi
 }
 
 // ── 12. Child Progress (Parent View) ─────────────────────────────────────
-function ChildProgress({child,onBack,onControls,onAccessibility,onResetPassword,onEditProfile,onEmailReport}) {
+function ChildProgress({child,onBack,onControls,onAccessibility,onResetPassword,onEditProfile,onEmailReport,onSignOut}) {
   const [insight,setInsight]=useState(null);
   const [insightLoading,setInsightLoading]=useState(false);
-  const [expanded,setExpanded]=useState({overview:true,insight:true,mastery:false,mastery_stats:false,habits:false,curriculum:false,subjects:false,patterns:false,velocity:false,gaps:false,sessions:false});
+  const [expanded,setExpanded]=useState({overview:true,insight:false,gaps:true,curriculum:false,mastery:false,mastery_stats:false,habits:false,subjects:false,patterns:false,velocity:false,sessions:false});
   const toggle=(k)=>setExpanded(e=>({...e,[k]:!e[k]}));
 
   const sessions=child.sessionHistory||[];
@@ -1578,6 +1578,9 @@ Write a personalised paragraph for the parent.`
         <BackBtn onClick={onBack}/>
 
         {/* Header */}
+        <div style={{display:"flex",justifyContent:"flex-end",marginBottom:8}}>
+          <button onClick={onSignOut} style={{padding:"8px 16px",borderRadius:10,background:"#FEE2E2",border:"none",cursor:"pointer",fontSize:13,fontWeight:800,color:"#DC2626",fontFamily:F}}>Sign Out</button>
+        </div>
         <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20,padding:"16px 18px",background:`linear-gradient(135deg,${tColor}18,${tColor}08)`,borderRadius:20,border:`1px solid ${tColor}20`}}>
           <AvatarCircle avatar={child.avatar} size={52} color={tColor}/>
           <div style={{flex:1}}>
@@ -4279,6 +4282,48 @@ export default function App() {
         child={manage}
         onBack={back}
         onControls={()=>go("child_controls")}
+        onAccessibility={()=>go("child_accessibility")}
+        onResetPassword={()=>go("reset_child_password")}
+        onEditProfile={()=>go("edit_child_profile")}
+        onEmailReport={()=>go("email_report")}
+        onSignOut={async()=>{
+          await supabase.auth.signOut();
+          setAcct(null);setKids([]);setAct(null);setMgr(null);
+          hist.current=["auth_login"];setScr("auth_login");
+        }}
+      />}
+
+      {screen==="child_accessibility"&&manage&&<AccessibilitySettings
+        child={manage}
+        onBack={back}
+        onSave={acc=>{updChild(manage.id,{accessibility:acc});setMgr(c=>({...c,accessibility:acc}));back();}}
+      />}
+
+      {screen==="reset_child_password"&&manage&&<ResetChildPassword
+        child={manage}
+        onBack={back}
+        onSave={async(newPass)=>{
+          const hash = await hashPassword(newPass);
+          await supabase.from("child_accounts").upsert({
+            parent_id: authUser?.id,
+            child_id: manage.id,
+            username: manage.childUsername,
+            password_hash: hash,
+            child_name: manage.name,
+          });
+        }}
+      />}
+
+      {screen==="edit_child_profile"&&manage&&<EditChildProfile
+        child={manage}
+        onBack={back}
+        onSave={(updates)=>{updChild(manage.id,updates);setMgr(c=>({...c,...updates}));back();}}
+      />}
+
+      {screen==="email_report"&&manage&&<EmailProgressReport
+        child={manage}
+        parentEmail={authUser?.email}
+        onBack={back}
       />}
 
       {screen==="child_controls"&&manage&&<ParentalControls
