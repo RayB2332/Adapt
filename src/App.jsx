@@ -3973,7 +3973,7 @@ export default function App() {
               setAcct(acct);
               setKids(d.children||[]);
               if((d.children||[]).length>0){
-                if(acct.type==="parent") go("child_login");
+                if(acct.type==="parent") go("parent_dash");
                 else {setAct(d.children[0]);go("child_dash");}
               } else {
                 go("welcome");
@@ -4099,7 +4099,7 @@ export default function App() {
       {screen==="child_login"&&<ChildLogin
         children={children}
         onSelect={c=>{setMgr(c);go("child_progress");}}
-        onParent={()=>go("parent_dash")}
+        onParent={()=>go("auth_parent_login")}
       />}
 
       {screen==="parent_name"&&<ParentName onBack={back} onNext={name=>{setAcct({type:"parent",name,createdAt:Date.now()});setSetup({...BLANK});go("details");}}/>}
@@ -4304,13 +4304,24 @@ export default function App() {
         onBack={back}
         onSave={async(newPass)=>{
           const hash = await hashPassword(newPass);
-          await supabase.from("child_accounts").upsert({
-            parent_id: authUser?.id,
-            child_id: manage.id,
-            username: manage.childUsername,
-            password_hash: hash,
-            child_name: manage.name,
-          });
+          // Find existing child account by child_id to get username
+          try {
+            const r = await fetch(
+              `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/child_accounts?child_id=eq.${manage.id}&select=username`,
+              {headers:{apikey:import.meta.env.VITE_SUPABASE_ANON_KEY,Authorization:`Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`}}
+            );
+            const rows = await r.json();
+            const username = rows?.[0]?.username || manage.childUsername;
+            if(username) {
+              await supabase.from("child_accounts").upsert({
+                parent_id: authUser?.id,
+                child_id: manage.id,
+                username: username,
+                password_hash: hash,
+                child_name: manage.name,
+              });
+            }
+          } catch(e) { console.error("Reset password failed:", e); }
         }}
       />}
 
