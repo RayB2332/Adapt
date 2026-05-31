@@ -3442,7 +3442,7 @@ function CreateChildAccount({childName, onNext, onBack}) {
         <Card style={{marginBottom:12}}>
           <Lbl c="Password"/>
           <input value={pass} onChange={e=>setPass(e.target.value)} type="password"
-            placeholder="At least 4 characters"
+            placeholder="At least 6 characters"
             style={{width:"100%",padding:"12px 16px",borderRadius:10,fontSize:18,fontWeight:700,
               color:C.text,background:C.bg,outline:"none",
               border:`2px solid ${pass?C.primary:C.border}`,transition:"border 0.2s"}}/>
@@ -3754,7 +3754,7 @@ function ResetChildPassword({child, onSave, onBack}) {
   const [done, setDone]   = useState(false);
 
   const save = async () => {
-    if(pass.length < 4) { setErr("Password must be at least 4 characters"); return; }
+    if(pass.length < 6) { setErr("Password must be at least 6 characters"); return; }
     if(pass !== pass2)  { setErr("Passwords don't match"); return; }
     setErr("");
     onSave(pass);
@@ -3784,7 +3784,7 @@ function ResetChildPassword({child, onSave, onBack}) {
         <Card style={{marginBottom:12}}>
           <Lbl c="New Password"/>
           <input value={pass} onChange={e=>setPass(e.target.value)} type="password"
-            placeholder="At least 4 characters"
+            placeholder="At least 6 characters"
             style={{width:"100%",padding:"12px 16px",borderRadius:10,fontSize:18,fontWeight:700,color:C.text,background:C.bg,outline:"none",border:`2px solid ${pass?C.primary:C.border}`}}/>
         </Card>
         <Card style={{marginBottom:24}}>
@@ -4139,19 +4139,31 @@ export default function App() {
       {screen==="create_child_account"&&<CreateChildAccount
         childName={setup.name}
         onBack={back}
-        onNext={creds=>{setSetup(s=>({...s,childUsername:creds.username,childPassword:creds.password}));go("ready_to_start");}}
+        onNext={async creds=>{
+          const updatedSetup={...setup,childUsername:creds.username,childPassword:creds.password};
+          setSetup(updatedSetup);
+          if(userType==="parent"||account?.type==="parent"){
+            // Parent flow: add child with default levels, skip diagnostic
+            // Child will do diagnostic on their first login
+            const c = await addChild({...updatedSetup});
+            const cWithCreds={...c,childUsername:creds.username,childPassword:creds.password};
+            setAct(cWithCreds);
+            setKids(prev=>prev.map(k=>k.id===c.id?cWithCreds:k));
+            go("child_handoff");
+          } else {
+            go("ready_to_start");
+          }
+        }}
       />}
 
 
 
       {screen==="ready_to_start"&&<ReadyToStart
         child={setup}
-        onStart={()=>{
-          // For parents, skip diagnostic - child does it on first login
-          if(userType==="parent"||account?.type==="parent") go("diagnostic");
-          else go("diagnostic");
-        }}
+        onStart={()=>go("diagnostic")}
       />}
+
+
 
       {screen==="diagnostic"&&<Diagnostic child={setup} onDone={async levels=>{
         const c=await addChild({...setup,level:levels});
