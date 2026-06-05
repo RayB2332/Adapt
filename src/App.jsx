@@ -42,6 +42,9 @@ import { useState, useEffect, useRef, useCallback } from "react";
     @keyframes slideUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
     @keyframes wiggle{0%,100%{transform:rotate(0)}25%{transform:rotate(-8deg)}75%{transform:rotate(8deg)}}
     button,input,select{font-family:'Nunito',sans-serif}
+    button:hover{filter:brightness(1.08);transform:translateY(-1px)}
+    button:active{transform:scale(0.96)!important;filter:brightness(0.95)}
+    .game-btn:hover{transform:translateY(-2px) scale(1.02)!important}
     .tap-scale:active{transform:scale(0.94)!important;transition:transform 0.08s!important}
   `;
   document.head.appendChild(s);
@@ -49,16 +52,25 @@ import { useState, useEffect, useRef, useCallback } from "react";
 
 // ── DESIGN TOKENS ─────────────────────────────────────────────────────────
 const C = {
-  bg:"#F0F4FF", surface:"#FFFFFF",
-  primary:"#4F46E5", pLight:"#EEF2FF",
-  amber:"#F59E0B", aLight:"#FFFBEB",
-  violet:"#7C3AED", vLight:"#F5F3FF",
-  sky:"#0EA5E9", sLight:"#F0F9FF",
-  green:"#059669", gLight:"#ECFDF5",
-  pink:"#EC4899", pkLight:"#FDF2F8",
-  red:"#DC2626", rLight:"#FEF2F2",
-  orange:"#EA580C", oLight:"#FFF7ED",
-  text:"#111827", muted:"#6B7280", border:"#E5E7EB",
+  // Backgrounds
+  bg:"#F5F3FF", surface:"#FFFFFF", card:"#FFFFFF",
+  // Primary - richer indigo
+  primary:"#4338CA", pLight:"#EEF2FF", pDark:"#3730A3",
+  // Semantic colours - more saturated
+  amber:"#D97706",  aLight:"#FEF3C7",
+  violet:"#7C3AED", vLight:"#F3F0FF",
+  sky:"#0284C7",    sLight:"#E0F2FE",
+  green:"#16A34A",  gLight:"#DCFCE7",
+  pink:"#DB2777",   pkLight:"#FCE7F3",
+  red:"#DC2626",    rLight:"#FEE2E2",
+  orange:"#EA580C", oLight:"#FFEDD5",
+  teal:"#0D9488",   tLight:"#CCFBF1",
+  lime:"#65A30D",   lLight:"#ECFCCB",
+  // Text
+  text:"#0F172A", muted:"#64748B", border:"#E2E8F0",
+  // Game answer button colours (Kahoot-style)
+  ansA:"#E53E3E", ansB:"#3182CE", ansC:"#D69E2E", ansD:"#38A169",
+  ansALight:"#FED7D7", ansBLight:"#BEE3F8", ansCLight:"#FEFCBF", ansDLight:"#C6F6D5",
 };
 const F = "'Nunito',sans-serif";
 const FDYS = "'OpenDyslexic','Comic Sans MS',sans-serif";
@@ -66,12 +78,20 @@ const FDYS = "'OpenDyslexic','Comic Sans MS',sans-serif";
 // ── DATA ──────────────────────────────────────────────────────────────────
 const SUBJECTS = ["Maths","English","Science","History","Geography","Computing"];
 const SUB = {
-  Maths:    {emoji:"🔢",color:C.primary, light:C.pLight},
-  English:  {emoji:"📖",color:C.sky,     light:C.sLight},
-  Science:  {emoji:"🔬",color:C.green,   light:C.gLight},
-  History:  {emoji:"📜",color:"#B45309", light:"#FEF3C7"},
-  Geography:{emoji:"🌍",color:"#0369A1", light:"#E0F2FE"},
-  Computing:{emoji:"💻",color:"#7C3AED", light:"#F5F3FF"},
+  Maths:    {emoji:"🔢",color:"#4338CA",light:"#EEF2FF",grad:"linear-gradient(135deg,#4338CA,#6366F1)"},
+  English:  {emoji:"📖",color:"#0284C7",light:"#E0F2FE",grad:"linear-gradient(135deg,#0284C7,#38BDF8)"},
+  Science:  {emoji:"🔬",color:"#16A34A",light:"#DCFCE7",grad:"linear-gradient(135deg,#16A34A,#4ADE80)"},
+  History:  {emoji:"📜",color:"#B45309",light:"#FEF3C7",grad:"linear-gradient(135deg,#B45309,#FBBF24)"},
+  Geography:{emoji:"🌍",color:"#0E7490",light:"#CFFAFE",grad:"linear-gradient(135deg,#0E7490,#22D3EE)"},
+  Computing:{emoji:"💻",color:"#7C3AED",light:"#F3F0FF",grad:"linear-gradient(135deg,#7C3AED,#A78BFA)"},
+  // US/CA subject aliases
+  Math:        {emoji:"🔢",color:"#4338CA",light:"#EEF2FF",grad:"linear-gradient(135deg,#4338CA,#6366F1)"},
+  Mathematics: {emoji:"🔢",color:"#4338CA",light:"#EEF2FF",grad:"linear-gradient(135deg,#4338CA,#6366F1)"},
+  "English Language Arts":{emoji:"📖",color:"#0284C7",light:"#E0F2FE",grad:"linear-gradient(135deg,#0284C7,#38BDF8)"},
+  Language:    {emoji:"📖",color:"#0284C7",light:"#E0F2FE",grad:"linear-gradient(135deg,#0284C7,#38BDF8)"},
+  "Science & Technology":{emoji:"🔬",color:"#16A34A",light:"#DCFCE7",grad:"linear-gradient(135deg,#16A34A,#4ADE80)"},
+  "Social Studies":{emoji:"🌍",color:"#B45309",light:"#FEF3C7",grad:"linear-gradient(135deg,#B45309,#FBBF24)"},
+  "Computer Studies":{emoji:"💻",color:"#7C3AED",light:"#F3F0FF",grad:"linear-gradient(135deg,#7C3AED,#A78BFA)"},
 };
 
 
@@ -1107,20 +1127,33 @@ function ChildDash({child,isParentView,onSession,onGames,onBadges,onParentView,o
               const diff=getDifficultyLabel(lvl);
               return (
                 <button key={s} onClick={()=>onSession(s)}
-                  style={{padding:"14px 8px",borderRadius:16,background:C.surface,border:`1.5px solid ${sc.color}20`,cursor:"pointer",fontFamily:F,textAlign:"center",transition:"all 0.2s",boxShadow:"0 2px 8px rgba(0,0,0,0.06)"}}>
-                  <span style={{fontSize:26,display:"block",marginBottom:6}}>{sc.emoji}</span>
-                  <p style={{fontSize:12,fontWeight:800,color:sc.color,marginBottom:2}}>{s}</p>
-                  <p style={{fontSize:10,fontWeight:700,color:diff.color}}>{diff.emoji} Lv.{lvl}</p>
+                  style={{padding:"14px 8px",borderRadius:18,
+                    background:sc.grad||`linear-gradient(135deg,${sc.color},${sc.color}CC)`,
+                    border:"none",cursor:"pointer",fontFamily:F,textAlign:"center",
+                    transition:"all 0.2s",boxShadow:`0 4px 16px ${sc.color}40`,
+                    transform:"translateY(0)"}}>
+                  <span style={{fontSize:28,display:"block",marginBottom:6}}>{sc.emoji}</span>
+                  <p style={{fontSize:12,fontWeight:900,color:"#fff",marginBottom:2}}>{s}</p>
+                  <p style={{fontSize:10,fontWeight:800,color:"rgba(255,255,255,0.85)"}}>{diff.emoji} Lv.{lvl}</p>
                 </button>
               );
             })}
           </div>
 
           {/* Games row */}
-          <button onClick={onGames} style={{width:"100%",padding:"14px 20px",borderRadius:16,background:"linear-gradient(135deg,#1E1B4B,#312E81)",border:"none",cursor:"pointer",fontFamily:F,display:"flex",alignItems:"center",justifyContent:"center",gap:10,marginBottom:16}}>
-            <span style={{fontSize:22}}>🎮</span>
-            <span style={{fontSize:15,fontWeight:800,color:"#fff"}}>Mini Games</span>
-            <span style={{fontSize:12,color:"rgba(255,255,255,0.6)",marginLeft:4}}>12 games</span>
+          <button onClick={onGames} style={{width:"100%",padding:"16px 20px",borderRadius:20,
+            background:"linear-gradient(135deg,#1E1B4B 0%,#4338CA 50%,#7C3AED 100%)",
+            border:"none",cursor:"pointer",fontFamily:F,
+            display:"flex",alignItems:"center",justifyContent:"center",gap:12,marginBottom:16,
+            boxShadow:"0 6px 24px rgba(67,56,202,0.5)",position:"relative",overflow:"hidden"}}>
+            <div style={{position:"absolute",top:-10,right:-10,width:60,height:60,borderRadius:"50%",background:"rgba(255,255,255,0.08)"}}/>
+            <div style={{position:"absolute",bottom:-15,left:20,width:80,height:80,borderRadius:"50%",background:"rgba(255,255,255,0.05)"}}/>
+            <span style={{fontSize:26}}>🎮</span>
+            <div style={{textAlign:"left"}}>
+              <p style={{fontSize:16,fontWeight:900,color:"#fff",letterSpacing:"0.01em"}}>Mini Games</p>
+              <p style={{fontSize:11,color:"rgba(255,255,255,0.7)"}}>65 curriculum-aligned games</p>
+            </div>
+            <span style={{marginLeft:"auto",fontSize:20,color:"rgba(255,255,255,0.6)"}}>›</span>
           </button>
         </div>
 
@@ -2629,7 +2662,7 @@ function ShooterEngine({child,name,emoji,subject,color="#4F46E5",bg="#EEF2FF",fe
     sr.current.targets=opts.map((opt,i)=>({
       id:++idr.current,opt,correct:opt===game.q.correct||opt.charAt(0)===game.q.correct,
       x:8+i*(80/Math.max(opts.length-1,1)),y:15+Math.random()*25,
-      vx:(Math.random()-0.5)*0.9,vy:0.12+game.lvl*0.05,alive:true
+      vx:(Math.random()-0.5)*0.5,vy:0.08+game.lvl*0.03,alive:true
     }));
     setTargets([...sr.current.targets]);
     setBullets([]);sr.current.bullets=[];
@@ -2658,7 +2691,7 @@ function ShooterEngine({child,name,emoji,subject,color="#4F46E5",bg="#EEF2FF",fe
       const missed=s.targets.find(t=>t.alive&&t.correct&&t.y>90);
       if(missed){s.targets=s.targets.map(t=>t.id===missed.id?{...t,alive:false}:t);game.answer(false);}
       setTargets([...s.targets]);setBullets([...s.bullets]);setExps([...s.exps]);
-    },50);
+    },60);
     return()=>clearInterval(loop);
   },[game.done,game.qIdx,game.q]);
 
@@ -2667,7 +2700,7 @@ function ShooterEngine({child,name,emoji,subject,color="#4F46E5",bg="#EEF2FF",fe
 
   if(game.loadErr)return <GameError name={name} onRetry={()=>window.location.reload()}/>;
   if(game.loading&&!game.q)return <GameLoad name={name} emoji={emoji} tutor={child.tutor}/>;
-  if(game.done)return <GameEnd name={name} emoji={emoji} score={game.score} max={game.score+3-game.lives} child={child} xp={game.score*12} level={game.lvl} onDone={()=>onComplete({score:game.score,max:game.score+3-game.lives,xp:game.score*12,total:game.qIdx,correct:game.score,levelReached:game.lvl})}/>;
+  if(game.done)return <GameEnd name={name} emoji={emoji} score={game.score} max={game.score+3-game.lives} child={child} xp={game.score*12} level={game.lvl} onRetry={()=>window.location.reload()} onDone={()=>onComplete({score:game.score,max:game.score+3-game.lives,xp:game.score*12,total:game.qIdx,correct:game.score,levelReached:game.lvl})}/>;
   return(
     <GameShell name={name} emoji={emoji} subject={subject} score={game.score} maxScore={null} round={game.qIdx+1} total={null} streak={game.streak} onQuit={()=>game.setDone(true)} lives={game.lives} level={game.lvl}>
       <div style={{textAlign:"center",marginBottom:6}}><div style={{background:bg,borderRadius:12,padding:"6px 16px",display:"inline-block",border:`2px solid ${color}30`}}><span style={{fontSize:15,fontWeight:900,color}}>{game.q?.q||game.q?.question}</span></div></div>
@@ -2684,10 +2717,30 @@ function ShooterEngine({child,name,emoji,subject,color="#4F46E5",bg="#EEF2FF",fe
         {flash&&<div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,0.4)",fontSize:40,zIndex:5}}>{flash}</div>}
         <div style={{position:"absolute",bottom:"4%",left:`${shipX}%`,transform:"translateX(-50%)",fontSize:24,zIndex:3,transition:"left 0.1s"}}>🚀</div>
       </div>
-      <div style={{display:"flex",gap:8}}>
-        <button onClick={()=>moveShip(-1)} style={{flex:1,padding:"12px",borderRadius:12,fontSize:20,background:C.surface,border:`1px solid ${C.border}`,cursor:"pointer",fontFamily:F}}>◀</button>
-        <button onClick={fire} style={{flex:2,padding:"12px",borderRadius:12,fontWeight:900,background:`linear-gradient(135deg,${color},${color}bb)`,color:"#fff",border:"none",cursor:"pointer",fontFamily:F,fontSize:14}}>🔫 FIRE!</button>
-        <button onClick={()=>moveShip(1)} style={{flex:1,padding:"12px",borderRadius:12,fontSize:20,background:C.surface,border:`1px solid ${C.border}`,cursor:"pointer",fontFamily:F}}>▶</button>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:8}}>
+        {(game.q?.options||[]).map((opt,i)=>{
+          const isCorrect=opt===game.q?.correct;
+          return(
+            <button key={i} onClick={()=>{
+              // Find the alien with this answer and shoot it
+              const target=sr.current.targets.find(t=>t.alive&&t.opt===opt);
+              if(target){
+                // Move ship to target x and fire
+                sr.current.shipX=target.x;
+                setShipX(target.x);
+                const b={id:++idr.current,x:target.x,y:80};
+                sr.current.bullets=[...sr.current.bullets,b];
+                setBullets(p=>[...p,b]);
+              }
+            }}
+            style={{padding:"14px 10px",borderRadius:14,fontSize:14,fontWeight:900,cursor:"pointer",fontFamily:F,
+              background:[`linear-gradient(135deg,#E53E3E,#FC8181)`,`linear-gradient(135deg,#3182CE,#63B3ED)`,`linear-gradient(135deg,#D69E2E,#F6E05E)`,`linear-gradient(135deg,#38A169,#68D391)`][i%4],
+              color:"#fff",border:"none",
+              transition:"all 0.15s",boxShadow:["0 4px 12px rgba(229,62,62,0.4)","0 4px 12px rgba(49,130,206,0.4)","0 4px 12px rgba(214,158,46,0.4)","0 4px 12px rgba(56,161,105,0.4)"][i%4]}}>
+              {opt}
+            </button>
+          );
+        })}
       </div>
     </GameShell>
   );
@@ -2705,7 +2758,7 @@ function CatcherEngine({child,name,emoji,subject,color="#4F46E5",bg="#EEF2FF",fe
   useEffect(()=>{
     if(!game.q||game.done)return;
     const opts=game.q.options||[];
-    const speed=1.2+game.lvl*0.18;
+    const speed=0.7+game.lvl*0.1;
     sr.current.items=opts.map((opt,i)=>({
       id:++idr.current,opt,correct:opt===game.q.correct||opt.charAt(0)===game.q.correct,
       x:10+i*(78/Math.max(opts.length-1,1)),y:-12,
@@ -2739,7 +2792,7 @@ function CatcherEngine({child,name,emoji,subject,color="#4F46E5",bg="#EEF2FF",fe
 
   if(game.loadErr)return <GameError name={name} onRetry={()=>window.location.reload()}/>;
   if(game.loading&&!game.q)return <GameLoad name={name} emoji={emoji} tutor={child.tutor}/>;
-  if(game.done)return <GameEnd name={name} emoji={emoji} score={game.score} max={game.score+3-game.lives} child={child} xp={game.score*12} level={game.lvl} onDone={()=>onComplete({score:game.score,max:game.score+3-game.lives,xp:game.score*12,total:game.qIdx,correct:game.score,levelReached:game.lvl})}/>;
+  if(game.done)return <GameEnd name={name} emoji={emoji} score={game.score} max={game.score+3-game.lives} child={child} xp={game.score*12} level={game.lvl} onRetry={()=>window.location.reload()} onDone={()=>onComplete({score:game.score,max:game.score+3-game.lives,xp:game.score*12,total:game.qIdx,correct:game.score,levelReached:game.lvl})}/>;
   return(
     <GameShell name={name} emoji={emoji} subject={subject} score={game.score} maxScore={null} round={game.qIdx+1} total={null} streak={game.streak} onQuit={()=>game.setDone(true)} lives={game.lives} level={game.lvl}>
       <div style={{textAlign:"center",marginBottom:6}}><div style={{background:bg,borderRadius:12,padding:"6px 16px",display:"inline-block",border:`2px solid ${color}30`}}><span style={{fontSize:14,fontWeight:900,color}}>{game.q?.q||game.q?.question}</span></div></div>
@@ -2752,9 +2805,27 @@ function CatcherEngine({child,name,emoji,subject,color="#4F46E5",bg="#EEF2FF",fe
         {caught&&<div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(255,255,255,0.7)",zIndex:5,fontSize:48}}>{caught.correct?"🎉":"❌"}</div>}
         <div style={{position:"absolute",bottom:"5%",left:`${basketX}%`,transform:"translateX(-50%)",fontSize:28,zIndex:3,transition:"left 0.1s"}}>{catcherChar}</div>
       </div>
-      <div style={{display:"flex",gap:8}}>
-        <button onClick={()=>move(-1)} style={{flex:1,padding:"14px",borderRadius:12,fontSize:22,background:C.surface,border:`1px solid ${C.border}`,cursor:"pointer",fontFamily:F}}>◀</button>
-        <button onClick={()=>move(1)} style={{flex:1,padding:"14px",borderRadius:12,fontSize:22,background:C.surface,border:`1px solid ${C.border}`,cursor:"pointer",fontFamily:F}}>▶</button>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:8}}>
+        {(game.q?.options||[]).map((opt,i)=>(
+          <button key={i} onClick={()=>{
+            // Find the falling item with this answer and catch it
+            const item=sr.current.items.find(it=>!it.caught&&it.opt===opt);
+            if(item){
+              sr.current.basketX=item.x;
+              setBasketX(item.x);
+              sr.current.items=sr.current.items.map(it=>it.opt===opt&&!it.caught?{...it,caught:true}:it);
+              setCaught(item);
+              game.answer(item.correct);
+              setTimeout(()=>setCaught(null),700);
+            }
+          }}
+          style={{padding:"14px 10px",borderRadius:14,fontSize:14,fontWeight:900,cursor:"pointer",fontFamily:F,
+            background:[`linear-gradient(135deg,#E53E3E,#FC8181)`,`linear-gradient(135deg,#3182CE,#63B3ED)`,`linear-gradient(135deg,#D69E2E,#F6E05E)`,`linear-gradient(135deg,#38A169,#68D391)`][i%4],
+            color:"#fff",border:"none",
+            transition:"all 0.15s",boxShadow:["0 4px 12px rgba(229,62,62,0.4)","0 4px 12px rgba(49,130,206,0.4)","0 4px 12px rgba(214,158,46,0.4)","0 4px 12px rgba(56,161,105,0.4)"][i%4]}}>
+            {opt}
+          </button>
+        ))}
       </div>
     </GameShell>
   );
@@ -2786,7 +2857,7 @@ function RunnerEngine({child,name,emoji,subject,color="#4F46E5",fetchFn,runnerCh
     const loop=setInterval(()=>{
       const s=sr.current;
       if(s.jumping||s.runnerY<GROUND){s.vel+=1.3;s.runnerY=Math.min(GROUND,s.runnerY+s.vel);if(s.runnerY>=GROUND){s.runnerY=GROUND;s.jumping=false;s.vel=0;}setRunnerY(s.runnerY);setJumping(s.runnerY<GROUND);}
-      s.obs=s.obs.map(o=>({...o,x:o.x-3.5}));
+      s.obs=s.obs.map(o=>({...o,x:o.x-2.0}));
       s.obs.forEach(o=>{
         if(o.passed||o.hit)return;
         if(o.x<28&&o.x>8&&s.runnerY>=GROUND-8){
@@ -2804,7 +2875,7 @@ function RunnerEngine({child,name,emoji,subject,color="#4F46E5",fetchFn,runnerCh
 
   if(game.loadErr)return <GameError name={name} onRetry={()=>window.location.reload()}/>;
   if(game.loading&&!game.q)return <GameLoad name={name} emoji={emoji} tutor={child.tutor}/>;
-  if(game.done)return <GameEnd name={name} emoji={emoji} score={game.score} max={game.score+3-game.lives} child={child} xp={game.score*12} level={game.lvl} onDone={()=>onComplete({score:game.score,max:game.score+3-game.lives,xp:game.score*12,total:game.qIdx,correct:game.score,levelReached:game.lvl})}/>;
+  if(game.done)return <GameEnd name={name} emoji={emoji} score={game.score} max={game.score+3-game.lives} child={child} xp={game.score*12} level={game.lvl} onRetry={()=>window.location.reload()} onDone={()=>onComplete({score:game.score,max:game.score+3-game.lives,xp:game.score*12,total:game.qIdx,correct:game.score,levelReached:game.lvl})}/>;
   return(
     <GameShell name={name} emoji={emoji} subject={subject} score={game.score} maxScore={null} round={game.qIdx+1} total={null} streak={game.streak} onQuit={()=>game.setDone(true)} lives={game.lives} level={game.lvl}>
       <div style={{textAlign:"center",marginBottom:6}}><div style={{background:C.pLight,borderRadius:12,padding:"6px 16px",display:"inline-block"}}><span style={{fontSize:14,fontWeight:900,color}}>{game.q?.q||game.q?.question}</span></div></div>
@@ -2820,7 +2891,30 @@ function RunnerEngine({child,name,emoji,subject,color="#4F46E5",fetchFn,runnerCh
         {flash&&<div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(255,255,255,0.5)",fontSize:42,zIndex:5}}>{flash}</div>}
         <p style={{position:"absolute",bottom:4,right:8,fontSize:10,fontWeight:700,color:"rgba(255,255,255,0.7)"}}>TAP TO JUMP</p>
       </div>
-      <button onClick={jump} style={{width:"100%",padding:"13px",borderRadius:14,fontWeight:900,background:`linear-gradient(135deg,${color},${color}bb)`,color:"#fff",border:"none",cursor:"pointer",fontFamily:F,fontSize:14}}>⬆ JUMP over the correct answer!</button>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:8}}>
+        {(game.q?.options||[]).map((opt,i)=>{
+          const obs=sr.current.obs.find(o=>!o.passed&&!o.hit&&o.opt===opt);
+          return(
+            <button key={i} onClick={()=>{
+              // Jump if correct, duck if wrong (just answer directly)
+              const o=sr.current.obs.find(x=>!x.passed&&!x.hit&&x.opt===opt);
+              if(o){
+                if(o.correct) jump();
+                else {o.hit=true;game.answer(false);}
+              } else {
+                // Fallback: just answer
+                game.answer(opt===game.q?.correct||opt.charAt(0)===game.q?.correct);
+              }
+            }}
+            style={{padding:"14px 10px",borderRadius:14,fontSize:14,fontWeight:900,cursor:"pointer",fontFamily:F,
+              background:[`linear-gradient(135deg,#E53E3E,#FC8181)`,`linear-gradient(135deg,#3182CE,#63B3ED)`,`linear-gradient(135deg,#D69E2E,#F6E05E)`,`linear-gradient(135deg,#38A169,#68D391)`][i%4],
+              color:"#fff",border:"none",
+              transition:"all 0.15s",boxShadow:["0 4px 12px rgba(229,62,62,0.4)","0 4px 12px rgba(49,130,206,0.4)","0 4px 12px rgba(214,158,46,0.4)","0 4px 12px rgba(56,161,105,0.4)"][i%4]}}>
+              {opt}
+            </button>
+          );
+        })}
+      </div>
     </GameShell>
   );
 }
@@ -2863,7 +2957,7 @@ function SpaceExplorer({child,name,emoji,subject,color="#4F46E5",fetchFn,initial
 
   if(game.loadErr)return <GameError name={name} onRetry={()=>window.location.reload()}/>;
   if(game.loading&&!game.q)return <GameLoad name={name} emoji={emoji} tutor={child.tutor}/>;
-  if(game.done)return <GameEnd name={name} emoji={emoji} score={game.score} max={game.score+3-game.lives} child={child} xp={game.score*12} level={game.lvl} onDone={()=>onComplete({score:game.score,max:game.score+3-game.lives,xp:game.score*12,total:game.qIdx,correct:game.score,levelReached:game.lvl})}/>;
+  if(game.done)return <GameEnd name={name} emoji={emoji} score={game.score} max={game.score+3-game.lives} child={child} xp={game.score*12} level={game.lvl} onRetry={()=>window.location.reload()} onDone={()=>onComplete({score:game.score,max:game.score+3-game.lives,xp:game.score*12,total:game.qIdx,correct:game.score,levelReached:game.lvl})}/>;
   return(
     <GameShell name={name} emoji={emoji} subject={subject} score={game.score} maxScore={null} round={game.qIdx+1} total={null} streak={game.streak} onQuit={()=>game.setDone(true)} lives={game.lives} level={game.lvl}>
       <div style={{textAlign:"center",marginBottom:6}}><div style={{background:"#1E1B4B",borderRadius:12,padding:"6px 16px",display:"inline-block"}}><span style={{fontSize:14,fontWeight:900,color:"#FCD34D"}}>{game.q?.q||game.q?.question}</span></div></div>
@@ -2878,16 +2972,27 @@ function SpaceExplorer({child,name,emoji,subject,color="#4F46E5",fetchFn,initial
         <div style={{position:"absolute",left:`${sx}%`,top:`${sy}%`,transform:"translateX(-50%)",fontSize:22,zIndex:3,transition:"all 0.08s"}}>🛸</div>
         {collected&&<div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,0.5)",zIndex:5,fontSize:40}}>{collected.correct?"✅":"❌"}</div>}
       </div>
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6,maxWidth:200,margin:"0 auto"}}>
-        <div/>
-        <button onClick={()=>move(0,-1)} style={{padding:"10px",borderRadius:10,fontSize:16,background:C.surface,border:`1px solid ${C.border}`,cursor:"pointer",fontFamily:F}}>⬆</button>
-        <div/>
-        <button onClick={()=>move(-1,0)} style={{padding:"10px",borderRadius:10,fontSize:16,background:C.surface,border:`1px solid ${C.border}`,cursor:"pointer",fontFamily:F}}>◀</button>
-        <div/>
-        <button onClick={()=>move(1,0)} style={{padding:"10px",borderRadius:10,fontSize:16,background:C.surface,border:`1px solid ${C.border}`,cursor:"pointer",fontFamily:F}}>▶</button>
-        <div/>
-        <button onClick={()=>move(0,1)} style={{padding:"10px",borderRadius:10,fontSize:16,background:C.surface,border:`1px solid ${C.border}`,cursor:"pointer",fontFamily:F}}>⬇</button>
-        <div/>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:8}}>
+        {planets.filter(p=>p.alive).concat(game.q?.options?.filter(opt=>!planets.find(p=>p.alive&&p.opt===opt)).map((opt,i)=>({id:-i,opt,alive:false,x:0,y:0,correct:opt===game.q?.correct||opt.charAt(0)===game.q?.correct}))||[]).slice(0,4).map((p,i)=>(
+          <button key={i} onClick={()=>{
+            if(p.alive){
+              // Move ship to planet and collect
+              const s=sr.current;
+              s.sx=p.x;s.sy=p.y;setSx(p.x);setSy(p.y);
+              sr.current.planets=sr.current.planets.map(pl=>pl.id===p.id?{...pl,alive:false}:pl);
+              setPlanets([...sr.current.planets]);
+              setCollected(p);game.answer(p.correct);
+              setTimeout(()=>setCollected(null),700);
+            } else {
+              game.answer(p.correct);
+            }
+          }}
+          style={{padding:"14px 10px",borderRadius:14,fontSize:13,fontWeight:900,cursor:"pointer",fontFamily:F,
+            background:p.alive?C.pLight:C.surface,border:`2px solid ${p.alive?C.primary:C.border}`,
+            color:C.text,transition:"all 0.15s"}}>
+            {p.opt}
+          </button>
+        ))}
       </div>
     </GameShell>
   );
@@ -2933,11 +3038,14 @@ function GameShell({name,emoji,subject,score,maxScore,round,total,streak,onQuit,
       <div style={{paddingTop:12}}>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
           <div style={{display:"flex",alignItems:"center",gap:10}}>
-            <div style={{width:42,height:42,borderRadius:12,background:sc?.light||C.pLight,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22}}>{emoji}</div>
+            <div style={{width:44,height:44,borderRadius:14,
+              background:sc?.grad||`linear-gradient(135deg,${sc?.color||C.primary},${sc?.color||C.primary}AA)`,
+              display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,
+              boxShadow:`0 3px 10px ${sc?.color||C.primary}40`}}>{emoji}</div>
             <div>
               <p style={{fontSize:15,fontWeight:900,color:C.text}}>{name}</p>
               <div style={{display:"flex",alignItems:"center",gap:6}}>
-                <span style={{fontSize:9,fontWeight:800,color:diff.color,background:diff.color+"20",padding:"1px 5px",borderRadius:4}}>{diff.emoji} {diff.label}</span>
+                <span style={{fontSize:9,fontWeight:800,color:"#fff",background:diff.color,padding:"2px 6px",borderRadius:6}}>{diff.emoji} {diff.label}</span>
                 <span style={{fontSize:11,fontWeight:700,color:C.muted}}>Q{round}{total?"/"+total:""}</span>
               </div>
             </div>
@@ -2970,12 +3078,52 @@ function GameLoad({name,emoji,tutor,onTimeout}) {
   },[]);
   return <Screen><div style={{paddingTop:60,textAlign:"center"}}><div style={{fontSize:64,marginBottom:16,animation:"bounceY 1s ease-in-out infinite"}}>{emoji}</div><h2 style={{fontSize:28,fontWeight:900,color:C.text,marginBottom:8}}>{name}</h2><p style={{fontSize:15,color:C.muted,fontWeight:700,marginBottom:32}}>Getting your questions ready...</p><Spinner color={t?.color||C.primary}/></div></Screen>;
 }
-function GameEnd({name,emoji,score,max,child,xp,onDone}) {
+function GameEnd({name,emoji,score,max,child,xp,onDone,onRetry,level}) {
   const pct=max>0?Math.round((score/max)*100):0;
   const medal=pct>=90?"🏆":pct>=70?"⭐":pct>=50?"🎯":"💪";
-  const msgs={Sparky:{hi:`AMAZING!! ${score}/${max} — you nailed it! 🎉`,mid:`Great game! ${score}/${max} — keep going! ⚡`,lo:`Nice try! Play again to beat your score! 💪`},Pip:{hi:`Wonderful! ${score}/${max} — you should be really proud. 🌟`,mid:`Good effort! Getting better every time! 🦉`,lo:`Don't worry. Every try makes you better. 🌱`}};
+  const tutorMsgs={
+    Sparky:{hi:`AMAZING!! You're on fire! 🔥`,mid:`Great game! Keep going! ⚡`,lo:`Nice try! Play again to beat it! 💪`},
+    Pip:{hi:`Wonderful! Really proud of you! 🌟`,mid:`Good effort! Getting better every time! 🦉`,lo:`Don't worry — every try makes you better! 🌱`},
+    Blaze:{hi:`INCREDIBLE!! Total legend! 🏆`,mid:`Nice one! You've got this! 🔥`,lo:`Keep at it! You'll smash it next time! 💥`},
+    Nova:{hi:`OUT OF THIS WORLD!! Amazing! 🚀`,mid:`Great effort! Stars are the limit! ⭐`,lo:`Keep exploring! You'll get there! 🌌`},
+  };
   const tier=pct>=80?"hi":pct>=50?"mid":"lo";
-  return <Screen><div style={{paddingTop:48,textAlign:"center"}}><div style={{fontSize:72,marginBottom:16,animation:"bounceY 1s ease-in-out infinite"}}>{medal}</div><h2 style={{fontSize:30,fontWeight:900,color:C.text,marginBottom:8}}>{name} Complete!</h2><div style={{display:"flex",justifyContent:"center",gap:10,marginBottom:24}}>{[{v:`${score}/${max}`,l:"Score",c:C.primary},{v:`${pct}%`,l:"Accuracy",c:pct>=80?C.green:pct>=60?C.amber:C.red},{v:`+${xp}`,l:"XP Earned",c:C.green}].map(s=><div key={s.l} style={{padding:"12px 16px",borderRadius:12,minWidth:80,background:C.surface,border:`1px solid ${C.border}`}}><p style={{fontSize:22,fontWeight:900,color:s.c}}>{s.v}</p><p style={{fontSize:11,color:C.muted,fontWeight:700}}>{s.l}</p></div>)}</div><div style={{display:"flex",gap:12,marginBottom:28,alignItems:"flex-start"}}><TutorChar name={child.tutor} size={52}/><Bubble tutor={child.tutor} text={msgs[child.tutor]?.[tier]} style={{flex:1,textAlign:"left"}}/></div><Btn onClick={onDone} style={{width:"100%",padding:16,fontSize:17}}>Back to Games 🎮</Btn></div></Screen>;
+  const msg=tutorMsgs[child.tutor]?.[tier]||tutorMsgs.Sparky[tier];
+  return (
+    <Screen>
+      <div style={{paddingTop:40,textAlign:"center"}}>
+        <div style={{fontSize:72,marginBottom:8}}>{medal}</div>
+        <h2 style={{fontSize:28,fontWeight:900,color:C.text,marginBottom:16}}>{name}</h2>
+        {/* Stats row */}
+        <div style={{display:"flex",justifyContent:"center",gap:8,marginBottom:20}}>
+          {[
+            {v:`${score}/${max||score+3}`,l:"Score",c:C.primary},
+            {v:`${pct}%`,l:"Accuracy",c:pct>=80?C.green:pct>=60?C.amber:C.red},
+            {v:`+${xp} XP`,l:"Earned",c:C.green},
+          ].map(s=>(
+            <div key={s.l} style={{padding:"10px 14px",borderRadius:14,background:C.surface,border:`1px solid ${C.border}`,minWidth:76}}>
+              <p style={{fontSize:18,fontWeight:900,color:s.c}}>{s.v}</p>
+              <p style={{fontSize:10,color:C.muted,fontWeight:700}}>{s.l}</p>
+            </div>
+          ))}
+        </div>
+        {/* Tutor message */}
+        <div style={{display:"flex",gap:12,marginBottom:28,alignItems:"flex-start",textAlign:"left",padding:"0 8px"}}>
+          <TutorChar name={child.tutor} size={48}/>
+          <Bubble tutor={child.tutor} text={msg} style={{flex:1}}/>
+        </div>
+        {/* Action buttons */}
+        {onRetry&&(
+          <Btn onClick={onRetry} style={{width:"100%",padding:16,fontSize:16,marginBottom:10,background:"linear-gradient(135deg,#F59E0B,#D97706)"}}>
+            🔄 Play Again
+          </Btn>
+        )}
+        <Btn onClick={onDone} style={{width:"100%",padding:16,fontSize:16}} v={onRetry?"ghost":"primary"}>
+          🎮 Back to Games
+        </Btn>
+      </div>
+    </Screen>
+  );
 }
 
 function NumberBlaster({child,mode,onComplete,onQuit,level=1}) {
@@ -2990,11 +3138,11 @@ function TimesTableRace({child,mode,onComplete,onQuit,level=1}) {
     level
   );
   const [input,setInput]=useState("");
-  const [timeLeft,setTimeLeft]=useState(Math.max(5,12-game.lvl));
+  const [timeLeft,setTimeLeft]=useState(Math.max(8,20-game.lvl));
   const [timerKey,setTimerKey]=useState(0);
   const inputRef=useRef(null);
 
-  useEffect(()=>{setTimeLeft(Math.max(5,12-game.lvl));setTimerKey(k=>k+1);setInput("");},[game.qIdx]);
+  useEffect(()=>{setTimeLeft(Math.max(8,20-game.lvl));setTimerKey(k=>k+1);setInput("");},[game.qIdx]);
   useEffect(()=>{
     if(game.done||timeLeft<=0)return;
     const t=setInterval(()=>setTimeLeft(s=>{if(s<=1){clearInterval(t);game.answer(false);return 0;}return s-1;}),1000);
@@ -3013,7 +3161,7 @@ function TimesTableRace({child,mode,onComplete,onQuit,level=1}) {
 
   if(game.loadErr)return <GameError name="Times Table Race" onRetry={()=>window.location.reload()}/>;
   if(game.loading&&!game.q)return <GameLoad name="Times Table Race" emoji="⏱️" tutor={child.tutor}/>;
-  if(game.done)return <GameEnd name="Times Table Race" emoji="⏱️" score={game.score} max={game.score+3-game.lives} child={child} xp={game.score*12} level={game.lvl} onDone={()=>onComplete({score:game.score,max:game.score+3-game.lives,xp:game.score*12,total:game.qIdx,correct:game.score,levelReached:game.lvl})}/>;
+  if(game.done)return <GameEnd name="Times Table Race" emoji="⏱️" score={game.score} max={game.score+3-game.lives} child={child} xp={game.score*12} level={game.lvl} onRetry={()=>window.location.reload()} onDone={()=>onComplete({score:game.score,max:game.score+3-game.lives,xp:game.score*12,total:game.qIdx,correct:game.score,levelReached:game.lvl})}/>;
 
   const danger=timeLeft<=3;
   return(
@@ -3068,7 +3216,7 @@ function SpellingBee({child,mode,onComplete,onQuit,level=1}) {
 
   if(game.loadErr)return <GameError name="Spelling Bee" onRetry={()=>window.location.reload()}/>;
   if(game.loading&&!game.q)return <GameLoad name="Spelling Bee" emoji="🐝" tutor={child.tutor}/>;
-  if(game.done)return <GameEnd name="Spelling Bee" emoji="🐝" score={game.score} max={game.score+3-game.lives} child={child} xp={game.score*12} level={game.lvl} onDone={()=>onComplete({score:game.score,max:game.score+3-game.lives,xp:game.score*12,total:game.qIdx,correct:game.score,levelReached:game.lvl})}/>;
+  if(game.done)return <GameEnd name="Spelling Bee" emoji="🐝" score={game.score} max={game.score+3-game.lives} child={child} xp={game.score*12} level={game.lvl} onRetry={()=>window.location.reload()} onDone={()=>onComplete({score:game.score,max:game.score+3-game.lives,xp:game.score*12,total:game.qIdx,correct:game.score,levelReached:game.lvl})}/>;
 
   return(
     <GameShell name="Spelling Bee" emoji="🐝" subject="English" score={game.score} maxScore={null} round={game.qIdx+1} total={null} streak={game.streak} onQuit={()=>game.setDone(true)} lives={game.lives} level={game.lvl}>
@@ -3161,7 +3309,7 @@ function MathFishing({child,mode,onComplete,onQuit,level=1}) {
   useEffect(()=>{
     if(!q||done)return;
     const answers=[q.correct,...(q.wrong||[q.correct+1,q.correct-1,q.correct+2])].slice(0,4).sort(()=>Math.random()-0.5);
-    const newFish=answers.map((ans,i)=>({id:++idRef.current,ans,correct:ans===q.correct,x:10+i*22,y:35+Math.random()*40,vx:(Math.random()-0.5)*0.8,vy:(Math.random()-0.5)*0.3,wobble:Math.random()*Math.PI*2}));
+    const newFish=answers.map((ans,i)=>({id:++idRef.current,ans,correct:ans===q.correct,x:10+i*22,y:35+Math.random()*40,vx:(Math.random()-0.5)*0.4,vy:(Math.random()-0.5)*0.3,wobble:Math.random()*Math.PI*2}));
     fishRef.current=newFish;setFish([...newFish]);setCaught(null);
   },[qIdx,q]);
 
@@ -3246,7 +3394,7 @@ function SpaceBlaster({child,mode,onComplete,onQuit,level=1}) {
   useEffect(()=>{
     if(!game.q||game.done)return;
     const opts=game.q.options||[];
-    sr.current.aliens=opts.map((opt,i)=>({id:++idr.current,opt,correct:opt===game.q.correct,x:8+i*(80/Math.max(opts.length-1,1)),y:15+Math.random()*20,vx:(Math.random()-0.5)*0.9,vy:0.12+game.lvl*0.04,alive:true}));
+    sr.current.aliens=opts.map((opt,i)=>({id:++idr.current,opt,correct:opt===game.q.correct,x:8+i*(80/Math.max(opts.length-1,1)),y:15+Math.random()*20,vx:(Math.random()-0.5)*0.9,vy:0.07+game.lvl*0.03,alive:true}));
     setAliens([...sr.current.aliens]);setBullets([]);sr.current.bullets=[];
   },[game.qIdx,game.q]);
 
@@ -3263,7 +3411,7 @@ function SpaceBlaster({child,mode,onComplete,onQuit,level=1}) {
       const missed=s.aliens.find(t=>t.alive&&t.correct&&t.y>90);
       if(missed){s.aliens=s.aliens.map(t=>t.id===missed.id?{...t,alive:false}:t);game.answer(false);}
       setAliens([...s.aliens]);setBullets([...s.bullets]);setExps([...s.exps]);
-    },50);
+    },60);
     return()=>clearInterval(loop);
   },[game.done,game.qIdx,game.q]);
 
@@ -3272,7 +3420,7 @@ function SpaceBlaster({child,mode,onComplete,onQuit,level=1}) {
 
   if(game.loadErr)return <GameError name="Space Blaster" onRetry={()=>window.location.reload()}/>;
   if(game.loading&&!game.q)return <GameLoad name="Space Blaster" emoji="🚀" tutor={child.tutor}/>;
-  if(game.done)return <GameEnd name="Space Blaster" emoji="🚀" score={game.score} max={game.score+3-game.lives} child={child} xp={game.score*12} level={game.lvl} onDone={()=>onComplete({score:game.score,max:game.score+3-game.lives,xp:game.score*12,total:game.qIdx,correct:game.score,levelReached:game.lvl})}/>;
+  if(game.done)return <GameEnd name="Space Blaster" emoji="🚀" score={game.score} max={game.score+3-game.lives} child={child} xp={game.score*12} level={game.lvl} onRetry={()=>window.location.reload()} onDone={()=>onComplete({score:game.score,max:game.score+3-game.lives,xp:game.score*12,total:game.qIdx,correct:game.score,levelReached:game.lvl})}/>;
 
   return(
     <GameShell name="Space Blaster" emoji="🚀" subject="Maths" score={game.score} maxScore={null} round={game.qIdx+1} total={null} streak={game.streak} onQuit={()=>game.setDone(true)} lives={game.lives} level={game.lvl}>
@@ -3290,10 +3438,24 @@ function SpaceBlaster({child,mode,onComplete,onQuit,level=1}) {
         {flash&&<div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,0.4)",fontSize:40,zIndex:5}}>{flash}</div>}
         <div style={{position:"absolute",bottom:"4%",left:`${shipX}%`,transform:"translateX(-50%)",fontSize:24,zIndex:3,transition:"left 0.1s"}}>🚀</div>
       </div>
-      <div style={{display:"flex",gap:8}}>
-        <button onClick={()=>moveShip(-1)} style={{flex:1,padding:"12px",borderRadius:12,fontSize:20,background:C.surface,border:`1px solid ${C.border}`,cursor:"pointer",fontFamily:F}}>◀</button>
-        <button onClick={fire} style={{flex:2,padding:"12px",borderRadius:12,fontWeight:900,background:"linear-gradient(135deg,#4F46E5,#7C3AED)",color:"#fff",border:"none",cursor:"pointer",fontFamily:F,fontSize:14}}>🔫 FIRE!</button>
-        <button onClick={()=>moveShip(1)} style={{flex:1,padding:"12px",borderRadius:12,fontSize:20,background:C.surface,border:`1px solid ${C.border}`,cursor:"pointer",fontFamily:F}}>▶</button>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:8}}>
+        {(game.q?.options||[]).map((opt,i)=>(
+          <button key={i} onClick={()=>{
+            const target=sr.current.aliens.find(t=>t.alive&&t.opt===opt);
+            if(target){
+              sr.current.shipX=target.x;setShipX(target.x);
+              const b={id:++idr.current,x:target.x,y:80};
+              sr.current.bullets=[...sr.current.bullets,b];
+              setBullets(p=>[...p,b]);
+            }
+          }}
+          style={{padding:"14px 10px",borderRadius:14,fontSize:14,fontWeight:900,cursor:"pointer",fontFamily:F,
+            background:[`linear-gradient(135deg,#E53E3E,#FC8181)`,`linear-gradient(135deg,#3182CE,#63B3ED)`,`linear-gradient(135deg,#D69E2E,#F6E05E)`,`linear-gradient(135deg,#38A169,#68D391)`][i%4],
+            color:"#fff",border:"none",
+            transition:"all 0.15s",boxShadow:["0 4px 12px rgba(229,62,62,0.4)","0 4px 12px rgba(49,130,206,0.4)","0 4px 12px rgba(214,158,46,0.4)","0 4px 12px rgba(56,161,105,0.4)"][i%4]}}>
+            {opt}
+          </button>
+        ))}
       </div>
     </GameShell>
   );
@@ -3317,7 +3479,7 @@ function WordRunner({child,mode,onComplete,onQuit,level=1}) {
   useEffect(()=>{
     if(!game.q||game.done||caught!==null)return;
     const shuffled=[...(game.q.options||[])].sort(()=>Math.random()-0.5);
-    sr.current=shuffled.map((w,i)=>({id:++idr.current,word:w,correct:w===game.q.correct,x:8+i*23,y:-15,speed:1.2+game.lvl*0.15+Math.random()*0.5}));
+    sr.current=shuffled.map((w,i)=>({id:++idr.current,word:w,correct:w===game.q.correct,x:8+i*23,y:-15,speed:0.6+game.lvl*0.08+Math.random()*0.2}));
     setFalling([...sr.current]);
   },[game.qIdx,game.q]);
 
@@ -3344,7 +3506,7 @@ function WordRunner({child,mode,onComplete,onQuit,level=1}) {
 
   if(game.loadErr)return <GameError name="Word Runner" onRetry={()=>window.location.reload()}/>;
   if(game.loading&&!game.q)return <GameLoad name="Word Runner" emoji="🏃" tutor={child.tutor}/>;
-  if(game.done)return <GameEnd name="Word Runner" emoji="🏃" score={game.score} max={game.score+3-game.lives} child={child} xp={game.score*12} level={game.lvl} onDone={()=>onComplete({score:game.score,max:game.score+3-game.lives,xp:game.score*12,total:game.qIdx,correct:game.score,levelReached:game.lvl})}/>;
+  if(game.done)return <GameEnd name="Word Runner" emoji="🏃" score={game.score} max={game.score+3-game.lives} child={child} xp={game.score*12} level={game.lvl} onRetry={()=>window.location.reload()} onDone={()=>onComplete({score:game.score,max:game.score+3-game.lives,xp:game.score*12,total:game.qIdx,correct:game.score,levelReached:game.lvl})}/>;
 
   const colors=["#6366F1","#EC4899","#F59E0B","#10B981"];
   return(
@@ -3401,7 +3563,7 @@ function GrandPrix({child,mode,onComplete,onQuit,level=1}) {
 
   if(game.loadErr)return <GameError name="Grand Prix Racing" onRetry={()=>window.location.reload()}/>;
   if(game.loading&&!game.q)return <GameLoad name="Grand Prix Racing" emoji="🏎️" tutor={child.tutor}/>;
-  if(game.done)return <GameEnd name="Grand Prix Racing" emoji="🏎️" score={game.score} max={game.score+3-game.lives} child={child} xp={game.score*12} level={game.lvl} onDone={()=>onComplete({score:game.score,max:game.score+3-game.lives,xp:game.score*12,total:game.qIdx,correct:game.score,levelReached:game.lvl})}/>;
+  if(game.done)return <GameEnd name="Grand Prix Racing" emoji="🏎️" score={game.score} max={game.score+3-game.lives} child={child} xp={game.score*12} level={game.lvl} onRetry={()=>window.location.reload()} onDone={()=>onComplete({score:game.score,max:game.score+3-game.lives,xp:game.score*12,total:game.qIdx,correct:game.score,levelReached:game.lvl})}/>;
 
   return(
     <GameShell name="Grand Prix Racing" emoji="🏎️" subject="Maths" score={game.score} maxScore={null} round={game.qIdx+1} total={null} streak={game.streak} onQuit={()=>game.setDone(true)} lives={game.lives} level={game.lvl}>
@@ -3555,7 +3717,7 @@ function FootballHistory({child,mode,onComplete,onQuit,level=1}) {
 
   if(game.loadErr)return <GameError name="Penalty Shootout" onRetry={()=>window.location.reload()}/>;
   if(game.loading&&!game.q)return <GameLoad name="Penalty Shootout" emoji="⚽" tutor={child.tutor}/>;
-  if(game.done)return <GameEnd name="Penalty Shootout" emoji="⚽" score={game.score} max={game.score+3-game.lives} child={child} xp={game.score*12} level={game.lvl} onDone={()=>onComplete({score:game.score,max:game.score+3-game.lives,xp:game.score*12,total:game.qIdx,correct:game.score,levelReached:game.lvl})}/>;
+  if(game.done)return <GameEnd name="Penalty Shootout" emoji="⚽" score={game.score} max={game.score+3-game.lives} child={child} xp={game.score*12} level={game.lvl} onRetry={()=>window.location.reload()} onDone={()=>onComplete({score:game.score,max:game.score+3-game.lives,xp:game.score*12,total:game.qIdx,correct:game.score,levelReached:game.lvl})}/>;
 
   return(
     <GameShell name="Penalty Shootout" emoji="⚽" subject="History" score={game.score} maxScore={null} round={game.qIdx+1} total={null} streak={game.streak} onQuit={()=>game.setDone(true)} lives={game.lives} level={game.lvl}>
@@ -3676,7 +3838,7 @@ function CircuitBuilder({child,mode,onComplete,onQuit,level=1}) {
 
   if(game.loadErr)return <GameError name="Circuit Builder" onRetry={()=>window.location.reload()}/>;
   if(game.loading&&!game.q)return <GameLoad name="Circuit Builder" emoji="⚡" tutor={child.tutor}/>;
-  if(game.done)return <GameEnd name="Circuit Builder" emoji="⚡" score={game.score} max={game.score+3-game.lives} child={child} xp={game.score*12} level={game.lvl} onDone={()=>onComplete({score:game.score,max:game.score+3-game.lives,xp:game.score*12,total:game.qIdx,correct:game.score,levelReached:game.lvl})}/>;
+  if(game.done)return <GameEnd name="Circuit Builder" emoji="⚡" score={game.score} max={game.score+3-game.lives} child={child} xp={game.score*12} level={game.lvl} onRetry={()=>window.location.reload()} onDone={()=>onComplete({score:game.score,max:game.score+3-game.lives,xp:game.score*12,total:game.qIdx,correct:game.score,levelReached:game.lvl})}/>;
 
   return(
     <GameShell name="Circuit Builder" emoji="⚡" subject="Science" score={game.score} maxScore={null} round={game.qIdx+1} total={null} streak={game.streak} onQuit={()=>game.setDone(true)} lives={game.lives} level={game.lvl}>
@@ -3784,13 +3946,16 @@ function GameHub({child,onPlay,onBack,onHome,onLevelUp}) {
             {/* Computing full width */}
             {availableGames.filter(g=>g.subjects.some(s=>categories[4].subjects.includes(s))).length>0&&(
               <button onClick={()=>setSelectedCat(categories[4])}
-                style={{width:"100%",padding:"16px",borderRadius:20,background:categories[4].bg,border:`2px solid ${categories[4].color}20`,cursor:"pointer",fontFamily:F,display:"flex",alignItems:"center",gap:12,boxShadow:`0 4px 16px ${categories[4].color}15`}}>
+                style={{width:"100%",padding:"16px",borderRadius:20,
+                  background:`linear-gradient(135deg,${categories[4].color},${categories[4].color}CC)`,
+                  border:"none",cursor:"pointer",fontFamily:F,display:"flex",alignItems:"center",gap:12,
+                  boxShadow:`0 6px 20px ${categories[4].color}50`}}>
                 <span style={{fontSize:32}}>{categories[4].emoji}</span>
                 <div style={{textAlign:"left"}}>
-                  <p style={{fontSize:14,fontWeight:900,color:categories[4].color}}>{categories[4].label}</p>
-                  <p style={{fontSize:11,fontWeight:700,color:C.muted}}>{availableGames.filter(g=>g.subjects.some(s=>categories[4].subjects.includes(s))).length} games</p>
+                  <p style={{fontSize:14,fontWeight:900,color:"#fff"}}>{categories[4].label}</p>
+                  <p style={{fontSize:11,fontWeight:700,color:"rgba(255,255,255,0.8)"}}>{availableGames.filter(g=>g.subjects.some(s=>categories[4].subjects.includes(s))).length} games</p>
                 </div>
-                <span style={{marginLeft:"auto",fontSize:18,color:C.muted}}>›</span>
+                <span style={{marginLeft:"auto",fontSize:18,color:"rgba(255,255,255,0.7)"}}>›</span>
               </button>
             )}
           </div>
@@ -5617,10 +5782,17 @@ export default function App() {
         child={activeChild}
         gameId={gameId}
         mode={activeChild.controls?.modeLock||activeChild.mode}
-        onComplete={(score,xp)=>{
+        onComplete={(stats)=>{
+          const s=typeof stats==="object"?stats:{score:stats,xp:0};
           const gp=(activeChild.gamesPlayed||0)+1;
-          const gb=score>0?(activeChild.gamesBeat||0)+1:(activeChild.gamesBeat||0);
-          const updated={xp:activeChild.xp+xp,gamesPlayed:gp,gamesBeat:gb};
+          const gb=(s.score||0)>0?(activeChild.gamesBeat||0)+1:(activeChild.gamesBeat||0);
+          const xpEarned=s.xp||s.xpEarned||0;
+          const updated={xp:(activeChild.xp||0)+xpEarned,gamesPlayed:gp,gamesBeat:gb};
+          // Sync subject level if game says child levelled up
+          if(s.levelReached&&s.levelUpSubject){
+            const newLevel={...(activeChild.level||{}),[s.levelUpSubject]:Math.max((activeChild.level?.[s.levelUpSubject]||1),s.levelReached)};
+            Object.assign(updated,{level:newLevel});
+          }
           const {badges,newBadge}=checkBadges({...activeChild,...updated});
           updChild(activeChild.id,{...updated,badges,_newBadge:newBadge});
           go("game_hub");
