@@ -13,7 +13,7 @@ async function hashPassword(pass) {
  * Full build: all screens, all features, persistent storage
  * Ages 4-11 | Maths, English, Science | UK, US, Canada
  */
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 
 // ── STYLES ────────────────────────────────────────────────────────────────
 (() => {
