@@ -544,19 +544,31 @@ function getLevelContext(level) {
 const calcXP   = (score, max) => Math.round(20 + (score / max) * 30);
 
 // ── CLAUDE API ────────────────────────────────────────────────────────────
-async function claude(system, msg) {
-  try {
-    const r = await fetch("/api/chat",{
-      method:"POST", headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({model:"claude-haiku-4-5-20251001",max_tokens:1200,system,
-        messages:[{role:"user",content:msg}]}),
-    });
-    const d = await r.json();
-    const t = d.content?.find(b=>b.type==="text")?.text||"";
-    const s=t.indexOf("{"),e=t.lastIndexOf("}");
-    if(s===-1||e===-1) return null;
-    return JSON.parse(t.slice(s,e+1));
-  } catch(e){console.error(e);return null;}
+async function claude(system, msg, retries=2) {
+  for(let attempt=0; attempt<=retries; attempt++) {
+    try {
+      const r = await fetch("/api/chat",{
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({model:"claude-haiku-4-5-20251001",max_tokens:1400,system,
+          messages:[{role:"user",content:msg||"Generate the content now."}]}),
+      });
+      if(!r.ok){if(attempt<retries){await new Promise(res=>setTimeout(res,1000));continue;}return null;}
+      const d = await r.json();
+      const t = d.content?.find(b=>b.type==="text")?.text||"";
+      const clean = t.replace(/```json\n?/g,"").replace(/```\n?/g,"").trim();
+      const s=clean.indexOf("{"),e=clean.lastIndexOf("}");
+      if(s===-1||e===-1){if(attempt<retries)continue;return null;}
+      try {
+        return JSON.parse(clean.slice(s,e+1));
+      } catch(pe) {
+        try {
+          const fixed=clean.slice(s,e+1).replace(/,\s*}/g,"}").replace(/,\s*]/g,"]");
+          return JSON.parse(fixed);
+        } catch(e2){if(attempt<retries)continue;return null;}
+      }
+    } catch(e){if(attempt<retries){await new Promise(res=>setTimeout(res,800));continue;}return null;}
+  }
+  return null;
 }
 
 const diagSys = (name,age,country,year,subject) =>
@@ -2973,28 +2985,62 @@ function NumberBlaster({child,mode,onComplete,onQuit,level=1}) {
 }
 
 function TimesTableRace({child,mode,onComplete,onQuit,level=1}) {
-  const [qs,setQs]=useState(null);const [idx,setIdx]=useState(0);const [score,setScore]=useState(0);const [input,setInput]=useState("");const [result,setResult]=useState(null);const [timeLeft,setTimeLeft]=useState(60);const [done,setDone]=useState(false);const timerRef=useRef(null);const inputRef=useRef(null);
-  useEffect(()=>{claude(`Generate 15 times table questions for age ${child.age}, level ${child.level.Maths}/5.\n${child.age<=7?"Use 1x to 5x tables only.":child.age<=9?"Use 1x to 10x tables.":"Use 1x to 12x tables."}\nReturn ONLY valid JSON: {"q":[{"q":"6 × 7","a":"42"},{"q":"3 × 8","a":"24"},...]}`,`Generate Times Table Race questions.`).then(d=>setQs(d?.q||d?.questions));},[]);
-  useEffect(()=>{if(!qs)return;timerRef.current=setInterval(()=>{setTimeLeft(t=>{if(t<=1){clearInterval(timerRef.current);setDone(true);return 0;}return t-1;});},1000);return()=>clearInterval(timerRef.current);},[qs]);
-  useEffect(()=>{if(qs&&mode==="audio")setTimeout(()=>speak(qs[idx]?.q+" equals?",child.tutor),200);setTimeout(()=>inputRef.current?.focus(),100);},[idx,qs]);
-  const submit=()=>{if(!input.trim()||result||!qs)return;const q=qs[idx];const ok=input.trim()===q.a;setResult(ok?"correct":"wrong");if(ok)setScore(s=>s+1);if(mode==="audio")speak(ok?"Correct!":"Not quite, the answer was "+q.a,child.tutor);setTimeout(()=>{if(idx+1>=qs.length){clearInterval(timerRef.current);setDone(true);}else{setIdx(i=>i+1);setInput("");setResult(null);}},800);};
-  if(!qs)return <GameLoad name="Times Table Race" emoji="⏱️" tutor={child.tutor}/>;
-  if(done){const xp=calcXP(score,qs?.length||15);return <GameEnd name="Times Table Race" emoji="⏱️" score={score} max={qs?.length||15} child={child} xp={xp} onDone={()=>onComplete(score,xp)}/>;}
-  const q=qs[idx];const timerColor=timeLeft>30?C.green:timeLeft>15?C.amber:C.red;
-  return <GameShell name="Times Table Race" emoji="⏱️" subject="Maths" score={score} maxScore={qs.length} round={idx+1} total={qs.length} streak={0} onQuit={onQuit}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}><span style={{fontSize:13,fontWeight:800,color:timerColor}}>⏱️ {timeLeft}s left</span><div style={{flex:1,marginLeft:12}}><PBar value={timeLeft} max={60} color={timerColor} h={6}/></div></div><Card style={{textAlign:"center",padding:"32px 20px",marginBottom:20}}><p style={{fontSize:48,fontWeight:900,color:C.text}}>{q?.q} = ?</p></Card><div style={{display:"flex",gap:10,marginBottom:12}}><input ref={inputRef} value={input} onChange={e=>setInput(e.target.value.replace(/[^0-9]/g,""))} onKeyDown={e=>e.key==="Enter"&&submit()} placeholder="Type your answer..." style={{flex:1,padding:"16px",borderRadius:14,fontSize:24,fontWeight:900,textAlign:"center",border:`2px solid ${result==="correct"?C.green:result==="wrong"?C.red:C.border}`,background:result==="correct"?C.gLight:result==="wrong"?C.rLight:C.bg,color:result==="correct"?C.green:result==="wrong"?C.red:C.text,outline:"none"}}/><Btn onClick={submit} style={{padding:"16px 24px",fontSize:18}}>→</Btn></div>{result&&<p style={{textAlign:"center",fontSize:15,fontWeight:800,color:result==="correct"?C.green:C.red}}>{result==="correct"?"✓ Correct!":"✗ The answer was "+q?.a}</p>}</GameShell>;
+  const game=useLivesGame(
+    useCallback(async(lvl)=>claude(`Generate 15 times table questions for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short numeric options. Return ONLY JSON: {"questions":[{"q":"6 × 7 =","options":["A) 36","B) 42","C) 48","D) 40"],"correct":"B"}]}`,"Times table questions."),[child]),
+    level
+  );
+  const [input,setInput]=useState("");
+  const [timeLeft,setTimeLeft]=useState(Math.max(5,12-game.lvl));
+  const [timerKey,setTimerKey]=useState(0);
+  const inputRef=useRef(null);
+
+  useEffect(()=>{setTimeLeft(Math.max(5,12-game.lvl));setTimerKey(k=>k+1);setInput("");},[game.qIdx]);
+  useEffect(()=>{
+    if(game.done||timeLeft<=0)return;
+    const t=setInterval(()=>setTimeLeft(s=>{if(s<=1){clearInterval(t);game.answer(false);return 0;}return s-1;}),1000);
+    return()=>clearInterval(t);
+  },[timerKey,game.done]);
+
+  const submit=()=>{
+    if(!input.trim()||!game.q)return;
+    const q=game.q;
+    // Extract correct number from option string
+    const correctNum=q.correct?.replace(/[^0-9]/g,"");
+    const ok=input.trim()===correctNum;
+    game.answer(ok);
+    setInput("");
+  };
+
+  if(game.loadErr)return <GameError name="Times Table Race" onRetry={()=>window.location.reload()}/>;
+  if(game.loading&&!game.q)return <GameLoad name="Times Table Race" emoji="⏱️" tutor={child.tutor}/>;
+  if(game.done)return <GameEnd name="Times Table Race" emoji="⏱️" score={game.score} max={game.score+3-game.lives} child={child} xp={game.score*12} level={game.lvl} onDone={()=>onComplete({score:game.score,max:game.score+3-game.lives,xp:game.score*12,total:game.qIdx,correct:game.score,levelReached:game.lvl})}/>;
+
+  const danger=timeLeft<=3;
+  return(
+    <GameShell name="Times Table Race" emoji="⏱️" subject="Maths" score={game.score} maxScore={null} round={game.qIdx+1} total={null} streak={game.streak} onQuit={()=>game.setDone(true)} lives={game.lives} level={game.lvl}>
+      <div style={{background:`linear-gradient(135deg,${danger?"#FEF2F2":"#EEF2FF"},${danger?"#FEE2E2":"#C7D2FE"})`,borderRadius:20,padding:20,marginBottom:16,textAlign:"center",border:`2px solid ${danger?C.red:C.primary}`}}>
+        <div style={{fontSize:36,fontWeight:900,color:danger?C.red:C.primary,marginBottom:8}}>{game.q?.q}</div>
+        <div style={{display:"flex",alignItems:"center",gap:8,justifyContent:"center"}}>
+          <div style={{flex:1,height:8,borderRadius:4,background:"rgba(0,0,0,0.1)"}}><div style={{height:"100%",width:`${(timeLeft/Math.max(5,12-game.lvl))*100}%`,background:danger?C.red:C.primary,borderRadius:4,transition:"width 1s"}}/></div>
+          <span style={{fontSize:14,fontWeight:900,color:danger?C.red:C.primary,minWidth:24}}>{timeLeft}s</span>
+        </div>
+      </div>
+      <div style={{display:"flex",gap:8}}>
+        <input ref={inputRef} value={input} onChange={e=>setInput(e.target.value.replace(/[^0-9]/g,""))}
+          onKeyDown={e=>e.key==="Enter"&&submit()} type="number" placeholder="Type answer..."
+          style={{flex:1,padding:"14px 16px",borderRadius:14,fontSize:20,fontWeight:900,color:C.text,background:C.surface,outline:"none",border:`2px solid ${C.border}`,fontFamily:F}}/>
+        <button onClick={submit} style={{padding:"14px 20px",borderRadius:14,fontWeight:900,background:C.primary,color:"#fff",border:"none",cursor:"pointer",fontFamily:F,fontSize:16}}>✓</button>
+      </div>
+    </GameShell>
+  );
 }
 
+
 function FractionChef({child,mode,onComplete,onQuit,level=1}) {
-  const [fractions,setFractions]=useState(null);const [idx,setIdx]=useState(0);const [filled,setFilled]=useState(new Set());const [checked,setChecked]=useState(false);const [correct,setCorrect]=useState(false);const [score,setScore]=useState(0);const [done,setDone]=useState(false);
-  useEffect(()=>{claude(`Generate 5 fraction challenges for age ${child.age}, Level ${level} (${getLevelContext(level)}), level ${child.level.Maths}/5.\n${child.age<=7?"Use only halves and quarters.":"Use halves, quarters, thirds and fifths."}\nEach uses 8 pizza slices.\nReturn ONLY valid JSON: {"fractions":[{"n":1,"d":2,"label":"one half","correctSlices":4},{"n":3,"d":4,"label":"three quarters","correctSlices":6},...]}`,`Generate Fraction Chef challenges.`).then(d=>setFractions(d?.fractions));},[]);
-  useEffect(()=>{if(fractions&&mode==="audio")setTimeout(()=>speak(`Fill ${fractions[idx]?.label} of the pizza!`,child.tutor),200);},[idx,fractions]);
-  const toggleSlice=(i)=>{if(checked)return;setFilled(prev=>{const n=new Set(prev);n.has(i)?n.delete(i):n.add(i);return n;});};
-  const check=()=>{const f=fractions[idx];const ok=filled.size===f.correctSlices;setChecked(true);setCorrect(ok);if(ok)setScore(s=>s+1);if(mode==="audio")speak(ok?"Perfect! That's "+f.label+"!":"Not quite. Needed "+f.correctSlices+" slices.",child.tutor);setTimeout(()=>{if(idx+1>=fractions.length)setDone(true);else{setIdx(i=>i+1);setFilled(new Set());setChecked(false);}},800);};
-  if(!fractions)return <GameLoad name="Fraction Chef" emoji="🍕" tutor={child.tutor}/>;
-  if(done){const xp=calcXP(score,fractions.length);return <GameEnd name="Fraction Chef" emoji="🍕" score={score} max={fractions.length} child={child} xp={xp} onDone={()=>onComplete(score,xp)}/>;}
-  const f=fractions[idx];const SLICES=8,r=90,cx=110,cy=110;
-  return <GameShell name="Fraction Chef" emoji="🍕" subject="Maths" score={score} maxScore={fractions.length} round={idx+1} total={fractions.length} streak={0} onQuit={onQuit}><Card style={{textAlign:"center",marginBottom:16,padding:"20px"}}><p style={{fontSize:14,fontWeight:700,color:C.muted,marginBottom:4}}>Fill the pizza to show</p><p style={{fontSize:32,fontWeight:900,color:C.primary}}>{f?.n}/{f?.d} — {f?.label}</p><p style={{fontSize:13,fontWeight:700,color:C.muted,marginTop:4}}>{filled.size} of 8 slices · need {f?.correctSlices}</p></Card><div style={{display:"flex",justifyContent:"center",marginBottom:20}}><svg width="220" height="220" viewBox="0 0 220 220">{Array.from({length:SLICES}).map((_,i)=>{const a1=(i/SLICES)*Math.PI*2-Math.PI/2,a2=((i+1)/SLICES)*Math.PI*2-Math.PI/2;const x1=cx+r*Math.cos(a1),y1=cy+r*Math.sin(a1),x2=cx+r*Math.cos(a2),y2=cy+r*Math.sin(a2);const isFilled=filled.has(i);return <g key={i} onClick={()=>toggleSlice(i)} style={{cursor:checked?"default":"pointer"}}><path d={`M${cx},${cy} L${x1},${y1} A${r},${r} 0 0,1 ${x2},${y2} Z`} fill={isFilled?(checked?(correct?C.green:C.red):"#FF6B35"):"#FFF3E0"} stroke="#E65100" strokeWidth="2" opacity={isFilled?1:0.6}/></g>})}<circle cx={cx} cy={cy} r={r} fill="none" stroke="#E65100" strokeWidth="2"/></svg></div>{!checked&&<Btn onClick={check} disabled={filled.size===0} style={{width:"100%",fontSize:16}}>Check my fraction! 🍕</Btn>}{checked&&<div style={{padding:"12px",borderRadius:12,background:correct?C.gLight:C.rLight,border:`1px solid ${correct?C.green:C.red}`,textAlign:"center"}}><p style={{fontSize:16,fontWeight:800,color:correct?C.green:C.red}}>{correct?"✓ Perfect!":"✗ Needed "+f?.correctSlices+" slices"}</p></div>}</GameShell>;
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 fractions questions for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options. Return ONLY JSON: {"questions":[{"q":"What is 1/2 of 20?","options":["A) 5","B) 8","C) 10","D) 15"],"correct":"C"}]}`,"Fraction chef questions."),[child]);
+  return <CatcherEngine child={child} name="Fraction Chef" emoji="🍕" subject="Maths" color="#EF4444" bg="#FEF2F2" catcherChar="🍕" sceneBg="linear-gradient(180deg,#FEF2F2,#FEE2E2)" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
 }
+
 
 function WordScramble({child,mode,onComplete,onQuit,level=1}) {
   const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 spelling, unscrambling words at curriculum Level for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Word Scramble questions."),[child]);
@@ -3002,17 +3048,48 @@ function WordScramble({child,mode,onComplete,onQuit,level=1}) {
 }
 
 function SpellingBee({child,mode,onComplete,onQuit,level=1}) {
-  const [words,setWords]=useState(null);const [idx,setIdx]=useState(0);const [input,setInput]=useState("");const [result,setResult]=useState(null);const [score,setScore]=useState(0);const [done,setDone]=useState(false);const [heard,setHeard]=useState(false);const inputRef=useRef(null);
-  useEffect(()=>{claude(`Generate 8 spelling words for age ${child.age}, level ${child.level.English}/5.\n${child.age<=6?"3-4 letter simple phonetic words.":child.age<=8?"4-6 letter common words.":"6-10 letter vocabulary words."}\nFor each provide a sentence using it.\nReturn ONLY valid JSON: {"words":[{"word":"beautiful","sentence":"The sunset was beautiful."},{"word":"friend","sentence":"She is my best friend."},...]}`,`Generate Spelling Bee words.`).then(d=>setWords(d?.words));},[]);
-  const hearWord=()=>{if(!words)return;speak(words[idx].word,child.tutor);setHeard(true);setTimeout(()=>inputRef.current?.focus(),300);};
-  useEffect(()=>{if(words){setInput("");setResult(null);setHeard(false);}},[idx,words]);
-  useEffect(()=>{if(words&&mode==="audio")hearWord();},[idx,words]);
-  const submit=()=>{if(!input.trim()||result||!words)return;const ok=input.trim().toLowerCase()===words[idx].word.toLowerCase();setResult(ok?"correct":"wrong");if(ok)setScore(s=>s+1);if(mode==="audio")speak(ok?"Perfect spelling!":"Correct spelling is "+words[idx].word,child.tutor);setTimeout(()=>{if(idx+1>=words.length)setDone(true);else setIdx(i=>i+1);},800);};
-  if(!words)return <GameLoad name="Spelling Bee" emoji="🐝" tutor={child.tutor}/>;
-  if(done){const xp=calcXP(score,words.length);return <GameEnd name="Spelling Bee" emoji="🐝" score={score} max={words.length} child={child} xp={xp} onDone={()=>onComplete(score,xp)}/>;}
-  const w=words[idx];
-  return <GameShell name="Spelling Bee" emoji="🐝" subject="English" score={score} maxScore={words.length} round={idx+1} total={words.length} streak={0} onQuit={onQuit}><Card style={{textAlign:"center",marginBottom:20,padding:"32px 20px"}}><div style={{fontSize:48,marginBottom:12}}>🐝</div><p style={{fontSize:14,fontWeight:700,color:C.muted,marginBottom:8}}>Listen to the word, then spell it!</p>{heard&&<p style={{fontSize:14,fontWeight:700,color:C.sky,lineHeight:1.5,marginTop:8}}><em>"{w?.sentence}"</em></p>}</Card><button onClick={hearWord} style={{width:"100%",padding:"16px",borderRadius:14,fontSize:16,fontWeight:800,background:C.sLight,border:`2px solid ${C.sky}`,color:C.sky,cursor:"pointer",fontFamily:F,marginBottom:14}}>🔊 {heard?"Hear again":"Hear the word"}</button>{heard&&<div style={{display:"flex",gap:10,marginBottom:12}}><input ref={inputRef} value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&submit()} placeholder="Type the spelling..." disabled={!!result} style={{flex:1,padding:"14px 16px",borderRadius:12,fontSize:20,fontWeight:700,border:`2px solid ${result==="correct"?C.green:result==="wrong"?C.red:C.border}`,background:result==="correct"?C.gLight:result==="wrong"?C.rLight:C.bg,color:result==="correct"?C.green:result==="wrong"?C.red:C.text,outline:"none"}}/><Btn onClick={submit} disabled={!input.trim()||!!result} style={{padding:"14px 20px"}}>✓</Btn></div>}{result&&<div style={{padding:"12px",borderRadius:12,background:result==="correct"?C.gLight:C.rLight,textAlign:"center"}}><p style={{fontSize:16,fontWeight:800,color:result==="correct"?C.green:C.red}}>{result==="correct"?"✓ Perfect spelling!":"✗ Correct: "+w?.word}</p></div>}</GameShell>;
+  const game=useLivesGame(
+    useCallback(async(lvl)=>claude(`Generate 10 spelling words for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Return ONLY JSON: {"questions":[{"word":"friend","hint":"A person you play with","sentence":"My ___ came to my house"}]}`,"Spelling bee questions."),[child]),
+    level
+  );
+  const [input,setInput]=useState("");
+  const [result,setResult]=useState(null);
+  const inputRef=useRef(null);
+
+  const submit=()=>{
+    if(!input.trim()||!game.q)return;
+    const ok=input.trim().toLowerCase()===game.q.word?.toLowerCase();
+    setResult(ok?"correct":"wrong");
+    game.answer(ok);
+    setTimeout(()=>{setResult(null);setInput("");},900);
+  };
+
+  const speak=()=>{if(window.speechSynthesis&&game.q?.word){const u=new SpeechSynthesisUtterance(game.q.word);u.rate=0.8;window.speechSynthesis.speak(u);}};
+
+  if(game.loadErr)return <GameError name="Spelling Bee" onRetry={()=>window.location.reload()}/>;
+  if(game.loading&&!game.q)return <GameLoad name="Spelling Bee" emoji="🐝" tutor={child.tutor}/>;
+  if(game.done)return <GameEnd name="Spelling Bee" emoji="🐝" score={game.score} max={game.score+3-game.lives} child={child} xp={game.score*12} level={game.lvl} onDone={()=>onComplete({score:game.score,max:game.score+3-game.lives,xp:game.score*12,total:game.qIdx,correct:game.score,levelReached:game.lvl})}/>;
+
+  return(
+    <GameShell name="Spelling Bee" emoji="🐝" subject="English" score={game.score} maxScore={null} round={game.qIdx+1} total={null} streak={game.streak} onQuit={()=>game.setDone(true)} lives={game.lives} level={game.lvl}>
+      <div style={{background:"linear-gradient(135deg,#FFFBEB,#FEF3C7)",borderRadius:20,padding:20,marginBottom:16,textAlign:"center",border:"2px solid #F59E0B"}}>
+        <div style={{fontSize:40,marginBottom:8}}>🐝</div>
+        {game.q?.sentence&&<p style={{fontSize:14,fontWeight:600,color:"#92400E",marginBottom:8,lineHeight:1.6,fontStyle:"italic"}}>"{game.q.sentence.replace("_".repeat(game.q.word?.length||5),"_ _ _")}"</p>}
+        {game.q?.hint&&<p style={{fontSize:13,fontWeight:600,color:"#78350F"}}>💡 {game.q.hint}</p>}
+        <button onClick={speak} style={{marginTop:10,padding:"6px 16px",borderRadius:10,background:"#F59E0B",border:"none",cursor:"pointer",fontSize:13,fontWeight:800,color:"#fff",fontFamily:F}}>🔊 Hear the word</button>
+      </div>
+      {result&&<div style={{textAlign:"center",fontSize:28,marginBottom:8}}>{result==="correct"?"✅ Correct!":"❌ Wrong — it was: "+game.q?.word}</div>}
+      <div style={{display:"flex",gap:8}}>
+        <input ref={inputRef} value={input} onChange={e=>setInput(e.target.value)}
+          onKeyDown={e=>e.key==="Enter"&&submit()}
+          placeholder="Type the spelling..."
+          style={{flex:1,padding:"14px",borderRadius:14,fontSize:17,fontWeight:700,color:C.text,background:C.surface,outline:"none",border:`2px solid ${input?C.primary:C.border}`,fontFamily:F}}/>
+        <button onClick={submit} style={{padding:"14px 20px",borderRadius:14,fontWeight:900,background:C.primary,color:"#fff",border:"none",cursor:"pointer",fontFamily:F,fontSize:16}}>✓</button>
+      </div>
+    </GameShell>
+  );
 }
+
 
 function SentenceBuilder({child,mode,onComplete,onQuit,level=1}) {
   const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 grammar, sentence structure, correct word order for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Sentence Builder questions."),[child]);
@@ -3050,146 +3127,103 @@ function WordMatch({child,mode,onComplete,onQuit,level=1}) {
 }
 
 function MathFishing({child,mode,onComplete,onQuit,level=1}) {
-  const ROUNDS=8;
-  const [qs,setQs]=useState(null);const [idx,setIdx]=useState(0);const [score,setScore]=useState(0);
-  const [rodX,setRodX]=useState(50);const [lineY,setLineY]=useState(0);const [casting,setCasting]=useState(false);
-  const [fish,setFish]=useState([]);const [hookedFish,setHookedFish]=useState(null);
-  const [result,setResult]=useState(null);const [done,setDone]=useState(false);const [loadErr,setLoadErr]=useState(false);
-  const animRef=useRef(null);const fishRef=useRef([]);
+  const [qs,setQs]=useState([]);
+  const [qIdx,setQIdx]=useState(0);
+  const [lives,setLives]=useState(3);
+  const [score,setScore]=useState(0);
+  const [lvl,setLvl]=useState(level);
+  const [streak,setStreak]=useState(0);
+  const [done,setDone]=useState(false);
+  const [loading,setLoading]=useState(true);
+  const [loadErr,setLoadErr]=useState(false);
+  const [caught,setCaught]=useState(null);
+  const [fish,setFish]=useState([]);
+  const fetching=useRef(false);
+  const fishRef=useRef([]);
+  const idRef=useRef(0);
+
+  const fetchBatch=useCallback(async(l)=>{
+    if(fetching.current)return;
+    fetching.current=true;
+    const t=setTimeout(()=>{setLoadErr(true);setLoading(false);},12000);
+    const d=await claude(`Generate 8 maths equations for age ${child.age}, ${child.country||"UK"} curriculum, Level ${l}. Each has correct answer and 3 wrong close answers. Return ONLY JSON: {"questions":[{"eq":"3+4=","correct":7,"wrong":[5,6,8]}]}`,"Fishing questions.");
+    clearTimeout(t);
+    if(d?.questions?.length)setQs(prev=>[...prev,...d.questions]);
+    else setLoadErr(true);
+    setLoading(false);fetching.current=false;
+  },[child]);
+
+  useEffect(()=>{fetchBatch(level);},[]);
+  useEffect(()=>{if(qs.length&&qIdx>=qs.length-2&&!fetching.current&&!done)fetchBatch(lvl);},[qIdx,qs.length,lvl,done]);
+
+  const q=qs[qIdx]||null;
 
   useEffect(()=>{
-    const t=setTimeout(()=>setLoadErr(true),12000);
-    claude(`Generate ${ROUNDS} maths equations for age ${child.age}, ${child.country||"UK"} curriculum, Level ${level}.
-Each has correct answer and 3 wrong answers.
-Return ONLY valid JSON: {"questions":[{"eq":"3 + 4 =","correct":7,"wrong":[5,6,8]}]}`,"Fishing game questions.").then(d=>{
-      clearTimeout(t);
-      if(!d?.questions){setLoadErr(true);return;}
-      setQs(d.questions);
-    });
-  },[]);
-
-  // Spawn fish for current question
-  useEffect(()=>{
-    if(!qs||done||idx>=qs.length) return;
-    const q=qs[idx];
+    if(!q||done)return;
     const answers=[q.correct,...(q.wrong||[q.correct+1,q.correct-1,q.correct+2])].slice(0,4).sort(()=>Math.random()-0.5);
-    const newFish = answers.map((ans,i)=>({
-      id:i, ans, correct:ans===q.correct,
-      x:10+i*22, y:35+Math.random()*40,
-      vx:(Math.random()-0.5)*0.8, vy:(Math.random()-0.5)*0.3,
-      wobble:Math.random()*Math.PI*2
-    }));
-    fishRef.current = newFish;
-    setFish([...newFish]);
-    setCasting(false);setHookedFish(null);setResult(null);
-  },[idx,qs]);
+    const newFish=answers.map((ans,i)=>({id:++idRef.current,ans,correct:ans===q.correct,x:10+i*22,y:35+Math.random()*40,vx:(Math.random()-0.5)*0.8,vy:(Math.random()-0.5)*0.3,wobble:Math.random()*Math.PI*2}));
+    fishRef.current=newFish;setFish([...newFish]);setCaught(null);
+  },[qIdx,q]);
 
-  // Fish swim animation
   useEffect(()=>{
-    if(!qs||done||result) return;
+    if(!q||done||caught!==null)return;
     let t=0;
     const loop=setInterval(()=>{
       t+=0.05;
-      fishRef.current = fishRef.current.map(f=>({
-        ...f,
-        x: Math.max(2,Math.min(85, f.x + f.vx)),
-        y: f.y + Math.sin(t+f.wobble)*0.3,
-        vx: f.x<=2?Math.abs(f.vx): f.x>=85?-Math.abs(f.vx): f.vx
-      }));
+      fishRef.current=fishRef.current.map(f=>({...f,x:Math.max(2,Math.min(85,f.x+f.vx)),y:f.y+Math.sin(t+f.wobble)*0.3,vx:f.x<=2?Math.abs(f.vx):f.x>=85?-Math.abs(f.vx):f.vx}));
       setFish([...fishRef.current]);
     },60);
     return()=>clearInterval(loop);
-  },[qs,done,result,idx]);
+  },[q,done,caught,qIdx]);
 
-  // Cast line animation
-  useEffect(()=>{
-    if(!casting) return;
-    let y=0;
-    const anim=setInterval(()=>{
-      y=Math.min(90,y+5);
-      setLineY(y);
-      if(y>=90){clearInterval(anim); setLineY(0); setCasting(false);}
-    },16);
-    return()=>clearInterval(anim);
-  },[casting]);
-
+  const [rodX,setRodX]=useState(50);
   const cast=(x)=>{
-    if(casting||result||!qs) return;
+    if(caught!==null||!q)return;
     setRodX(x);
-    setCasting(true);
-    // Check if any fish is near cast position
     setTimeout(()=>{
-      const hit = fishRef.current.find(f=>Math.abs(f.x-x)<12);
+      const hit=fishRef.current.find(f=>Math.abs(f.x-x)<12);
       if(hit){
-        setHookedFish(hit);
-        setResult(hit.correct?"correct":"wrong");
-        if(hit.correct)setScore(s=>s+1);
-        setTimeout(()=>{
-          if(idx+1>=ROUNDS) setDone(true);
-          else setIdx(i=>i+1);
-        },1200);
+        setCaught(hit);
+        if(hit.correct){
+          setScore(s=>s+1);
+          const ns=streak+1;setStreak(ns);
+          if(ns>0&&ns%5===0)setLvl(l=>l+1);
+        } else {
+          setStreak(0);
+          const nl=lives-1;setLives(nl);
+          if(nl<=0){setDone(true);return;}
+        }
+        setTimeout(()=>{setCaught(null);setQIdx(i=>i+1);},1000);
       }
-    },800);
+    },600);
   };
 
-  if(loadErr)return <GameError name="Maths Fishing" onRetry={()=>{setLoadErr(false);setQs(null);}}/>;
-  if(!qs)return <GameLoad name="Maths Fishing" emoji="🎣" tutor={child.tutor}/>;
-  if(done)return <GameEnd name="Maths Fishing" emoji="🎣" score={score} max={ROUNDS} child={child} xp={score*10} onDone={()=>onComplete({score,max:ROUNDS,xp:score*10})}/>;
+  if(loadErr)return <GameError name="Maths Fishing" onRetry={()=>{setLoadErr(false);setQs([]);fetchBatch(level);}}/>;
+  if(loading&&!q)return <GameLoad name="Maths Fishing" emoji="🎣" tutor={child.tutor}/>;
+  if(done)return <GameEnd name="Maths Fishing" emoji="🎣" score={score} max={score+3-lives} child={child} xp={score*12} level={lvl} onDone={()=>onComplete({score,max:score+3-lives,xp:score*12,total:qIdx,correct:score,levelReached:lvl})}/>;
 
-  const q=qs[idx];
-
-  return (
-    <GameShell name="Maths Fishing" emoji="🎣" subject="Maths" score={score} maxScore={ROUNDS} round={idx+1} total={ROUNDS} streak={0} onQuit={onQuit}>
-      {/* Question */}
+  return(
+    <GameShell name="Maths Fishing" emoji="🎣" subject="Maths" score={score} maxScore={null} round={qIdx+1} total={null} streak={streak} onQuit={()=>onComplete({score,max:score+3-lives,xp:score*12,total:qIdx,correct:score})} lives={lives} level={lvl}>
       <div style={{textAlign:"center",marginBottom:8}}>
-        <div style={{fontSize:28,fontWeight:900,color:C.primary,background:C.pLight,borderRadius:14,padding:"8px 20px",display:"inline-block"}}>{q?.eq}</div>
-        <p style={{fontSize:12,color:C.muted,fontWeight:600,marginTop:4}}>Tap the water where the correct fish is!</p>
+        <div style={{fontSize:26,fontWeight:900,color:C.primary,background:C.pLight,borderRadius:14,padding:"8px 20px",display:"inline-block"}}>{q?.eq}</div>
+        <p style={{fontSize:11,color:C.muted,fontWeight:600,marginTop:4}}>Tap the water to cast near the correct fish!</p>
       </div>
-      {/* Game canvas */}
-      <div style={{position:"relative",height:220,borderRadius:20,overflow:"hidden",cursor:"pointer",userSelect:"none"}}
-        onClick={e=>{
-          const rect=e.currentTarget.getBoundingClientRect();
-          const xPct=((e.clientX-rect.left)/rect.width)*100;
-          cast(xPct);
-        }}>
-        {/* Sky */}
+      <div style={{position:"relative",height:200,borderRadius:20,overflow:"hidden",cursor:"pointer",userSelect:"none"}} onClick={e=>{const rect=e.currentTarget.getBoundingClientRect();cast(((e.clientX-rect.left)/rect.width)*100);}}>
         <div style={{position:"absolute",top:0,left:0,right:0,height:50,background:"linear-gradient(180deg,#BAE6FD,#7DD3FC)"}}/>
-        {/* Rod */}
         <div style={{position:"absolute",top:0,left:`${rodX}%`,transform:"translateX(-50%)",zIndex:4}}>
           <div style={{width:3,background:"#92400E",height:50,margin:"0 auto",borderRadius:2}}/>
-          {casting&&<div style={{width:1,background:"#9CA3AF",height:`${lineY*1.5}px`,margin:"0 auto",transition:"height 0.05s"}}/>}
-          {casting&&lineY>80&&<div style={{width:8,height:8,borderRadius:"50%",background:"#F59E0B",margin:"-4px auto"}}/>}
         </div>
-        {/* Water */}
         <div style={{position:"absolute",top:50,left:0,right:0,bottom:0,background:"linear-gradient(180deg,#0EA5E9,#0369A1)"}}/>
-        {/* Ripples */}
         <svg style={{position:"absolute",top:46,left:0,width:"100%",height:12}} viewBox="0 0 400 12" preserveAspectRatio="none">
           <path d="M0,6 Q25,0 50,6 Q75,12 100,6 Q125,0 150,6 Q175,12 200,6 Q225,0 250,6 Q275,12 300,6 Q325,0 350,6 Q375,12 400,6" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="2"/>
         </svg>
-        {/* Fish */}
         {fish.map(f=>(
-          <div key={f.id} style={{
-            position:"absolute",
-            left:`${f.x}%`,top:`${f.y}%`,
-            transform:`translateX(-50%) ${hookedFish?.id===f.id?"translateY(-20px) scale(1.2)":""}`,
-            transition:hookedFish?.id===f.id?"all 0.4s":"none",
-            zIndex:3
-          }}>
-            <div style={{
-              background:"rgba(255,255,255,0.9)",borderRadius:10,padding:"3px 8px",
-              fontSize:12,fontWeight:900,color:C.text,textAlign:"center",
-              boxShadow:"0 2px 8px rgba(0,0,0,0.2)",marginBottom:2,whiteSpace:"nowrap",
-              border:`2px solid ${result&&hookedFish?.id===f.id?(result==="correct"?C.green:C.red):"transparent"}`
-            }}>{f.ans}</div>
-            <div style={{textAlign:"center",fontSize:20,transform:`scaleX(${f.vx>0?1:-1})`}}>🐟</div>
+          <div key={f.id} style={{position:"absolute",left:`${f.x}%`,top:`${f.y}%`,transform:`translateX(-50%) ${caught?.id===f.id?"translateY(-20px) scale(1.2)":""}`,transition:caught?.id===f.id?"all 0.4s":"none",zIndex:3}}>
+            <div style={{background:"rgba(255,255,255,0.9)",borderRadius:10,padding:"2px 7px",fontSize:11,fontWeight:900,color:C.text,textAlign:"center",marginBottom:2,border:`2px solid ${caught?.id===f.id?(caught.correct?C.green:C.red):"transparent"}`}}>{f.ans}</div>
+            <div style={{textAlign:"center",fontSize:18,transform:`scaleX(${f.vx>0?1:-1})`}}>🐟</div>
           </div>
         ))}
-        {/* Result overlay */}
-        {result&&(
-          <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,0.3)",borderRadius:20,zIndex:5}}>
-            <div style={{fontSize:56,animation:"bounceY 0.4s ease"}}>{result==="correct"?"🎣✅":"💨❌"}</div>
-          </div>
-        )}
+        {caught&&<div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,0.3)",borderRadius:20,zIndex:5,fontSize:48}}>{caught.correct?"🎣✅":"💨❌"}</div>}
       </div>
     </GameShell>
   );
@@ -3197,136 +3231,69 @@ Return ONLY valid JSON: {"questions":[{"eq":"3 + 4 =","correct":7,"wrong":[5,6,8
 
 
 function SpaceBlaster({child,mode,onComplete,onQuit,level=1}) {
-  const W=320,H=280;
-  const [qs,setQs]=useState(null);const [idx,setIdx]=useState(0);const [score,setScore]=useState(0);
+  const game=useLivesGame(
+    useCallback(async(lvl)=>claude(`Generate 10 maths questions for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Each has a question and exactly 4 answer options (one correct). Return ONLY JSON: {"questions":[{"q":"5×4=","options":["12","15","20","18"],"correct":"20"}]}`,"Space blaster questions."),[child]),
+    level
+  );
   const [shipX,setShipX]=useState(50);
   const [bullets,setBullets]=useState([]);
   const [aliens,setAliens]=useState([]);
-  const [explosions,setExplosions]=useState([]);
-  const [done,setDone]=useState(false);const [loadErr,setLoadErr]=useState(false);
-  const [selectedAns,setSelectedAns]=useState(null);
-  const gameRef=useRef({bullets:[],aliens:[],explosions:[],shipX:50,paused:false});
+  const [exps,setExps]=useState([]);
+  const [flash,setFlash]=useState(null);
+  const sr=useRef({shipX:50,bullets:[],aliens:[],exps:[]});
+  const idr=useRef(0);
 
   useEffect(()=>{
-    const t=setTimeout(()=>setLoadErr(true),12000);
-    claude(`Generate 10 maths questions for age ${child.age}, ${child.country||"UK"} curriculum, Level ${level}.
-Each has 4 answer options, only 1 correct.
-Return ONLY valid JSON: {"questions":[{"q":"5 × 4 =","options":[15,20,18,24],"correct":20}]}`,"Space blaster questions.").then(d=>{
-      clearTimeout(t);
-      if(!d?.questions){setLoadErr(true);return;}
-      setQs(d.questions);
-    });
-  },[]);
+    if(!game.q||game.done)return;
+    const opts=game.q.options||[];
+    sr.current.aliens=opts.map((opt,i)=>({id:++idr.current,opt,correct:opt===game.q.correct,x:8+i*(80/Math.max(opts.length-1,1)),y:15+Math.random()*20,vx:(Math.random()-0.5)*0.9,vy:0.12+game.lvl*0.04,alive:true}));
+    setAliens([...sr.current.aliens]);setBullets([]);sr.current.bullets=[];
+  },[game.qIdx,game.q]);
 
-  // Spawn aliens for current question
   useEffect(()=>{
-    if(!qs||done||idx>=qs.length) return;
-    const q=qs[idx];
-    const a=q.options.map((opt,i)=>({
-      id:i, val:opt, correct:opt===q.correct,
-      x:10+i*22, y:20, vx:0.4*(i%2===0?1:-1), vy:0, alive:true
-    }));
-    gameRef.current.aliens=a;
-    setAliens([...a]);
-    setBullets([]);gameRef.current.bullets=[];
-    setExplosions([]);gameRef.current.explosions=[];
-    setSelectedAns(null);
-  },[idx,qs]);
-
-  // Game loop
-  useEffect(()=>{
-    if(!qs||done) return;
+    if(game.done||!game.q)return;
     const loop=setInterval(()=>{
-      const g=gameRef.current;
-      // Move aliens
-      g.aliens=g.aliens.map(a=>{
-        if(!a.alive) return a;
-        let nx=a.x+a.vx;
-        let nvx=a.vx;
-        if(nx>82||nx<8){nvx=-nvx;nx=a.x;}
-        return{...a,x:nx,vx:nvx};
-      });
-      // Move bullets up
-      g.bullets=g.bullets.map(b=>({...b,y:b.y-4})).filter(b=>b.y>0);
-      // Check bullet-alien collisions
+      const s=sr.current;
+      s.aliens=s.aliens.map(t=>({...t,y:t.alive?t.y+t.vy:t.y,x:Math.max(3,Math.min(90,t.x+t.vx)),vx:t.x<=3||t.x>=90?-t.vx:t.vx}));
+      s.bullets=s.bullets.map(b=>({...b,y:b.y-5})).filter(b=>b.y>0);
+      s.exps=s.exps.map(e=>({...e,t:e.t+1})).filter(e=>e.t<8);
       let hit=null;
-      g.bullets=g.bullets.filter(b=>{
-        const a=g.aliens.find(a=>a.alive&&Math.abs(a.x-b.x)<8&&Math.abs(a.y-b.y)<10);
-        if(a){hit=a;g.explosions=[...g.explosions,{id:Date.now(),x:a.x,y:a.y,t:0}];}
-        return !a;
-      });
-      if(hit){
-        g.aliens=g.aliens.map(a=>a.id===hit.id?{...a,alive:false}:a);
-        setSelectedAns(hit.val);
-        if(hit.correct){
-          setTimeout(()=>{if(idx+1>=qs.length)setDone(true);else setIdx(i=>i+1);},600);
-        } else {
-          setTimeout(()=>setSelectedAns(null),800);
-        }
-      }
-      // Fade explosions
-      g.explosions=g.explosions.map(e=>({...e,t:e.t+1})).filter(e=>e.t<8);
-      setAliens([...g.aliens]);
-      setBullets([...g.bullets]);
-      setExplosions([...g.explosions]);
+      s.bullets=s.bullets.filter(b=>{const t=s.aliens.find(t=>t.alive&&Math.abs(t.x-b.x)<10&&Math.abs(t.y-b.y)<12);if(t){hit=t;s.exps=[...s.exps,{id:Date.now(),x:t.x,y:t.y,t:0}];}return!t;});
+      if(hit){s.aliens=s.aliens.map(t=>t.id===hit.id?{...t,alive:false}:t);game.answer(hit.correct);setFlash(hit.correct?"✅":"❌");setTimeout(()=>setFlash(null),500);}
+      const missed=s.aliens.find(t=>t.alive&&t.correct&&t.y>90);
+      if(missed){s.aliens=s.aliens.map(t=>t.id===missed.id?{...t,alive:false}:t);game.answer(false);}
+      setAliens([...s.aliens]);setBullets([...s.bullets]);setExps([...s.exps]);
     },50);
     return()=>clearInterval(loop);
-  },[qs,done,idx]);
+  },[game.done,game.qIdx,game.q]);
 
-  const moveShip=(dir)=>{
-    gameRef.current.shipX=Math.max(5,Math.min(95,gameRef.current.shipX+dir*8));
-    setShipX(gameRef.current.shipX);
-  };
-  const fire=()=>{
-    const b={id:Date.now(),x:gameRef.current.shipX,y:85};
-    gameRef.current.bullets=[...gameRef.current.bullets,b];
-    setBullets(prev=>[...prev,b]);
-  };
+  const moveShip=dir=>{sr.current.shipX=Math.max(5,Math.min(92,sr.current.shipX+dir*10));setShipX(sr.current.shipX);};
+  const fire=()=>{const b={id:++idr.current,x:sr.current.shipX,y:80};sr.current.bullets=[...sr.current.bullets,b];setBullets(p=>[...p,b]);};
 
-  if(loadErr)return <GameError name="Space Blaster" onRetry={()=>{setLoadErr(false);setQs(null);}}/>;
-  if(!qs)return <GameLoad name="Space Blaster" emoji="🚀" tutor={child.tutor}/>;
-  if(done)return <GameEnd name="Space Blaster" emoji="🚀" score={score} max={10} child={child} xp={score*10} onDone={()=>onComplete({score,max:10,xp:score*10})}/>;
+  if(game.loadErr)return <GameError name="Space Blaster" onRetry={()=>window.location.reload()}/>;
+  if(game.loading&&!game.q)return <GameLoad name="Space Blaster" emoji="🚀" tutor={child.tutor}/>;
+  if(game.done)return <GameEnd name="Space Blaster" emoji="🚀" score={game.score} max={game.score+3-game.lives} child={child} xp={game.score*12} level={game.lvl} onDone={()=>onComplete({score:game.score,max:game.score+3-game.lives,xp:game.score*12,total:game.qIdx,correct:game.score,levelReached:game.lvl})}/>;
 
-  const q=qs[Math.min(idx,qs.length-1)];
-
-  return (
-    <GameShell name="Space Blaster" emoji="🚀" subject="Maths" score={score} maxScore={10} round={idx+1} total={10} streak={0} onQuit={onQuit}>
-      <div style={{textAlign:"center",marginBottom:8}}>
-        <span style={{fontSize:22,fontWeight:900,color:"#FCD34D",background:"#1E1B4B",padding:"6px 18px",borderRadius:12}}>{q?.q}</span>
-      </div>
-      {/* Game area */}
-      <div style={{position:"relative",height:200,background:"linear-gradient(180deg,#0F0F1A,#1E1B4B)",borderRadius:16,overflow:"hidden",marginBottom:10}}>
-        {/* Stars */}
-        {[...Array(20)].map((_,i)=><div key={i} style={{position:"absolute",width:1.5,height:1.5,background:"#fff",borderRadius:"50%",top:`${(i*17)%90}%`,left:`${(i*13)%100}%`,opacity:0.4+0.6*(i%3)/2}}/>)}
-        {/* Aliens */}
-        {aliens.filter(a=>a.alive).map(a=>(
-          <div key={a.id} style={{position:"absolute",left:`${a.x}%`,top:`${a.y}%`,transform:"translateX(-50%)",zIndex:2,textAlign:"center"}}>
-            <div style={{fontSize:20,lineHeight:1}}>👾</div>
-            <div style={{background:"rgba(255,255,255,0.9)",borderRadius:6,padding:"1px 6px",fontSize:11,fontWeight:900,color:C.text,marginTop:1}}>{a.val}</div>
+  return(
+    <GameShell name="Space Blaster" emoji="🚀" subject="Maths" score={game.score} maxScore={null} round={game.qIdx+1} total={null} streak={game.streak} onQuit={()=>game.setDone(true)} lives={game.lives} level={game.lvl}>
+      <div style={{textAlign:"center",marginBottom:6}}><span style={{fontSize:18,fontWeight:900,color:"#FCD34D",background:"#1E1B4B",padding:"6px 18px",borderRadius:12}}>{game.q?.q}</span></div>
+      <div style={{position:"relative",height:195,background:"linear-gradient(180deg,#0F0F1A,#1E1B4B,#312E81)",borderRadius:16,overflow:"hidden",marginBottom:8}}>
+        {[...Array(15)].map((_,i)=><div key={i} style={{position:"absolute",width:1.5,height:1.5,background:"#fff",borderRadius:"50%",top:`${(i*17)%95}%`,left:`${(i*13)%100}%`,opacity:0.4}}/>)}
+        {aliens.filter(t=>t.alive).map(t=>(
+          <div key={t.id} style={{position:"absolute",left:`${t.x}%`,top:`${t.y}%`,transform:"translateX(-50%)",zIndex:2,textAlign:"center"}}>
+            <div style={{fontSize:18}}>{t.correct?"👾":"💀"}</div>
+            <div style={{background:"rgba(255,255,255,0.93)",borderRadius:6,padding:"1px 6px",fontSize:10,fontWeight:900,color:C.text,marginTop:1,whiteSpace:"nowrap"}}>{t.opt}</div>
           </div>
         ))}
-        {/* Explosions */}
-        {explosions.map(e=>(
-          <div key={e.id} style={{position:"absolute",left:`${e.x}%`,top:`${e.y}%`,transform:"translateX(-50%)",fontSize:20,zIndex:3,opacity:1-e.t/8}}>💥</div>
-        ))}
-        {/* Bullets */}
-        {bullets.map(b=>(
-          <div key={b.id} style={{position:"absolute",left:`${b.x}%`,top:`${b.y}%`,width:3,height:10,background:"#FCD34D",borderRadius:2,transform:"translateX(-50%)",zIndex:2}}/>
-        ))}
-        {/* Ship */}
-        <div style={{position:"absolute",bottom:"4%",left:`${shipX}%`,transform:"translateX(-50%)",fontSize:28,zIndex:3}}>🚀</div>
-        {/* Answer feedback */}
-        {selectedAns!==null&&(
-          <div style={{position:"absolute",top:"40%",left:"50%",transform:"translate(-50%,-50%)",fontSize:32,fontWeight:900,color:selectedAns===q?.correct?"#22C55E":"#EF4444",background:"rgba(0,0,0,0.7)",borderRadius:12,padding:"8px 16px",zIndex:5}}>
-            {selectedAns===q?.correct?"✅ CORRECT!":"❌ MISS!"}
-          </div>
-        )}
+        {bullets.map(b=><div key={b.id} style={{position:"absolute",left:`${b.x}%`,top:`${b.y}%`,width:3,height:10,background:"#FCD34D",borderRadius:2,transform:"translateX(-50%)",zIndex:2}}/>)}
+        {exps.map(e=><div key={e.id} style={{position:"absolute",left:`${e.x}%`,top:`${e.y}%`,transform:"translateX(-50%)",fontSize:16,opacity:1-e.t/8,zIndex:3}}>💥</div>)}
+        {flash&&<div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,0.4)",fontSize:40,zIndex:5}}>{flash}</div>}
+        <div style={{position:"absolute",bottom:"4%",left:`${shipX}%`,transform:"translateX(-50%)",fontSize:24,zIndex:3,transition:"left 0.1s"}}>🚀</div>
       </div>
-      {/* Controls */}
-      <div style={{display:"flex",gap:8,alignItems:"center"}}>
-        <button onClick={()=>moveShip(-1)} style={{flex:1,padding:"14px",borderRadius:12,fontSize:22,background:C.surface,border:`1px solid ${C.border}`,cursor:"pointer",fontFamily:F}}>◀</button>
-        <button onClick={fire} style={{flex:2,padding:"14px",borderRadius:12,fontSize:18,fontWeight:900,background:"linear-gradient(135deg,#4F46E5,#7C3AED)",color:"#fff",border:"none",cursor:"pointer",fontFamily:F}}>🔫 FIRE!</button>
-        <button onClick={()=>moveShip(1)} style={{flex:1,padding:"14px",borderRadius:12,fontSize:22,background:C.surface,border:`1px solid ${C.border}`,cursor:"pointer",fontFamily:F}}>▶</button>
+      <div style={{display:"flex",gap:8}}>
+        <button onClick={()=>moveShip(-1)} style={{flex:1,padding:"12px",borderRadius:12,fontSize:20,background:C.surface,border:`1px solid ${C.border}`,cursor:"pointer",fontFamily:F}}>◀</button>
+        <button onClick={fire} style={{flex:2,padding:"12px",borderRadius:12,fontWeight:900,background:"linear-gradient(135deg,#4F46E5,#7C3AED)",color:"#fff",border:"none",cursor:"pointer",fontFamily:F,fontSize:14}}>🔫 FIRE!</button>
+        <button onClick={()=>moveShip(1)} style={{flex:1,padding:"12px",borderRadius:12,fontSize:20,background:C.surface,border:`1px solid ${C.border}`,cursor:"pointer",fontFamily:F}}>▶</button>
       </div>
     </GameShell>
   );
@@ -3339,117 +3306,66 @@ function GemHunter({child,mode,onComplete,onQuit,level=1}) {
 }
 
 function WordRunner({child,mode,onComplete,onQuit,level=1}) {
-  const ROUNDS=8;
-  const [qs,setQs]=useState(null);const [idx,setIdx]=useState(0);const [score,setScore]=useState(0);
-  const [words,setWords]=useState([]);const [caught,setCaught]=useState(null);const [done,setDone]=useState(false);const [loadErr,setLoadErr]=useState(false);
-  const wordsRef=useRef([]);const idRef=useRef(0);
+  const game=useLivesGame(
+    useCallback(async(lvl)=>claude(`Generate 10 grammar questions for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Instructions like "Catch the VERB!" — 4 word options, 1 correct. Return ONLY JSON: {"questions":[{"instruction":"Catch the VERB!","options":["run","happy","quickly","big"],"correct":"run"}]}`,"Word runner questions."),[child]),
+    level
+  );
+  const [falling,setFalling]=useState([]);
+  const [caught,setCaught]=useState(null);
+  const sr=useRef([]);const idr=useRef(0);
 
   useEffect(()=>{
-    const t=setTimeout(()=>setLoadErr(true),12000);
-    claude(`Generate ${ROUNDS} grammar questions for age ${child.age}, ${child.country||"UK"} curriculum, Level ${level}.
-Instructions like "Catch the VERB!", "Grab the ADJECTIVE!", "Find the NOUN!", "Catch the ADVERB!".
-4 word options each, 1 correct.
-Return ONLY valid JSON: {"questions":[{"instruction":"Catch the VERB!","options":["run","happy","quickly","big"],"correct":"run"}]}`,"Word runner questions.").then(d=>{
-      clearTimeout(t);
-      if(!d?.questions){setLoadErr(true);return;}
-      setQs(d.questions);
-    });
-  },[]);
+    if(!game.q||game.done||caught!==null)return;
+    const shuffled=[...(game.q.options||[])].sort(()=>Math.random()-0.5);
+    sr.current=shuffled.map((w,i)=>({id:++idr.current,word:w,correct:w===game.q.correct,x:8+i*23,y:-15,speed:1.2+game.lvl*0.15+Math.random()*0.5}));
+    setFalling([...sr.current]);
+  },[game.qIdx,game.q]);
 
-  // Spawn words for current question
   useEffect(()=>{
-    if(!qs||done||idx>=qs.length) return;
-    const q=qs[idx];
-    const cols=[15,38,61,84];
-    const shuffled=[...q.options].sort(()=>Math.random()-0.5);
-    const newWords=shuffled.map((w,i)=>({
-      id:++idRef.current, word:w, correct:w===q.correct,
-      x:cols[i%4], y:-15, speed:1.2+level*0.15+Math.random()*0.5,
-      caught:false
-    }));
-    wordsRef.current=newWords;
-    setWords([...newWords]);
-    setCaught(null);
-  },[idx,qs]);
-
-  // Fall animation
-  useEffect(()=>{
-    if(!qs||done||caught!==null) return;
+    if(game.done||caught!==null||!game.q)return;
     const loop=setInterval(()=>{
-      wordsRef.current=wordsRef.current.map(w=>({...w,y:w.y+w.speed}));
-      // If all words past bottom, move to next question (miss)
-      if(wordsRef.current.every(w=>w.y>105)){
+      sr.current=sr.current.map(w=>({...w,y:w.y+w.speed}));
+      if(sr.current.length&&sr.current.every(w=>w.y>105)){
         setCaught({missed:true});
-        setTimeout(()=>{
-          setCaught(null);
-          if(idx+1>=ROUNDS)setDone(true);
-          else setIdx(i=>i+1);
-        },600);
+        game.answer(false);
+        setTimeout(()=>{setCaught(null);},600);
       }
-      setWords([...wordsRef.current]);
+      setFalling([...sr.current]);
     },50);
     return()=>clearInterval(loop);
-  },[done,caught,idx,qs]);
+  },[game.done,caught,game.qIdx,game.q]);
 
   const catchWord=(w)=>{
-    if(caught) return;
+    if(caught)return;
     setCaught(w);
-    if(w.correct)setScore(s=>s+1);
-    // Mark caught
-    wordsRef.current=wordsRef.current.map(x=>x.id===w.id?{...x,caught:true}:x);
-    setWords([...wordsRef.current]);
-    setTimeout(()=>{
-      setCaught(null);
-      if(idx+1>=ROUNDS)setDone(true);
-      else setIdx(i=>i+1);
-    },700);
+    game.answer(w.correct);
+    setTimeout(()=>setCaught(null),700);
   };
 
-  if(loadErr)return <GameError name="Word Runner" onRetry={()=>{setLoadErr(false);setQs(null);}}/>;
-  if(!qs)return <GameLoad name="Word Runner" emoji="🏃" tutor={child.tutor}/>;
-  if(done)return <GameEnd name="Word Runner" emoji="🏃" score={score} max={ROUNDS} child={child} xp={score*10} onDone={()=>onComplete({score,max:ROUNDS,xp:score*10})}/>;
+  if(game.loadErr)return <GameError name="Word Runner" onRetry={()=>window.location.reload()}/>;
+  if(game.loading&&!game.q)return <GameLoad name="Word Runner" emoji="🏃" tutor={child.tutor}/>;
+  if(game.done)return <GameEnd name="Word Runner" emoji="🏃" score={game.score} max={game.score+3-game.lives} child={child} xp={game.score*12} level={game.lvl} onDone={()=>onComplete({score:game.score,max:game.score+3-game.lives,xp:game.score*12,total:game.qIdx,correct:game.score,levelReached:game.lvl})}/>;
 
-  const q=qs[idx];
   const colors=["#6366F1","#EC4899","#F59E0B","#10B981"];
-
-  return (
-    <GameShell name="Word Runner" emoji="🏃" subject="English" score={score} maxScore={ROUNDS} round={idx+1} total={ROUNDS} streak={0} onQuit={onQuit}>
-      {/* Instruction */}
+  return(
+    <GameShell name="Word Runner" emoji="🏃" subject="English" score={game.score} maxScore={null} round={game.qIdx+1} total={null} streak={game.streak} onQuit={()=>game.setDone(true)} lives={game.lives} level={game.lvl}>
       <div style={{textAlign:"center",marginBottom:8}}>
-        <div style={{background:"linear-gradient(135deg,#4F46E5,#7C3AED)",borderRadius:20,padding:"8px 20px",display:"inline-block"}}>
-          <p style={{fontSize:18,fontWeight:900,color:"#fff"}}>{q?.instruction}</p>
+        <div style={{background:"linear-gradient(135deg,#4F46E5,#7C3AED)",borderRadius:20,padding:"7px 18px",display:"inline-block"}}>
+          <p style={{fontSize:17,fontWeight:900,color:"#fff"}}>{game.q?.instruction}</p>
         </div>
       </div>
-      {/* Game area - falling words */}
-      <div style={{position:"relative",height:230,background:"linear-gradient(180deg,#EEF2FF,#C7D2FE)",borderRadius:20,overflow:"hidden",marginBottom:8}}>
-        {/* Lane markers */}
+      <div style={{position:"relative",height:210,background:"linear-gradient(180deg,#EEF2FF,#C7D2FE)",borderRadius:20,overflow:"hidden",marginBottom:8}}>
         {[25,50,75].map(x=><div key={x} style={{position:"absolute",left:`${x}%`,top:0,bottom:0,width:1,background:"rgba(99,102,241,0.1)"}}/>)}
-        {/* Falling words */}
-        {words.filter(w=>!w.caught).map((w,i)=>(
-          <button key={w.id}
-            onClick={()=>!caught&&catchWord(w)}
-            style={{
-              position:"absolute",left:`${w.x}%`,top:`${w.y}%`,transform:"translateX(-50%)",
-              padding:"8px 14px",borderRadius:12,fontSize:15,fontWeight:900,cursor:"pointer",
-              background:caught?.id===w.id?(w.correct?"#D1FAE5":"#FEE2E2"):(w.correct?"#FEF3C7":"white"),
-              border:`2px solid ${caught?.id===w.id?(w.correct?"#22C55E":"#EF4444"):colors[i%4]}`,
-              color:caught?.id===w.id?(w.correct?C.green:C.red):colors[i%4],
-              boxShadow:`0 3px 10px ${colors[i%4]}44`,fontFamily:F,
-              transition:"background 0.1s",whiteSpace:"nowrap",zIndex:2
-            }}>
+        {!caught&&falling.map((w,i)=>(
+          <button key={w.id} onClick={()=>!caught&&catchWord(w)}
+            style={{position:"absolute",left:`${w.x}%`,top:`${w.y}%`,transform:"translateX(-50%)",padding:"7px 12px",borderRadius:12,fontSize:14,fontWeight:900,cursor:"pointer",background:w.correct?"#FEF3C7":"white",border:`2px solid ${colors[i%4]}`,color:colors[i%4],boxShadow:`0 3px 10px ${colors[i%4]}44`,fontFamily:F,whiteSpace:"nowrap",zIndex:2}}>
             {w.word}
           </button>
         ))}
-        {/* Result flash */}
-        {caught&&(
-          <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(255,255,255,0.7)",zIndex:5}}>
-            <span style={{fontSize:52}}>{caught.missed?"💨":caught.correct?"🎉":"❌"}</span>
-          </div>
-        )}
-        {/* Runner */}
-        <div style={{position:"absolute",bottom:4,left:"50%",transform:"translateX(-50%)",fontSize:28}}>🏃</div>
+        {caught&&<div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(255,255,255,0.7)",zIndex:5,fontSize:52}}>{caught.missed?"💨":caught.correct?"🎉":"❌"}</div>}
+        <div style={{position:"absolute",bottom:5,left:"50%",transform:"translateX(-50%)",fontSize:26}}>🏃</div>
       </div>
-      <p style={{textAlign:"center",fontSize:12,color:C.muted,fontWeight:600}}>Tap the correct falling word!</p>
+      <p style={{textAlign:"center",fontSize:12,color:C.muted,fontWeight:600}}>Tap the correct falling word before it hits the ground!</p>
     </GameShell>
   );
 }
@@ -3466,82 +3382,45 @@ function TreasureMap({child,mode,onComplete,onQuit,level=1}) {
 }
 
 function GrandPrix({child,mode,onComplete,onQuit,level=1}) {
-  const LAPS=8;
-  const [qs,setQs]=useState(null);const [idx,setIdx]=useState(0);const [pos,setPos]=useState(8);
-  const [carX,setCarX]=useState(50);const [boost,setBoost]=useState(false);
+  const game=useLivesGame(
+    useCallback(async(lvl)=>claude(`Generate 10 measurement questions for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options. Return ONLY JSON: {"questions":[{"q":"cm in 1m?","options":["A) 10","B) 100","C) 1000","D) 50"],"correct":"B"}]}`,"Grand prix questions."),[child]),
+    level
+  );
+  const [pos,setPos]=useState(8);
+  const [boost,setBoost]=useState(false);
   const [sel,setSel]=useState(null);const [ans,setAns]=useState(false);
-  const [done,setDone]=useState(false);const [loadErr,setLoadErr]=useState(false);
-  const trackRef=useRef(0); // track scroll offset
-
-  useEffect(()=>{
-    const t=setTimeout(()=>setLoadErr(true),12000);
-    claude(`Generate ${LAPS} measurement questions for age ${child.age}, ${child.country||"UK"} curriculum, Level ${level}.
-Length, mass, capacity, time, money, perimeter, area. Fun racing theme.
-Return ONLY valid JSON: {"questions":[{"q":"How many cm in 1 metre?","options":["A) 10","B) 100","C) 1000","D) 10"],"correct":"B"}]}`,"Grand prix questions.").then(d=>{
-      clearTimeout(t);
-      if(!d?.questions){setLoadErr(true);return;}
-      setQs(d.questions);
-    });
-  },[]);
 
   const answer=(opt)=>{
-    if(ans) return;
-    setSel(opt);setAns(true);
-    const ok=opt.charAt(0)===qs[idx]?.correct;
+    if(ans)return;setSel(opt);setAns(true);
+    const ok=opt.charAt(0)===game.q?.correct;
     if(ok){setPos(p=>Math.max(1,p-1));setBoost(true);setTimeout(()=>setBoost(false),600);}
     else setPos(p=>Math.min(8,p+1));
-    setTimeout(()=>{
-      setSel(null);setAns(false);
-      if(idx+1>=LAPS)setDone(true);
-      else setIdx(i=>i+1);
-    },900);
+    game.answer(ok);
+    setTimeout(()=>{setSel(null);setAns(false);},900);
   };
 
-  if(loadErr)return <GameError name="Grand Prix Racing" onRetry={()=>{setLoadErr(false);setQs(null);}}/>;
-  if(!qs)return <GameLoad name="Grand Prix Racing" emoji="🏎️" tutor={child.tutor}/>;
-  if(done)return <GameEnd name="Grand Prix Racing" emoji="🏎️" score={LAPS-pos+1} max={LAPS} child={child} xp={(LAPS-pos+1)*10} onDone={()=>onComplete({score:LAPS-pos+1,max:LAPS,xp:(LAPS-pos+1)*10})}/>;
+  if(game.loadErr)return <GameError name="Grand Prix Racing" onRetry={()=>window.location.reload()}/>;
+  if(game.loading&&!game.q)return <GameLoad name="Grand Prix Racing" emoji="🏎️" tutor={child.tutor}/>;
+  if(game.done)return <GameEnd name="Grand Prix Racing" emoji="🏎️" score={game.score} max={game.score+3-game.lives} child={child} xp={game.score*12} level={game.lvl} onDone={()=>onComplete({score:game.score,max:game.score+3-game.lives,xp:game.score*12,total:game.qIdx,correct:game.score,levelReached:game.lvl})}/>;
 
-  const q=qs[idx];
-  const cars=["🏎️","🚗","🚕","🚙","🚓","🚑","🚌","🚛"];
-
-  return (
-    <GameShell name="Grand Prix Racing" emoji="🏎️" subject="Maths" score={LAPS-pos+1} maxScore={LAPS} round={idx+1} total={LAPS} streak={0} onQuit={onQuit}>
-      {/* Race track view */}
-      <div style={{background:"linear-gradient(180deg,#1F2937,#111827)",borderRadius:20,padding:"10px 12px",marginBottom:12,position:"relative",overflow:"hidden",height:160}}>
-        {/* Track */}
-        <div style={{position:"absolute",top:0,left:0,right:0,bottom:0,overflow:"hidden"}}>
-          {/* Road */}
-          <div style={{position:"absolute",top:"30%",left:0,right:0,height:"50%",background:"#374151"}}/>
-          {/* Lane lines - animated */}
-          {[...Array(8)].map((_,i)=>(
-            <div key={i} style={{position:"absolute",top:"54%",left:`${(i*14+((idx*20)%14))}%`,width:"8%",height:3,background:"#FCD34D",borderRadius:2,opacity:0.7}}/>
-          ))}
-          {/* Grass */}
-          <div style={{position:"absolute",top:0,left:0,right:0,height:"30%",background:"#14532D"}}/>
-          <div style={{position:"absolute",bottom:0,left:0,right:0,height:"20%",background:"#14532D"}}/>
-        </div>
-        {/* Position board */}
+  return(
+    <GameShell name="Grand Prix Racing" emoji="🏎️" subject="Maths" score={game.score} maxScore={null} round={game.qIdx+1} total={null} streak={game.streak} onQuit={()=>game.setDone(true)} lives={game.lives} level={game.lvl}>
+      <div style={{background:"linear-gradient(180deg,#1F2937,#111827)",borderRadius:20,padding:"10px 12px",marginBottom:12,position:"relative",overflow:"hidden",height:140}}>
+        <div style={{position:"absolute",top:"30%",left:0,right:0,height:"45%",background:"#374151"}}/>
+        {[...Array(8)].map((_,i)=><div key={i} style={{position:"absolute",top:"52%",left:`${(i*14+((game.qIdx*20)%14))}%`,width:"8%",height:3,background:"#FCD34D",borderRadius:2,opacity:0.7}}/>)}
+        <div style={{position:"absolute",top:0,left:0,right:0,height:"30%",background:"#14532D"}}/>
+        <div style={{position:"absolute",bottom:0,left:0,right:0,height:"22%",background:"#14532D"}}/>
         <div style={{position:"absolute",top:8,right:12,background:"rgba(0,0,0,0.7)",borderRadius:8,padding:"4px 10px",zIndex:4}}>
           <p style={{fontSize:10,fontWeight:800,color:"#9CA3AF"}}>POSITION</p>
-          <p style={{fontSize:22,fontWeight:900,color:pos===1?"#FCD34D":"#fff"}}>P{pos}</p>
+          <p style={{fontSize:20,fontWeight:900,color:pos===1?"#FCD34D":"#fff"}}>P{pos}</p>
         </div>
-        {/* AI cars */}
-        {cars.slice(1,5).map((car,i)=>(
-          <div key={i} style={{position:"absolute",left:`${15+i*18}%`,top:`${38+i*2}%`,fontSize:20,zIndex:2,opacity:0.7}}>{car}</div>
-        ))}
-        {/* Player car with boost trail */}
-        <div style={{position:"absolute",left:"50%",top:"42%",transform:"translateX(-50%)",fontSize:28,zIndex:3,transition:"left 0.3s"}}>
-          {boost&&<div style={{position:"absolute",right:"100%",top:"20%",fontSize:14,opacity:0.8}}>💨💨</div>}
+        <div style={{position:"absolute",left:"45%",top:"36%",fontSize:26,zIndex:3}}>
+          {boost&&<div style={{position:"absolute",right:"100%",top:"20%",fontSize:12,opacity:0.8}}>💨💨</div>}
           🏎️
         </div>
-        {/* Lap counter */}
-        <div style={{position:"absolute",top:8,left:12,background:"rgba(0,0,0,0.7)",borderRadius:8,padding:"4px 10px",zIndex:4}}>
-          <p style={{fontSize:10,fontWeight:800,color:"#9CA3AF"}}>LAP</p>
-          <p style={{fontSize:16,fontWeight:900,color:"#fff"}}>{idx+1}/{LAPS}</p>
-        </div>
       </div>
-      <p style={{fontSize:16,fontWeight:800,color:C.text,marginBottom:14}}>{q?.q}</p>
-      <Options options={q?.options} correct={q?.correct} selected={sel} answered={ans} onAnswer={answer}/>
+      <p style={{fontSize:16,fontWeight:800,color:C.text,marginBottom:14}}>{game.q?.q}</p>
+      <Options options={game.q?.options} correct={game.q?.correct} selected={sel} answered={ans} onAnswer={answer}/>
     </GameShell>
   );
 }
@@ -3598,38 +3477,11 @@ function SchoolRun({child,mode,onComplete,onQuit,level=1}) {
 }
 
 function MemoryWords({child,mode,onComplete,onQuit,level=1}) {
-  const PAIRS=6;const [pairs,setPairs]=useState(null);const [flipped,setFlipped]=useState([]);const [matched,setMatched]=useState([]);const [attempts,setAttempts]=useState(0);const [done,setDone]=useState(false);const [loadErr,setLoadErr]=useState(false);const [locked,setLocked]=useState(false);
-  useEffect(()=>{const t=setTimeout(()=>setLoadErr(true),12000);claude(`Generate ${PAIRS} word-meaning pairs for age ${child.age}, ${child.country||"UK"} curriculum, Level ${level}. Each: a word and its short definition. Return ONLY valid JSON: {"pairs":[{"word":"habitat","meaning":"where an animal lives"}]}`,"Memory match word pairs.").then(d=>{clearTimeout(t);if(!d?.pairs)setLoadErr(true);else{const cards=[...d.pairs.map((p,i)=>({id:i,type:"word",text:p.word,pairId:i})),...d.pairs.map((p,i)=>({id:i+PAIRS,type:"meaning",text:p.meaning,pairId:i}))].sort(()=>Math.random()-0.5);setPairs(cards);}});}, []);
-  const flip=(card)=>{
-    if(locked||flipped.some(f=>f.id===card.id)||matched.includes(card.pairId))return;
-    const newFlipped=[...flipped,card];
-    setFlipped(newFlipped);
-    if(newFlipped.length===2){
-      setAttempts(a=>a+1);setLocked(true);
-      if(newFlipped[0].pairId===newFlipped[1].pairId){
-        setMatched(m=>[...m,newFlipped[0].pairId]);
-        setFlipped([]);setLocked(false);
-        if(matched.length+1>=PAIRS)setDone(true);
-      }else setTimeout(()=>{setFlipped([]);setLocked(false);},1000);
-    }
-  };
-  if(loadErr)return <GameError name="Memory Match" onRetry={()=>{setLoadErr(false);setPairs(null);}}/>;
-  if(!pairs)return <GameLoad name="Memory Match" emoji="🧠" tutor={child.tutor}/>;
-  if(done)return <GameEnd name="Memory Match" emoji="🧠" score={PAIRS} max={PAIRS} child={child} xp={Math.max(20,60-attempts*3)} onDone={()=>onComplete({score:PAIRS,max:PAIRS,xp:Math.max(20,60-attempts*3)})}/>;
-  return (<GameShell name="Memory Match" emoji="🧠" subject="English" score={matched.length} maxScore={PAIRS} round={matched.length+1} total={PAIRS} streak={0} onQuit={onQuit}>
-    <p style={{textAlign:"center",fontSize:13,fontWeight:700,color:C.muted,marginBottom:12}}>Match each word to its meaning! Attempts: {attempts}</p>
-    <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8}}>
-      {pairs.map(card=>{
-        const isFlipped=flipped.some(f=>f.id===card.id);const isMatched=matched.includes(card.pairId);
-        return(<button key={card.id} onClick={()=>flip(card)} style={{height:64,borderRadius:12,fontSize:11,fontWeight:800,cursor:"pointer",fontFamily:F,padding:"4px",border:`2px solid ${isMatched?"#22C55E":isFlipped?C.primary:C.border}`,background:isMatched?"#F0FDF4":isFlipped?C.pLight:C.surface,color:isMatched?C.green:isFlipped?C.primary:C.text,transition:"all 0.2s",textAlign:"center",lineHeight:1.3}}>
-          {isFlipped||isMatched?card.text:"?"}
-        </button>);
-      })}
-    </div>
-  </GameShell>);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 vocabulary/reading questions for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options. Return ONLY JSON: {"questions":[{"q":"What does 'habitat' mean?","options":["A) Food","B) Home of animal","C) Weather","D) Plant"],"correct":"B"}]}`,"Memory words questions."),[child]);
+  return <SpaceExplorer child={child} name="Memory Match" emoji="🧠" subject="English" color="#0EA5E9" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
 }
 
-// ── 🦕 DINO DIG ──────────────────────────────────────────────────────────
+
 function DinosaurGame({child,mode,onComplete,onQuit,level=1}) {
   const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 dinosaurs, fossils, evolution, prehistoric life for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Dino Dig questions."),[child]);
   return <CatcherEngine child={child} name="Dino Dig" emoji="🦕" subject="Science" color="#D97706" bg="#FFFBEB" catcherChar="⛏️" sceneBg="linear-gradient(180deg,#FFFBEB,#FEF3C7)" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
@@ -3681,93 +3533,46 @@ function TenableGame({child,mode,onComplete,onQuit,level=1}) {
 }
 
 function FootballHistory({child,mode,onComplete,onQuit,level=1}) {
-  const TOTAL=8;
-  const [qs,setQs]=useState(null);const [idx,setIdx]=useState(0);const [goals,setGoals]=useState(0);
-  const [sel,setSel]=useState(null);const [ans,setAns]=useState(false);
-  const [ballPos,setBallPos]=useState({x:50,y:80});const [shotResult,setShotResult]=useState(null);
-  const [done,setDone]=useState(false);const [loadErr,setLoadErr]=useState(false);
   const country=child.country||"UK";
-
-  useEffect(()=>{
-    const t=setTimeout(()=>setLoadErr(true),12000);
-    claude(`Generate ${TOTAL} ${country==="US"?"American":country==="CA"?"Canadian":"British"} history questions for age ${child.age}, ${country} curriculum, Level ${level}.
-Penalty shootout theme — exciting and engaging!
-Return ONLY valid JSON: {"questions":[{"q":"In what year did WW2 end?","options":["A) 1943","B) 1944","C) 1945","D) 1946"],"correct":"C"}]}`,"Football history questions.").then(d=>{
-      clearTimeout(t);
-      if(!d?.questions){setLoadErr(true);return;}
-      setQs(d.questions);
-    });
-  },[]);
+  const game=useLivesGame(
+    useCallback(async(lvl)=>claude(`Generate 10 ${country==="US"?"American":country==="CA"?"Canadian":"British"} history questions for age ${child.age}, ${country} curriculum, Level ${lvl}. Short options. Return ONLY JSON: {"questions":[{"q":"WW2 ended in?","options":["A) 1943","B) 1944","C) 1945","D) 1946"],"correct":"C"}]}`,"Penalty shootout questions."),[child]),
+    level
+  );
+  const [ballPos,setBallPos]=useState({x:50,y:80});
+  const [shotResult,setShotResult]=useState(null);
+  const [sel,setSel]=useState(null);const [ans,setAns]=useState(false);
 
   const answer=(opt)=>{
-    if(ans) return;
-    setSel(opt);setAns(true);
-    const ok=opt.charAt(0)===qs[idx]?.correct;
-    // Animate ball
-    const corners=[[15,15],[50,12],[85,15],[20,35],[80,35]];
+    if(ans)return;setSel(opt);setAns(true);
+    const ok=opt.charAt(0)===game.q?.correct;
+    const corners=[[15,15],[50,12],[85,15],[20,32],[80,32]];
     const target=ok?corners[Math.floor(Math.random()*corners.length)]:[50,55];
     setBallPos({x:target[0],y:target[1]});
-    setShotResult(ok?"GOAL!":"SAVED!");
-    if(ok)setGoals(g=>g+1);
-    setTimeout(()=>{
-      setBallPos({x:50,y:80});
-      setShotResult(null);
-      setSel(null);setAns(false);
-      if(idx+1>=TOTAL)setDone(true);
-      else setIdx(i=>i+1);
-    },1400);
+    setShotResult(ok?"⚽ GOAL!":"🧤 SAVED!");
+    game.answer(ok);
+    setTimeout(()=>{setBallPos({x:50,y:80});setShotResult(null);setSel(null);setAns(false);},1300);
   };
 
-  if(loadErr)return <GameError name="Penalty Shootout" onRetry={()=>{setLoadErr(false);setQs(null);}}/>;
-  if(!qs)return <GameLoad name="Penalty Shootout" emoji="⚽" tutor={child.tutor}/>;
-  if(done)return <GameEnd name="Penalty Shootout" emoji="⚽" score={goals} max={TOTAL} child={child} xp={goals*10} onDone={()=>onComplete({score:goals,max:TOTAL,xp:goals*10})}/>;
+  if(game.loadErr)return <GameError name="Penalty Shootout" onRetry={()=>window.location.reload()}/>;
+  if(game.loading&&!game.q)return <GameLoad name="Penalty Shootout" emoji="⚽" tutor={child.tutor}/>;
+  if(game.done)return <GameEnd name="Penalty Shootout" emoji="⚽" score={game.score} max={game.score+3-game.lives} child={child} xp={game.score*12} level={game.lvl} onDone={()=>onComplete({score:game.score,max:game.score+3-game.lives,xp:game.score*12,total:game.qIdx,correct:game.score,levelReached:game.lvl})}/>;
 
-  const q=qs[idx];
-
-  return (
-    <GameShell name="Penalty Shootout" emoji="⚽" subject="History" score={goals} maxScore={TOTAL} round={idx+1} total={TOTAL} streak={0} onQuit={onQuit}>
-      {/* Pitch view */}
-      <div style={{background:"#14532D",borderRadius:20,padding:"12px",marginBottom:12,position:"relative",height:160,overflow:"hidden"}}>
-        {/* Grass stripes */}
+  return(
+    <GameShell name="Penalty Shootout" emoji="⚽" subject="History" score={game.score} maxScore={null} round={game.qIdx+1} total={null} streak={game.streak} onQuit={()=>game.setDone(true)} lives={game.lives} level={game.lvl}>
+      <div style={{background:"#14532D",borderRadius:20,padding:"12px",marginBottom:12,position:"relative",height:140,overflow:"hidden"}}>
         {[...Array(6)].map((_,i)=><div key={i} style={{position:"absolute",top:0,bottom:0,left:`${i*17}%`,width:"17%",background:i%2===0?"rgba(255,255,255,0.03)":"transparent"}}/>)}
-        {/* Goal */}
         <svg style={{position:"absolute",top:"5%",left:"15%",width:"70%",height:"45%"}} viewBox="0 0 200 80">
           <rect x="0" y="0" width="200" height="80" fill="rgba(0,0,0,0.4)" stroke="white" strokeWidth="3" rx="2"/>
-          {/* Goal net lines */}
-          {[...Array(8)].map((_,i)=><line key={"v"+i} x1={i*28} y1="0" x2={i*28} y2="80" stroke="rgba(255,255,255,0.2)" strokeWidth="1"/>)}
-          {[...Array(4)].map((_,i)=><line key={"h"+i} x1="0" y1={i*26} x2="200" y2={i*26} stroke="rgba(255,255,255,0.2)" strokeWidth="1"/>)}
+          {[...Array(8)].map((_,i)=><line key={"v"+i} x1={i*28} y1="0" x2={i*28} y2="80" stroke="rgba(255,255,255,0.15)" strokeWidth="1"/>)}
+          {[...Array(4)].map((_,i)=><line key={"h"+i} x1="0" y1={i*26} x2="200" y2={i*26} stroke="rgba(255,255,255,0.15)" strokeWidth="1"/>)}
         </svg>
-        {/* Penalty spot */}
-        <div style={{position:"absolute",bottom:"20%",left:"50%",transform:"translateX(-50%)",width:6,height:6,borderRadius:"50%",background:"white"}}/>
-        {/* Ball */}
-        <div style={{
-          position:"absolute",
-          left:`${ballPos.x}%`,top:`${ballPos.y}%`,
-          transform:"translateX(-50%)",
-          fontSize:22,zIndex:3,
-          transition:"all 0.5s cubic-bezier(0.25,0.46,0.45,0.94)"
-        }}>⚽</div>
-        {/* Goalkeeper */}
-        <div style={{
-          position:"absolute",top:"8%",left:`${50+(shotResult==="SAVED!"?0:30)}%`,
-          transform:"translateX(-50%)",fontSize:24,
-          transition:"left 0.3s",zIndex:2
-        }}>🧤</div>
-        {/* Result */}
-        {shotResult&&(
-          <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,0.5)",borderRadius:20,zIndex:5}}>
-            <div style={{fontSize:28,fontWeight:900,color:shotResult==="GOAL!"?"#FCD34D":"#EF4444",background:"rgba(0,0,0,0.7)",padding:"8px 20px",borderRadius:12}}>{shotResult}</div>
-          </div>
-        )}
-        {/* Score tracker */}
-        <div style={{position:"absolute",bottom:8,left:"50%",transform:"translateX(-50%)",display:"flex",gap:4}}>
-          {Array.from({length:TOTAL}).map((_,i)=>(
-            <div key={i} style={{width:16,height:16,borderRadius:"50%",border:"2px solid white",background:i<goals?"#FCD34D":i<idx&&i>=goals?"#EF4444":"transparent"}}/>
-          ))}
-        </div>
+        <div style={{position:"absolute",bottom:"18%",left:"50%",transform:"translateX(-50%)",width:5,height:5,borderRadius:"50%",background:"white"}}/>
+        <div style={{position:"absolute",left:`${ballPos.x}%`,top:`${ballPos.y}%`,transform:"translateX(-50%)",fontSize:20,zIndex:3,transition:"all 0.5s cubic-bezier(0.25,0.46,0.45,0.94)"}}>⚽</div>
+        <div style={{position:"absolute",top:"8%",left:"50%",transform:"translateX(-50%)",fontSize:22,zIndex:2}}>🧤</div>
+        {shotResult&&<div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,0.5)",borderRadius:20,zIndex:5,fontSize:22,fontWeight:900,color:shotResult.includes("GOAL")?"#FCD34D":"#EF4444"}}>{shotResult}</div>}
       </div>
-      <p style={{fontSize:16,fontWeight:800,color:C.text,marginBottom:14}}>{q?.q}</p>
-      <Options options={q?.options} correct={q?.correct} selected={sel} answered={ans} onAnswer={answer}/>
+      <p style={{fontSize:16,fontWeight:800,color:C.text,marginBottom:14}}>{game.q?.q}</p>
+      <Options options={game.q?.options} correct={game.q?.correct} selected={sel} answered={ans} onAnswer={answer}/>
     </GameShell>
   );
 }
@@ -3854,79 +3659,43 @@ function SoundWaves({child,mode,onComplete,onQuit,level=1}) {
 }
 
 function CircuitBuilder({child,mode,onComplete,onQuit,level=1}) {
-  const TOTAL=8;
-  const [qs,setQs]=useState(null);const [idx,setIdx]=useState(0);const [built,setBuilt]=useState(0);
+  const game=useLivesGame(
+    useCallback(async(lvl)=>claude(`Generate 10 electricity and circuits science questions for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options. Return ONLY JSON: {"questions":[{"q":"Which conducts electricity?","options":["A) Plastic","B) Wood","C) Copper","D) Rubber"],"correct":"C"}]}`,"Circuit builder questions."),[child]),
+    level
+  );
   const [sel,setSel]=useState(null);const [ans,setAns]=useState(false);
   const [lit,setLit]=useState(false);const [sparks,setSparks]=useState([]);
-  const [done,setDone]=useState(false);const [loadErr,setLoadErr]=useState(false);
-
-  useEffect(()=>{
-    const t=setTimeout(()=>setLoadErr(true),12000);
-    claude(`Generate ${TOTAL} electricity and circuits questions for age ${child.age}, ${child.country||"UK"} curriculum, Level ${level}.
-Safety, circuits, components, conductors, insulators, series circuits.
-Return ONLY valid JSON: {"questions":[{"q":"Which material conducts electricity?","options":["A) Plastic","B) Wood","C) Copper","D) Rubber"],"correct":"C"}]}`,"Circuit builder questions.").then(d=>{
-      clearTimeout(t);
-      if(!d?.questions){setLoadErr(true);return;}
-      setQs(d.questions);
-    });
-  },[]);
 
   const answer=(opt)=>{
-    if(ans) return;
-    setSel(opt);setAns(true);
-    const ok=opt.charAt(0)===qs[idx]?.correct;
-    if(ok){
-      setBuilt(b=>b+1);setLit(true);
-      // Spark particles
-      const newSparks=Array.from({length:8},(_,i)=>({id:i,angle:(i/8)*360,dist:0}));
-      setSparks(newSparks);
-      setTimeout(()=>setSparks([]),600);
-      setTimeout(()=>setLit(false),800);
-    }
-    setTimeout(()=>{
-      setSel(null);setAns(false);
-      if(idx+1>=TOTAL)setDone(true);
-      else setIdx(i=>i+1);
-    },1000);
+    if(ans)return;setSel(opt);setAns(true);
+    const ok=opt.charAt(0)===game.q?.correct;
+    if(ok){setLit(true);setSparks(Array.from({length:6},(_,i)=>({id:i,angle:i*60})));setTimeout(()=>{setLit(false);setSparks([]);},800);}
+    game.answer(ok);
+    setTimeout(()=>{setSel(null);setAns(false);},1000);
   };
 
-  if(loadErr)return <GameError name="Circuit Builder" onRetry={()=>{setLoadErr(false);setQs(null);}}/>;
-  if(!qs)return <GameLoad name="Circuit Builder" emoji="⚡" tutor={child.tutor}/>;
-  if(done)return <GameEnd name="Circuit Builder" emoji="⚡" score={built} max={TOTAL} child={child} xp={built*10} onDone={()=>onComplete({score:built,max:TOTAL,xp:built*10})}/>;
+  if(game.loadErr)return <GameError name="Circuit Builder" onRetry={()=>window.location.reload()}/>;
+  if(game.loading&&!game.q)return <GameLoad name="Circuit Builder" emoji="⚡" tutor={child.tutor}/>;
+  if(game.done)return <GameEnd name="Circuit Builder" emoji="⚡" score={game.score} max={game.score+3-game.lives} child={child} xp={game.score*12} level={game.lvl} onDone={()=>onComplete({score:game.score,max:game.score+3-game.lives,xp:game.score*12,total:game.qIdx,correct:game.score,levelReached:game.lvl})}/>;
 
-  const q=qs[idx];
-  const pct=Math.round((built/TOTAL)*100);
-
-  return (
-    <GameShell name="Circuit Builder" emoji="⚡" subject="Science" score={built} maxScore={TOTAL} round={idx+1} total={TOTAL} streak={0} onQuit={onQuit}>
-      {/* Interactive circuit diagram */}
-      <div style={{background:"#111827",borderRadius:20,padding:"16px 12px",marginBottom:12,position:"relative"}}>
+  return(
+    <GameShell name="Circuit Builder" emoji="⚡" subject="Science" score={game.score} maxScore={null} round={game.qIdx+1} total={null} streak={game.streak} onQuit={()=>game.setDone(true)} lives={game.lives} level={game.lvl}>
+      <div style={{background:"#111827",borderRadius:20,padding:"14px 12px",marginBottom:12,position:"relative"}}>
         <svg viewBox="0 0 300 120" style={{width:"100%",height:100}}>
-          {/* Wire paths */}
           <polyline points="40,60 40,20 260,20 260,60" fill="none" stroke={lit?"#FCD34D":"#374151"} strokeWidth="3" strokeLinejoin="round"/>
           <polyline points="40,60 40,100 260,100 260,60" fill="none" stroke={lit?"#FCD34D":"#374151"} strokeWidth="3" strokeLinejoin="round"/>
-          {/* Battery */}
           <rect x="20" y="45" width="40" height="30" rx="6" fill="#1F2937" stroke="#4B5563" strokeWidth="1.5"/>
           <text x="40" y="65" fontSize="14" textAnchor="middle" fill="#FCD34D">🔋</text>
-          {/* Bulb - lights up when correct! */}
           <ellipse cx="150" cy="60" rx="18" ry="18" fill={lit?"#FEF9C3":"#1F2937"} stroke={lit?"#FCD34D":"#4B5563"} strokeWidth="2"/>
-          <text x="150" y="67" fontSize="16" textAnchor="middle">{lit?"💡":"⚫"}</text>
-          {lit&&<ellipse cx="150" cy="60" rx="28" ry="28" fill="rgba(252,211,77,0.2)" stroke="none"/>}
-          {/* Switch */}
+          <text x="150" y="67" fontSize="16" textAnchor="middle">{lit?"💡":"○"}</text>
+          {lit&&<ellipse cx="150" cy="60" rx="28" ry="28" fill="rgba(252,211,77,0.25)" stroke="none"/>}
+          {sparks.map(s=><circle key={s.id} cx={150+Math.cos(s.angle*Math.PI/180)*30} cy={60+Math.sin(s.angle*Math.PI/180)*30} r="3" fill="#FCD34D" opacity="0.9"/>)}
           <rect x="230" y="45" width="50" height="30" rx="6" fill="#1F2937" stroke="#4B5563" strokeWidth="1.5"/>
           <text x="255" y="65" fontSize="12" textAnchor="middle" fill={lit?"#22C55E":"#9CA3AF"}>{lit?"ON":"OFF"}</text>
-          {/* Sparks */}
-          {sparks.map(s=>(
-            <circle key={s.id} cx={150+Math.cos(s.angle*Math.PI/180)*30} cy={60+Math.sin(s.angle*Math.PI/180)*30} r="3" fill="#FCD34D" opacity="0.8"/>
-          ))}
         </svg>
-        <div style={{textAlign:"center",marginTop:4}}>
-          <div style={{display:"flex",gap:4,justifyContent:"center"}}>{Array.from({length:TOTAL}).map((_,i)=><div key={i} style={{width:20,height:6,borderRadius:3,background:i<built?"#FCD34D":"#374151"}}/>)}</div>
-          <p style={{fontSize:10,fontWeight:800,color:"#9CA3AF",marginTop:4}}>CIRCUIT COMPLETION: {pct}%</p>
-        </div>
       </div>
-      <p style={{fontSize:16,fontWeight:800,color:C.text,marginBottom:14}}>{q?.q}</p>
-      <Options options={q?.options} correct={q?.correct} selected={sel} answered={ans} onAnswer={answer}/>
+      <p style={{fontSize:16,fontWeight:800,color:C.text,marginBottom:14}}>{game.q?.q}</p>
+      <Options options={game.q?.options} correct={game.q?.correct} selected={sel} answered={ans} onAnswer={answer}/>
     </GameShell>
   );
 }
