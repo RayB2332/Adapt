@@ -1507,7 +1507,7 @@ function ParentDash({account,children,onProgressChild,onAddChild,onSettings,onSi
 function ChildProgress({child,onBack,onControls,onAccessibility,onResetPassword,onEditProfile,onEmailReport,onSignOut,onAdvanceYear}) {
   const [insight,setInsight]=useState(null);
   const [insightLoading,setInsightLoading]=useState(false);
-  const [expanded,setExpanded]=useState({overview:true,insight:false,gaps:true,curriculum:false,mastery:false,mastery_stats:false,habits:false,subjects:false,patterns:false,velocity:false,sessions:false});
+  const [expanded,setExpanded]=useState({overview:true,insight:false,gaps:true,curriculum:false,mastery:false,mastery_stats:false,habits:false,subjects:false,patterns:false,velocity:false,games_stats:false,sessions:false});
   const toggle=(k)=>setExpanded(e=>({...e,[k]:!e[k]}));
 
   const sessions=child.sessionHistory||[];
@@ -1835,7 +1835,10 @@ Write a personalised paragraph for the parent.`
           {expanded.subjects&&(
             <div style={{animation:"fadeUp 0.2s ease"}}>
               {getSubjects(child.country||"UK").map(subj=>{
-                const lvl=child.level[subj]||1;
+                // Map US/CA subject names to display config
+                const displaySubj=SUB_ALIASES[subj]||subj;
+                const sc=SUB[displaySubj]||SUB[subj]||{color:C.primary,light:C.pLight,emoji:"📚"};
+                const lvl=child.level[subj]||child.level[displaySubj]||1;
                 const topics=(getCurriculum(child.country||"UK")[subj]||CURRICULUM[subj]||[]).filter(t=>t.minAge<=child.age);
                 const startedTopics=topics.filter(t=>((tLevels[subj]?.[t.id])||1)>1).length;
                 return (
@@ -2054,7 +2057,10 @@ Write a personalised paragraph for the parent.`
                 </p>
               </div>
               {getSubjects(child.country||"UK").map(subj=>{
-                const lvl=child.level[subj]||1;
+                // Map US/CA subject names to display config
+                const displaySubj=SUB_ALIASES[subj]||subj;
+                const sc=SUB[displaySubj]||SUB[subj]||{color:C.primary,light:C.pLight,emoji:"📚"};
+                const lvl=child.level[subj]||child.level[displaySubj]||1;
                 const diff=getDifficultyLabel(lvl);
                 const topicsForAge=(CURRICULUM[subj]||[]).filter(t=>t.minAge<=child.age);
                 const masteredInSubj=topicsForAge.filter(t=>((child.topicLevels||{})[subj]?.[t.id]||1)>=4).length;
@@ -2080,6 +2086,31 @@ Write a personalised paragraph for the parent.`
                   </div>
                 );
               })}
+            </div>
+          )}
+        </Card>
+
+        {/* ── SECTION 7e: Games Stats ── */}
+        <Card style={{marginBottom:12}}>
+          <SectionHeader k="games_stats" title="Mini Games" emoji="🎮" badge={`${(child.gamesPlayed||0)} played`}/>
+          {expanded.games_stats&&(
+            <div style={{animation:"fadeUp 0.2s ease"}}>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:12}}>
+                {[
+                  {e:"🎮",v:child.gamesPlayed||0,l:"Games Played",c:C.primary},
+                  {e:"🏆",v:child.gamesBeat||0,l:"Games Won",c:C.green},
+                  {e:"⭐",v:child.gamesPlayed>0?Math.round((child.gamesBeat||0)/(child.gamesPlayed||1)*100)+"%":"—",l:"Win Rate",c:C.amber},
+                ].map(s=>(
+                  <div key={s.l} style={{padding:"10px 8px",borderRadius:12,background:C.bg,textAlign:"center"}}>
+                    <p style={{fontSize:11,marginBottom:2}}>{s.e}</p>
+                    <p style={{fontSize:16,fontWeight:900,color:s.c}}>{s.v}</p>
+                    <p style={{fontSize:9,color:C.muted,fontWeight:700}}>{s.l}</p>
+                  </div>
+                ))}
+              </div>
+              {(!child.gamesPlayed||child.gamesPlayed===0)&&(
+                <p style={{textAlign:"center",fontSize:13,color:C.muted,fontWeight:600}}>{child.name} hasn't played any mini games yet.</p>
+              )}
             </div>
           )}
         </Card>
@@ -2439,24 +2470,482 @@ function getGameLevel(child, game) {
 }
 
 
-function GameShell({name,emoji,subject,score,maxScore,round,total,streak,onQuit,children}) {
-  const sc=SUB[subject];
+
+// ── ENDLESS Q&A ENGINE ───────────────────────────────────────────────────
+// Powers all themed Q&A games with lives, progressive difficulty and level sync
+function useEndlessGame({child, subject, promptFn, initialLevel=1}) {
+  const MAX_LIVES=3;
+  const [questions,setQuestions]=useState([]);
+  const [qIdx,setQIdx]=useState(0);
+  const [lives,setLives]=useState(MAX_LIVES);
+  const [score,setScore]=useState(0);
+  const [streak,setStreak]=useState(0);
+  const [diffLevel,setDiffLevel]=useState(initialLevel);
+  const [loading,setLoading]=useState(true);
+  const [done,setDone]=useState(false);
+  const [loadErr,setLoadErr]=useState(false);
+  const fetchingRef=useRef(false);
+
+  const fetchBatch=useCallback(async(lvl)=>{
+    if(fetchingRef.current) return;
+    fetchingRef.current=true;
+    setLoading(true);
+    const t=setTimeout(()=>{setLoadErr(true);setLoading(false);},12000);
+    try {
+      const batch=await claude(promptFn(child,lvl),"Generate next batch of game questions.");
+      clearTimeout(t);
+      if(batch?.questions?.length){
+        setQuestions(prev=>[...prev,...batch.questions]);
+      } else {
+        setLoadErr(true);
+      }
+    } catch(e){setLoadErr(true);}
+    setLoading(false);
+    fetchingRef.current=false;
+  },[child,promptFn]);
+
+  // Initial load
+  useEffect(()=>{ fetchBatch(diffLevel); },[]);
+
+  // Prefetch when running low
+  useEffect(()=>{
+    if(questions.length>0&&qIdx>=questions.length-3&&!fetchingRef.current&&!done){
+      fetchBatch(diffLevel);
+    }
+  },[qIdx,questions.length,diffLevel,done]);
+
+  const currentQ = questions[qIdx]||null;
+
+  const answer=(opt)=>{
+    if(!currentQ||done) return;
+    const correct=opt.charAt(0)===currentQ.correct;
+    if(correct){
+      setScore(s=>s+1);
+      const newStreak=streak+1;
+      setStreak(newStreak);
+      // Level up every 5 correct in a row
+      if(newStreak>0&&newStreak%5===0){
+        setDiffLevel(l=>l+1);
+      }
+    } else {
+      setStreak(0);
+      const newLives=lives-1;
+      setLives(newLives);
+      if(newLives<=0){
+        setDone(true);
+        return;
+      }
+    }
+    setQIdx(i=>i+1);
+    return correct;
+  };
+
+  const xpEarned=score*10+Math.max(0,diffLevel-initialLevel)*20;
+
+  return {currentQ,lives,score,streak,diffLevel,loading,loadErr,done,answer,xpEarned,total:qIdx+1};
+}
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 2D GAME ENGINES — shared mechanics for all mini games
+// ═══════════════════════════════════════════════════════════════════════════
+
+function useLivesGame(fetchFn, initialLevel=1) {
+  const [qs,setQs]=useState([]);
+  const [qIdx,setQIdx]=useState(0);
+  const [lives,setLives]=useState(3);
+  const [score,setScore]=useState(0);
+  const [streak,setStreak]=useState(0);
+  const [lvl,setLvl]=useState(initialLevel);
+  const [loading,setLoading]=useState(true);
+  const [loadErr,setLoadErr]=useState(false);
+  const [done,setDone]=useState(false);
+  const fetching=useRef(false);
+
+  const fetchBatch=useCallback(async(l)=>{
+    if(fetching.current)return;
+    fetching.current=true;setLoading(true);
+    const t=setTimeout(()=>{setLoadErr(true);setLoading(false);},14000);
+    try{
+      const d=await fetchFn(l);
+      clearTimeout(t);
+      if(d?.questions?.length)setQs(prev=>[...prev,...d.questions]);
+      else setLoadErr(true);
+    }catch(e){setLoadErr(true);}
+    setLoading(false);fetching.current=false;
+  },[fetchFn]);
+
+  useEffect(()=>{fetchBatch(initialLevel);},[]);
+  useEffect(()=>{
+    if(qs.length&&qIdx>=qs.length-3&&!fetching.current&&!done)fetchBatch(lvl);
+  },[qIdx,qs.length,lvl,done]);
+
+  const q=qs[qIdx]||null;
+
+  const answer=(isCorrect)=>{
+    if(done)return false;
+    if(isCorrect){
+      setScore(s=>s+1);
+      const ns=streak+1;setStreak(ns);
+      if(ns>0&&ns%5===0)setLvl(l=>l+1);
+    }else{
+      setStreak(0);
+      const nl=lives-1;setLives(nl);
+      if(nl<=0){setDone(true);return false;}
+    }
+    setQIdx(i=>i+1);
+    return isCorrect;
+  };
+
+  return{q,qs,qIdx,lives,score,streak,lvl,loading,loadErr,done,answer,setDone};
+}
+
+// ── SHOOTER ENGINE ────────────────────────────────────────────────────────
+function ShooterEngine({child,name,emoji,subject,color="#4F46E5",bg="#EEF2FF",fetchFn,initialLevel=1}) {
+  const game=useLivesGame(fetchFn,initialLevel);
+  const [shipX,setShipX]=useState(50);
+  const [targets,setTargets]=useState([]);
+  const [bullets,setBullets]=useState([]);
+  const [exps,setExps]=useState([]);
+  const [flash,setFlash]=useState(null);
+  const sr=useRef({shipX:50,targets:[],bullets:[],exps:[]});
+  const idr=useRef(0);
+
+  useEffect(()=>{
+    if(!game.q||game.done)return;
+    const opts=game.q.options||[];
+    sr.current.targets=opts.map((opt,i)=>({
+      id:++idr.current,opt,correct:opt===game.q.correct||opt.charAt(0)===game.q.correct,
+      x:8+i*(80/Math.max(opts.length-1,1)),y:15+Math.random()*25,
+      vx:(Math.random()-0.5)*0.9,vy:0.12+game.lvl*0.05,alive:true
+    }));
+    setTargets([...sr.current.targets]);
+    setBullets([]);sr.current.bullets=[];
+  },[game.qIdx,game.q]);
+
+  useEffect(()=>{
+    if(game.done||!game.q)return;
+    const loop=setInterval(()=>{
+      const s=sr.current;
+      s.targets=s.targets.map(t=>({...t,y:t.alive?t.y+t.vy:t.y,x:Math.max(3,Math.min(90,t.x+t.vx)),vx:t.x<=3||t.x>=90?-t.vx:t.vx}));
+      s.bullets=s.bullets.map(b=>({...b,y:b.y-5})).filter(b=>b.y>0);
+      s.exps=s.exps.map(e=>({...e,t:e.t+1})).filter(e=>e.t<8);
+      let hit=null;
+      s.bullets=s.bullets.filter(b=>{
+        const t=s.targets.find(t=>t.alive&&Math.abs(t.x-b.x)<10&&Math.abs(t.y-b.y)<12);
+        if(t){hit=t;s.exps=[...s.exps,{id:Date.now(),x:t.x,y:t.y,t:0}];}
+        return!t;
+      });
+      if(hit){
+        s.targets=s.targets.map(t=>t.id===hit.id?{...t,alive:false}:t);
+        const ok=game.answer(hit.correct);
+        setFlash(hit.correct?"✅":"❌");
+        setTimeout(()=>setFlash(null),500);
+      }
+      // Correct target reaches bottom = life lost
+      const missed=s.targets.find(t=>t.alive&&t.correct&&t.y>90);
+      if(missed){s.targets=s.targets.map(t=>t.id===missed.id?{...t,alive:false}:t);game.answer(false);}
+      setTargets([...s.targets]);setBullets([...s.bullets]);setExps([...s.exps]);
+    },50);
+    return()=>clearInterval(loop);
+  },[game.done,game.qIdx,game.q]);
+
+  const moveShip=dir=>{sr.current.shipX=Math.max(5,Math.min(92,sr.current.shipX+dir*10));setShipX(sr.current.shipX);};
+  const fire=()=>{const b={id:++idr.current,x:sr.current.shipX,y:80};sr.current.bullets=[...sr.current.bullets,b];setBullets(p=>[...p,b]);};
+
+  if(game.loadErr)return <GameError name={name} onRetry={()=>window.location.reload()}/>;
+  if(game.loading&&!game.q)return <GameLoad name={name} emoji={emoji} tutor={child.tutor}/>;
+  if(game.done)return <GameEnd name={name} emoji={emoji} score={game.score} max={game.score+3-game.lives} child={child} xp={game.score*12} level={game.lvl} onDone={()=>onComplete({score:game.score,max:game.score+3-game.lives,xp:game.score*12,total:game.qIdx,correct:game.score,levelReached:game.lvl})}/>;
+  return(
+    <GameShell name={name} emoji={emoji} subject={subject} score={game.score} maxScore={null} round={game.qIdx+1} total={null} streak={game.streak} onQuit={()=>game.setDone(true)} lives={game.lives} level={game.lvl}>
+      <div style={{textAlign:"center",marginBottom:6}}><div style={{background:bg,borderRadius:12,padding:"6px 16px",display:"inline-block",border:`2px solid ${color}30`}}><span style={{fontSize:15,fontWeight:900,color}}>{game.q?.q||game.q?.question}</span></div></div>
+      <div style={{position:"relative",height:195,background:"linear-gradient(180deg,#0F0F1A,#1E1B4B,#312E81)",borderRadius:16,overflow:"hidden",marginBottom:8}}>
+        {[...Array(15)].map((_,i)=><div key={i} style={{position:"absolute",width:1.5,height:1.5,background:"#fff",borderRadius:"50%",top:`${(i*17)%95}%`,left:`${(i*13)%100}%`,opacity:0.4}}/>)}
+        {targets.filter(t=>t.alive).map(t=>(
+          <div key={t.id} style={{position:"absolute",left:`${t.x}%`,top:`${t.y}%`,transform:"translateX(-50%)",zIndex:2,textAlign:"center"}}>
+            <div style={{fontSize:18}}>{t.correct?"👾":"💀"}</div>
+            <div style={{background:"rgba(255,255,255,0.93)",borderRadius:6,padding:"1px 6px",fontSize:10,fontWeight:900,color:C.text,marginTop:1,whiteSpace:"nowrap"}}>{t.opt}</div>
+          </div>
+        ))}
+        {bullets.map(b=><div key={b.id} style={{position:"absolute",left:`${b.x}%`,top:`${b.y}%`,width:3,height:10,background:"#FCD34D",borderRadius:2,transform:"translateX(-50%)",zIndex:2}}/>)}
+        {exps.map(e=><div key={e.id} style={{position:"absolute",left:`${e.x}%`,top:`${e.y}%`,transform:"translateX(-50%)",fontSize:16,opacity:1-e.t/8,zIndex:3}}>💥</div>)}
+        {flash&&<div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,0.4)",fontSize:40,zIndex:5}}>{flash}</div>}
+        <div style={{position:"absolute",bottom:"4%",left:`${shipX}%`,transform:"translateX(-50%)",fontSize:24,zIndex:3,transition:"left 0.1s"}}>🚀</div>
+      </div>
+      <div style={{display:"flex",gap:8}}>
+        <button onClick={()=>moveShip(-1)} style={{flex:1,padding:"12px",borderRadius:12,fontSize:20,background:C.surface,border:`1px solid ${C.border}`,cursor:"pointer",fontFamily:F}}>◀</button>
+        <button onClick={fire} style={{flex:2,padding:"12px",borderRadius:12,fontWeight:900,background:`linear-gradient(135deg,${color},${color}bb)`,color:"#fff",border:"none",cursor:"pointer",fontFamily:F,fontSize:14}}>🔫 FIRE!</button>
+        <button onClick={()=>moveShip(1)} style={{flex:1,padding:"12px",borderRadius:12,fontSize:20,background:C.surface,border:`1px solid ${C.border}`,cursor:"pointer",fontFamily:F}}>▶</button>
+      </div>
+    </GameShell>
+  );
+}
+
+// ── CATCHER ENGINE ────────────────────────────────────────────────────────
+function CatcherEngine({child,name,emoji,subject,color="#4F46E5",bg="#EEF2FF",fetchFn,catcherChar="🧺",sceneBg,initialLevel=1}) {
+  const game=useLivesGame(fetchFn,initialLevel);
+  const [basketX,setBasketX]=useState(50);
+  const [items,setItems]=useState([]);
+  const [caught,setCaught]=useState(null);
+  const sr=useRef({basketX:50,items:[]});
+  const idr=useRef(0);
+
+  useEffect(()=>{
+    if(!game.q||game.done)return;
+    const opts=game.q.options||[];
+    const speed=1.2+game.lvl*0.18;
+    sr.current.items=opts.map((opt,i)=>({
+      id:++idr.current,opt,correct:opt===game.q.correct||opt.charAt(0)===game.q.correct,
+      x:10+i*(78/Math.max(opts.length-1,1)),y:-12,
+      speed:speed+Math.random()*0.5,caught:false
+    }));
+    setItems([...sr.current.items]);setCaught(null);
+  },[game.qIdx,game.q]);
+
+  useEffect(()=>{
+    if(game.done||!game.q||caught!==null)return;
+    const loop=setInterval(()=>{
+      sr.current.items=sr.current.items.map(it=>({...it,y:it.y+it.speed}));
+      const bx=sr.current.basketX;
+      const hit=sr.current.items.find(it=>!it.caught&&it.y>74&&it.y<88&&Math.abs(it.x-bx)<13);
+      if(hit){
+        sr.current.items=sr.current.items.map(it=>it.id===hit.id?{...it,caught:true}:it);
+        setCaught(hit);game.answer(hit.correct);
+        setTimeout(()=>setCaught(null),700);
+      }
+      const missed=sr.current.items.filter(it=>!it.caught&&it.y>105);
+      if(missed.some(it=>it.correct)){
+        sr.current.items=sr.current.items.filter(it=>!(it.y>105&&!it.caught));
+        game.answer(false);setTimeout(()=>setCaught(null),600);
+      }
+      setItems([...sr.current.items]);
+    },50);
+    return()=>clearInterval(loop);
+  },[game.done,game.qIdx,game.q,caught]);
+
+  const move=dir=>{sr.current.basketX=Math.max(8,Math.min(90,sr.current.basketX+dir*10));setBasketX(sr.current.basketX);};
+
+  if(game.loadErr)return <GameError name={name} onRetry={()=>window.location.reload()}/>;
+  if(game.loading&&!game.q)return <GameLoad name={name} emoji={emoji} tutor={child.tutor}/>;
+  if(game.done)return <GameEnd name={name} emoji={emoji} score={game.score} max={game.score+3-game.lives} child={child} xp={game.score*12} level={game.lvl} onDone={()=>onComplete({score:game.score,max:game.score+3-game.lives,xp:game.score*12,total:game.qIdx,correct:game.score,levelReached:game.lvl})}/>;
+  return(
+    <GameShell name={name} emoji={emoji} subject={subject} score={game.score} maxScore={null} round={game.qIdx+1} total={null} streak={game.streak} onQuit={()=>game.setDone(true)} lives={game.lives} level={game.lvl}>
+      <div style={{textAlign:"center",marginBottom:6}}><div style={{background:bg,borderRadius:12,padding:"6px 16px",display:"inline-block",border:`2px solid ${color}30`}}><span style={{fontSize:14,fontWeight:900,color}}>{game.q?.q||game.q?.question}</span></div></div>
+      <div style={{position:"relative",height:200,background:sceneBg||bg||"linear-gradient(180deg,#EEF2FF,#C7D2FE)",borderRadius:16,overflow:"hidden",marginBottom:8,border:`2px solid ${color}20`}}>
+        {items.filter(it=>!it.caught).map(it=>(
+          <div key={it.id} style={{position:"absolute",left:`${it.x}%`,top:`${it.y}%`,transform:"translateX(-50%)",zIndex:2,textAlign:"center"}}>
+            <div style={{background:"#fff",borderRadius:10,padding:"4px 10px",fontSize:12,fontWeight:900,color:C.text,boxShadow:`0 2px 8px ${color}40`,border:`2px solid ${color}`,whiteSpace:"nowrap"}}>{it.opt}</div>
+          </div>
+        ))}
+        {caught&&<div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(255,255,255,0.7)",zIndex:5,fontSize:48}}>{caught.correct?"🎉":"❌"}</div>}
+        <div style={{position:"absolute",bottom:"5%",left:`${basketX}%`,transform:"translateX(-50%)",fontSize:28,zIndex:3,transition:"left 0.1s"}}>{catcherChar}</div>
+      </div>
+      <div style={{display:"flex",gap:8}}>
+        <button onClick={()=>move(-1)} style={{flex:1,padding:"14px",borderRadius:12,fontSize:22,background:C.surface,border:`1px solid ${C.border}`,cursor:"pointer",fontFamily:F}}>◀</button>
+        <button onClick={()=>move(1)} style={{flex:1,padding:"14px",borderRadius:12,fontSize:22,background:C.surface,border:`1px solid ${C.border}`,cursor:"pointer",fontFamily:F}}>▶</button>
+      </div>
+    </GameShell>
+  );
+}
+
+// ── RUNNER ENGINE ────────────────────────────────────────────────────────
+function RunnerEngine({child,name,emoji,subject,color="#4F46E5",fetchFn,runnerChar="🏃",sceneBg,initialLevel=1}) {
+  const game=useLivesGame(fetchFn,initialLevel);
+  const [runnerY,setRunnerY]=useState(70);
+  const [jumping,setJumping]=useState(false);
+  const [obs,setObs]=useState([]);
+  const [flash,setFlash]=useState(null);
+  const sr=useRef({runnerY:70,vel:0,jumping:false,obs:[]});
+  const idr=useRef(0);
+  const GROUND=70,JV=-12;
+
+  useEffect(()=>{
+    if(!game.q||game.done)return;
+    const opts=game.q.options||[];
+    sr.current.obs=opts.map((opt,i)=>({
+      id:++idr.current,opt,correct:opt===game.q.correct||opt.charAt(0)===game.q.correct,
+      x:100+i*40,passed:false,hit:false
+    }));
+    setObs([...sr.current.obs]);setFlash(null);
+  },[game.qIdx,game.q]);
+
+  useEffect(()=>{
+    if(game.done||!game.q)return;
+    const loop=setInterval(()=>{
+      const s=sr.current;
+      if(s.jumping||s.runnerY<GROUND){s.vel+=1.3;s.runnerY=Math.min(GROUND,s.runnerY+s.vel);if(s.runnerY>=GROUND){s.runnerY=GROUND;s.jumping=false;s.vel=0;}setRunnerY(s.runnerY);setJumping(s.runnerY<GROUND);}
+      s.obs=s.obs.map(o=>({...o,x:o.x-3.5}));
+      s.obs.forEach(o=>{
+        if(o.passed||o.hit)return;
+        if(o.x<28&&o.x>8&&s.runnerY>=GROUND-8){
+          if(o.correct){o.passed=true;game.answer(true);setFlash("✅");setTimeout(()=>setFlash(null),500);}
+          else{o.hit=true;game.answer(false);setFlash("❌");setTimeout(()=>setFlash(null),500);}
+        }
+        if(o.x<-5)o.passed=true;
+      });
+      setObs([...s.obs]);
+    },40);
+    return()=>clearInterval(loop);
+  },[game.done,game.qIdx,game.q]);
+
+  const jump=()=>{if(sr.current.jumping||sr.current.runnerY<GROUND)return;sr.current.jumping=true;sr.current.vel=JV;setJumping(true);};
+
+  if(game.loadErr)return <GameError name={name} onRetry={()=>window.location.reload()}/>;
+  if(game.loading&&!game.q)return <GameLoad name={name} emoji={emoji} tutor={child.tutor}/>;
+  if(game.done)return <GameEnd name={name} emoji={emoji} score={game.score} max={game.score+3-game.lives} child={child} xp={game.score*12} level={game.lvl} onDone={()=>onComplete({score:game.score,max:game.score+3-game.lives,xp:game.score*12,total:game.qIdx,correct:game.score,levelReached:game.lvl})}/>;
+  return(
+    <GameShell name={name} emoji={emoji} subject={subject} score={game.score} maxScore={null} round={game.qIdx+1} total={null} streak={game.streak} onQuit={()=>game.setDone(true)} lives={game.lives} level={game.lvl}>
+      <div style={{textAlign:"center",marginBottom:6}}><div style={{background:C.pLight,borderRadius:12,padding:"6px 16px",display:"inline-block"}}><span style={{fontSize:14,fontWeight:900,color}}>{game.q?.q||game.q?.question}</span></div></div>
+      <div onClick={jump} style={{position:"relative",height:165,background:sceneBg||"linear-gradient(180deg,#BAE6FD,#7DD3FC 50%,#14532D 50%)",borderRadius:16,overflow:"hidden",marginBottom:8,cursor:"pointer",userSelect:"none"}}>
+        <div style={{position:"absolute",bottom:"26%",left:0,right:0,height:2,background:"rgba(255,255,255,0.3)"}}/>
+        <div style={{position:"absolute",left:"14%",top:`${runnerY-10}%`,fontSize:26,transition:"top 0.02s",zIndex:3}}>{jumping?"🤸":runnerChar}</div>
+        {obs.filter(o=>o.x>-5&&o.x<108).map(o=>(
+          <div key={o.id} style={{position:"absolute",left:`${o.x}%`,bottom:"24%",transform:"translateX(-50%)",zIndex:2,textAlign:"center"}}>
+            <div style={{background:o.correct?"#D1FAE5":"#FEE2E2",borderRadius:8,padding:"3px 8px",fontSize:10,fontWeight:900,color:o.correct?C.green:C.red,border:`2px solid ${o.correct?C.green:C.red}`,marginBottom:2,whiteSpace:"nowrap"}}>{o.opt}</div>
+            <div style={{fontSize:14}}>{o.correct?"⬆️":"🚧"}</div>
+          </div>
+        ))}
+        {flash&&<div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(255,255,255,0.5)",fontSize:42,zIndex:5}}>{flash}</div>}
+        <p style={{position:"absolute",bottom:4,right:8,fontSize:10,fontWeight:700,color:"rgba(255,255,255,0.7)"}}>TAP TO JUMP</p>
+      </div>
+      <button onClick={jump} style={{width:"100%",padding:"13px",borderRadius:14,fontWeight:900,background:`linear-gradient(135deg,${color},${color}bb)`,color:"#fff",border:"none",cursor:"pointer",fontFamily:F,fontSize:14}}>⬆ JUMP over the correct answer!</button>
+    </GameShell>
+  );
+}
+
+// ── SPACE EXPLORER ENGINE ─────────────────────────────────────────────────
+function SpaceExplorer({child,name,emoji,subject,color="#4F46E5",fetchFn,initialLevel=1}) {
+  const game=useLivesGame(fetchFn,initialLevel);
+  const [sx,setSx]=useState(50);
+  const [sy,setSy]=useState(70);
+  const [planets,setPlanets]=useState([]);
+  const [collected,setCollected]=useState(null);
+  const sr=useRef({sx:50,sy:70,planets:[]});
+  const idr=useRef(0);
+  const PE=["🪐","🌍","🌕","⭐","🌙","☀️","💫","🌟"];
+
+  useEffect(()=>{
+    if(!game.q||game.done)return;
+    const opts=game.q.options||[];
+    const spots=[[50,18],[18,42],[78,28],[38,58],[68,52],[50,40]];
+    sr.current.planets=opts.map((opt,i)=>({
+      id:++idr.current,opt,correct:opt===game.q.correct||opt.charAt(0)===game.q.correct,
+      x:spots[i%6][0]+(-12+Math.random()*24),y:spots[i%6][1]+(-6+Math.random()*12),alive:true
+    }));
+    setPlanets([...sr.current.planets]);setCollected(null);
+  },[game.qIdx,game.q]);
+
+  const move=(dx,dy)=>{
+    const s=sr.current;
+    s.sx=Math.max(5,Math.min(90,s.sx+dx*9));
+    s.sy=Math.max(5,Math.min(85,s.sy+dy*9));
+    setSx(s.sx);setSy(s.sy);
+    const hit=s.planets.find(p=>p.alive&&Math.abs(p.x-s.sx)<9&&Math.abs(p.y-s.sy)<9);
+    if(hit){
+      s.planets=s.planets.map(p=>p.id===hit.id?{...p,alive:false}:p);
+      setPlanets([...s.planets]);
+      setCollected(hit);game.answer(hit.correct);
+      setTimeout(()=>setCollected(null),700);
+    }
+  };
+
+  if(game.loadErr)return <GameError name={name} onRetry={()=>window.location.reload()}/>;
+  if(game.loading&&!game.q)return <GameLoad name={name} emoji={emoji} tutor={child.tutor}/>;
+  if(game.done)return <GameEnd name={name} emoji={emoji} score={game.score} max={game.score+3-game.lives} child={child} xp={game.score*12} level={game.lvl} onDone={()=>onComplete({score:game.score,max:game.score+3-game.lives,xp:game.score*12,total:game.qIdx,correct:game.score,levelReached:game.lvl})}/>;
+  return(
+    <GameShell name={name} emoji={emoji} subject={subject} score={game.score} maxScore={null} round={game.qIdx+1} total={null} streak={game.streak} onQuit={()=>game.setDone(true)} lives={game.lives} level={game.lvl}>
+      <div style={{textAlign:"center",marginBottom:6}}><div style={{background:"#1E1B4B",borderRadius:12,padding:"6px 16px",display:"inline-block"}}><span style={{fontSize:14,fontWeight:900,color:"#FCD34D"}}>{game.q?.q||game.q?.question}</span></div></div>
+      <div style={{position:"relative",height:185,background:"linear-gradient(135deg,#0F0F1A,#1E1B4B)",borderRadius:16,overflow:"hidden",marginBottom:8}}>
+        {[...Array(20)].map((_,i)=><div key={i} style={{position:"absolute",width:1.5,height:1.5,background:"#fff",borderRadius:"50%",top:`${(i*17)%95}%`,left:`${(i*13)%100}%`,opacity:0.35}}/>)}
+        {planets.filter(p=>p.alive).map((p,i)=>(
+          <div key={p.id} style={{position:"absolute",left:`${p.x}%`,top:`${p.y}%`,transform:"translateX(-50%)",textAlign:"center",zIndex:2}}>
+            <div style={{fontSize:20}}>{PE[i%8]}</div>
+            <div style={{background:"rgba(255,255,255,0.9)",borderRadius:6,padding:"1px 5px",fontSize:9,fontWeight:900,color:C.text,whiteSpace:"nowrap",marginTop:1}}>{p.opt}</div>
+          </div>
+        ))}
+        <div style={{position:"absolute",left:`${sx}%`,top:`${sy}%`,transform:"translateX(-50%)",fontSize:22,zIndex:3,transition:"all 0.08s"}}>🛸</div>
+        {collected&&<div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,0.5)",zIndex:5,fontSize:40}}>{collected.correct?"✅":"❌"}</div>}
+      </div>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6,maxWidth:200,margin:"0 auto"}}>
+        <div/>
+        <button onClick={()=>move(0,-1)} style={{padding:"10px",borderRadius:10,fontSize:16,background:C.surface,border:`1px solid ${C.border}`,cursor:"pointer",fontFamily:F}}>⬆</button>
+        <div/>
+        <button onClick={()=>move(-1,0)} style={{padding:"10px",borderRadius:10,fontSize:16,background:C.surface,border:`1px solid ${C.border}`,cursor:"pointer",fontFamily:F}}>◀</button>
+        <div/>
+        <button onClick={()=>move(1,0)} style={{padding:"10px",borderRadius:10,fontSize:16,background:C.surface,border:`1px solid ${C.border}`,cursor:"pointer",fontFamily:F}}>▶</button>
+        <div/>
+        <button onClick={()=>move(0,1)} style={{padding:"10px",borderRadius:10,fontSize:16,background:C.surface,border:`1px solid ${C.border}`,cursor:"pointer",fontFamily:F}}>⬇</button>
+        <div/>
+      </div>
+    </GameShell>
+  );
+}
+
+
+function BreakCountdown() {
+  const [secs,setSecs]=useState(300);
+  useEffect(()=>{
+    const t=setInterval(()=>setSecs(s=>s>0?s-1:0),1000);
+    return()=>clearInterval(t);
+  },[]);
+  const m=Math.floor(secs/60),s=secs%60;
+  const pct=((300-secs)/300)*100;
+  return(
+    <div style={{textAlign:"center",padding:"16px",background:C.pLight,borderRadius:16,marginBottom:16}}>
+      <p style={{fontSize:36,marginBottom:4}}>☕</p>
+      <p style={{fontSize:24,fontWeight:900,color:C.primary,marginBottom:4}}>{m}:{s.toString().padStart(2,"0")}</p>
+      <p style={{fontSize:12,color:C.muted,fontWeight:700,marginBottom:8}}>Break time — rest your eyes!</p>
+      <div style={{height:6,borderRadius:3,background:C.border}}><div style={{height:"100%",width:`${pct}%`,background:C.primary,borderRadius:3,transition:"width 1s"}}/></div>
+    </div>
+  );
+}
+
+function GameError({name, onRetry}) {
+  return (
+    <Screen>
+      <div style={{paddingTop:80,textAlign:"center"}}>
+        <div style={{fontSize:56,marginBottom:16}}>😕</div>
+        <h3 style={{fontSize:22,fontWeight:900,color:C.text,marginBottom:8}}>Couldn't load {name||"game"}</h3>
+        <p style={{fontSize:14,color:C.muted,fontWeight:600,marginBottom:28}}>Check your connection and try again.</p>
+        <Btn onClick={onRetry} style={{width:"100%"}}>Try Again ↺</Btn>
+      </div>
+    </Screen>
+  );
+}
+
+function GameShell({name,emoji,subject,score,maxScore,round,total,streak,onQuit,children,lives=null,level=1}) {
+  const sc=SUB[subject]||{color:C.primary,light:C.pLight};
+  const diff=getDifficultyLabel(level);
   return (
     <Screen>
       <div style={{paddingTop:12}}>
-        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14}}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
           <div style={{display:"flex",alignItems:"center",gap:10}}>
             <div style={{width:42,height:42,borderRadius:12,background:sc?.light||C.pLight,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22}}>{emoji}</div>
-            <div><p style={{fontSize:15,fontWeight:900,color:C.text}}>{name}</p><p style={{fontSize:11,fontWeight:700,color:C.muted}}>Q{round}/{total}</p></div>
+            <div>
+              <p style={{fontSize:15,fontWeight:900,color:C.text}}>{name}</p>
+              <div style={{display:"flex",alignItems:"center",gap:6}}>
+                <span style={{fontSize:9,fontWeight:800,color:diff.color,background:diff.color+"20",padding:"1px 5px",borderRadius:4}}>{diff.emoji} {diff.label}</span>
+                <span style={{fontSize:11,fontWeight:700,color:C.muted}}>Q{round}{total?"/"+total:""}</span>
+              </div>
+            </div>
           </div>
-          <div style={{display:"flex",alignItems:"center",gap:12}}>
+          <div style={{display:"flex",alignItems:"center",gap:10}}>
+            {/* Lives */}
+            {lives!==null&&(
+              <div style={{display:"flex",gap:2}}>
+                {[...Array(3)].map((_,i)=><span key={i} style={{fontSize:14,opacity:i<lives?1:0.2}}>❤️</span>)}
+              </div>
+            )}
+            {/* Streak */}
             {streak>=2&&<span style={{fontSize:13,fontWeight:900,color:C.amber}}>🔥{streak}</span>}
-            <span style={{fontSize:15,fontWeight:900,color:sc?.color||C.primary}}>{score}<span style={{fontSize:11,color:C.muted}}>/{maxScore}</span></span>
+            {/* Score */}
+            <span style={{fontSize:15,fontWeight:900,color:sc?.color||C.primary}}>{score}{maxScore?<span style={{fontSize:11,color:C.muted}}>/{maxScore}</span>:""}</span>
             <button onClick={onQuit} style={{background:C.rLight,border:"none",borderRadius:8,padding:"6px 10px",cursor:"pointer",fontSize:12,fontWeight:800,color:C.red,fontFamily:F}}>Quit</button>
           </div>
         </div>
-        <PBar value={round-1} max={total} color={sc?.color||C.primary} h={5}/>
-        <div style={{marginTop:16}}>{children}</div>
+        {total&&<PBar value={round-1} max={total} color={sc?.color||C.primary} h={4}/>}
+        <div style={{marginTop:12}}>{children}</div>
       </div>
     </Screen>
   );
@@ -2478,24 +2967,9 @@ function GameEnd({name,emoji,score,max,child,xp,onDone}) {
 }
 
 function NumberBlaster({child,mode,onComplete,onQuit,level=1}) {
-  const [qs,setQs]=useState(null);const [idx,setIdx]=useState(0);const [score,setScore]=useState(0);const [timeLeft,setTimeLeft]=useState(Math.max(5,12-level));const [answered,setAnswered]=useState(false);const [sel,setSel]=useState(null);const [streak,setStreak]=useState(0);const [done,setDone]=useState(false);const [loadErr,setLoadErr]=useState(false);const timerRef=useRef(null);
-  useEffect(()=>{claude(`Generate 10 ${child.country||"UK"} curriculum maths equations for age ${child.age}, Level ${level} difficulty (${getLevelContext(level)}).\n${child.age<=6?"Single-digit addition and subtraction only.":child.age<=8?"Addition, subtraction, simple multiplication.":"Mixed multiplication, division and operations."}\nReturn ONLY valid JSON: {"q":[{"eq":"3+4","ans":"7","wrong":["5","8","6"]},{"eq":"9-3","ans":"6","wrong":["4","7","5"]},...]}`,`Generate 10 Number Blaster questions.`).then(d=>setQs(d?.q||d?.questions));},[]);
-  useEffect(()=>{
-    if(!qs||answered||done)return;
-    const q=qs[idx];
-    if(mode==="audio"&&q)setTimeout(()=>speak(`${q.eq} equals?`,child.tutor),200);
-    setTimeLeft(child?.accessibility?.testAnxiety||child?.accessibility?.dyspraxia||child?.accessibility?.dyscalculia?30:10);clearInterval(timerRef.current);
-    timerRef.current=setInterval(()=>{setTimeLeft(t=>{if(t<=1){clearInterval(timerRef.current);handleAns(null);return 0;}return t-1;});},1000);
-    return()=>clearInterval(timerRef.current);
-  },[idx,qs]);
-  const handleAns=(opt)=>{clearInterval(timerRef.current);if(answered)return;setAnswered(true);setSel(opt);const q=qs[idx];const ok=opt!==null&&opt===q.ans;if(ok){setScore(s=>s+(timeLeft>6?3:timeLeft>3?2:1));setStreak(s=>s+1);}else setStreak(0);if(mode==="audio")speak(ok?"Correct!":"The answer was "+q.ans,child.tutor);setTimeout(()=>{if(idx+1>=qs.length)setDone(true);else{setIdx(i=>i+1);setAnswered(false);setSel(null);}},750);};
-  if(loadErr)return <GameError name="Number Blaster" emoji="🔢" onRetry={()=>{setLoadErr(false);}}/>;
-  if(!qs)return <GameLoad name="Number Blaster" emoji="🔢" tutor={child.tutor}/>;
-  if(done){const xp=calcXP(score,qs.length*3);return <GameEnd name="Number Blaster" emoji="🔢" score={score} max={qs.length*3} child={child} xp={xp} onDone={()=>onComplete(score,xp)}/>;}
-  const q=qs[idx];
-  const opts=React.useMemo(()=>q?shuffle([q.ans,...q.wrong]):[],[idx,qs]);
-  const timerPct=(timeLeft/10)*100;const timerColor=timeLeft>6?C.green:timeLeft>3?C.amber:C.red;
-  return <GameShell name="Number Blaster" emoji="🔢" subject="Maths" score={score} maxScore={qs.length*3} round={idx+1} total={qs.length} streak={streak} onQuit={onQuit}><div style={{height:8,background:C.border,borderRadius:4,overflow:"hidden",marginBottom:20}}><div style={{height:"100%",width:`${timerPct}%`,background:timerColor,transition:"width 1s linear"}}/></div><Card style={{textAlign:"center",marginBottom:20,padding:"32px 20px"}}><p style={{fontSize:52,fontWeight:900,color:C.text,letterSpacing:-1}}>{q?.eq} = ?</p><p style={{fontSize:13,color:timerColor,fontWeight:800,marginTop:8}}>{timeLeft}s</p></Card><div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>{opts.map(opt=>{const isRight=opt===q?.ans,isSel=opt===sel;const bg=answered&&isRight?C.gLight:answered&&isSel&&!isRight?C.rLight:C.pLight;const bc=answered&&isRight?C.green:answered&&isSel&&!isRight?C.red:C.primary;const tc=answered&&isRight?C.green:answered&&isSel&&!isRight?C.red:C.primary;return <button key={opt} onClick={()=>handleAns(opt)} disabled={answered} style={{padding:"22px 12px",borderRadius:16,border:`2px solid ${bc}`,background:bg,color:tc,fontSize:32,fontWeight:900,cursor:answered?"default":"pointer",transition:"all 0.15s",fontFamily:F}}>{opt}</button>;})}</div></GameShell>;
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 maths equations for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Mix +/-/×/÷. Each has correct answer + 3 wrong. Return ONLY JSON: {"questions":[{"q":"3 + 4 =","options":["7","5","6","8"],"correct":"7"}]}`,"Number blaster questions."),[child]);
+  const props={child,name:"Number Blaster",emoji:"🔢",subject:"Maths",color:"#4F46E5",bg:"#EEF2FF",fetchFn,initialLevel:level};
+  return <ShooterEngine {...props} onComplete={onComplete} onQuit={onQuit}/>;
 }
 
 function TimesTableRace({child,mode,onComplete,onQuit,level=1}) {
@@ -2523,16 +2997,8 @@ function FractionChef({child,mode,onComplete,onQuit,level=1}) {
 }
 
 function WordScramble({child,mode,onComplete,onQuit,level=1}) {
-  const [words,setWords]=useState(null);const [idx,setIdx]=useState(0);const [letters,setLetters]=useState([]);const [selected,setSelected]=useState([]);const [checked,setChecked]=useState(false);const [correct,setCorrect]=useState(false);const [score,setScore]=useState(0);const [done,setDone]=useState(false);
-  useEffect(()=>{claude(`Generate 6 words for word scramble for age ${child.age}, level ${child.level.English}/5.\n${child.age<=6?"3-4 letter simple words.":child.age<=8?"4-6 letter common words.":"5-8 letter vocabulary words."}\nReturn ONLY valid JSON: {"words":[{"word":"APPLE","clue":"A crunchy red or green fruit"},{"word":"HAPPY","clue":"How you feel when something good happens"},...]}`,`Generate Word Scramble words.`).then(d=>setWords(d?.words));},[]);
-  useEffect(()=>{if(!words)return;const ls=shuffle(words[idx].word.split("").map((l,i)=>({l,i,id:i+"-"+Math.random()})));setLetters(ls);setSelected([]);setChecked(false);if(mode==="audio")setTimeout(()=>speak("Unscramble: "+words[idx].clue,child.tutor),200);},[idx,words]);
-  const tapLetter=(lt,pos)=>{if(checked)return;setLetters(prev=>prev.map((x,i)=>i===pos?{...x,used:true}:x));setSelected(prev=>[...prev,lt]);};
-  const removeLast=()=>{if(!selected.length||checked)return;const last=selected[selected.length-1];setLetters(prev=>prev.map(x=>x.id===last.id?{...x,used:false}:x));setSelected(prev=>prev.slice(0,-1));};
-  const checkWord=()=>{const guess=selected.map(s=>s.l).join("");const ok=guess===words[idx].word;setChecked(true);setCorrect(ok);if(ok)setScore(s=>s+1);if(mode==="audio")speak(ok?"Correct! The word is "+words[idx].word:"Not quite. The word was "+words[idx].word,child.tutor);setTimeout(()=>{if(idx+1>=words.length)setDone(true);else setIdx(i=>i+1);},750);};
-  if(!words)return <GameLoad name="Word Scramble" emoji="🔤" tutor={child.tutor}/>;
-  if(done){const xp=calcXP(score,words.length);return <GameEnd name="Word Scramble" emoji="🔤" score={score} max={words.length} child={child} xp={xp} onDone={()=>onComplete(score,xp)}/>;}
-  const w=words[idx];const guess=selected.map(s=>s.l).join("");
-  return <GameShell name="Word Scramble" emoji="🔤" subject="English" score={score} maxScore={words.length} round={idx+1} total={words.length} streak={0} onQuit={onQuit}><Card style={{textAlign:"center",marginBottom:16}}><p style={{fontSize:13,fontWeight:700,color:C.muted,marginBottom:4}}>Clue</p><p style={{fontSize:18,fontWeight:700,color:C.text,lineHeight:1.5}}>{w?.clue}</p></Card><div style={{display:"flex",justifyContent:"center",gap:8,marginBottom:20,flexWrap:"wrap"}}>{Array.from({length:w?.word.length||0}).map((_,i)=><div key={i} style={{width:44,height:52,borderRadius:10,border:`2px solid ${checked?(correct?C.green:C.red):selected[i]?C.primary:C.border}`,background:checked?(correct?C.gLight:C.rLight):selected[i]?C.pLight:C.bg,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,fontWeight:900,color:checked?(correct?C.green:C.red):C.primary}}>{selected[i]?.l||""}</div>)}</div><div style={{display:"flex",justifyContent:"center",gap:8,flexWrap:"wrap",marginBottom:16}}>{letters.map((lt,i)=><button key={lt.id} onClick={()=>!lt.used&&!checked&&tapLetter(lt,i)} style={{width:44,height:52,borderRadius:10,fontSize:20,fontWeight:900,background:lt.used?C.border:C.surface,color:lt.used?C.border:C.text,border:`2px solid ${lt.used?C.border:C.primary}`,cursor:lt.used||checked?"default":"pointer",transition:"all 0.15s",fontFamily:F}}>{lt.used?"":lt.l}</button>)}</div>{!checked&&<div style={{display:"flex",gap:10}}><Btn onClick={removeLast} v="ghost" style={{flex:1}} disabled={!selected.length}>⌫ Remove</Btn><Btn onClick={checkWord} style={{flex:2}} disabled={guess.length!==w?.word.length}>Check ✓</Btn></div>}{checked&&<div style={{padding:"12px",borderRadius:12,background:correct?C.gLight:C.rLight,textAlign:"center"}}><p style={{fontSize:16,fontWeight:800,color:correct?C.green:C.red}}>{correct?"✓ Correct!":"✗ The word was "+w?.word}</p></div>}</GameShell>;
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 spelling, unscrambling words at curriculum Level for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Word Scramble questions."),[child]);
+  return <CatcherEngine child={child} name="Word Scramble" emoji="🔤" subject="English" color="#0EA5E9" bg="#F0F9FF" catcherChar="🧺" sceneBg="linear-gradient(180deg,#EEF2FF,#BFDBFE)" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
 }
 
 function SpellingBee({child,mode,onComplete,onQuit,level=1}) {
@@ -2549,836 +3015,588 @@ function SpellingBee({child,mode,onComplete,onQuit,level=1}) {
 }
 
 function SentenceBuilder({child,mode,onComplete,onQuit,level=1}) {
-  const [sentences,setSentences]=useState(null);const [idx,setIdx]=useState(0);const [pool,setPool]=useState([]);const [placed,setPlaced]=useState([]);const [checked,setChecked]=useState(false);const [correct,setCorrect]=useState(false);const [score,setScore]=useState(0);const [done,setDone]=useState(false);
-  useEffect(()=>{claude(`Generate 4 sentences for sentence builder for age ${child.age}, level ${child.level.English}/5.\n${child.age<=6?"3-4 word simple sentences.":child.age<=8?"4-6 word sentences.":"5-8 word sentences."}\nReturn ONLY valid JSON: {"sentences":[{"words":["The","dog","ran","fast"],"meaning":"An animal moving quickly"},{"words":["She","likes","to","read","books"],"meaning":"Someone enjoying reading"},...]}`,`Generate Sentence Builder sentences.`).then(d=>setSentences(d?.sentences));},[]);
-  useEffect(()=>{if(!sentences)return;const s=sentences[idx];const shuffled=shuffle(s.words.map((w,i)=>({w,i,id:i+"-"+Math.random()})));setPool(shuffled);setPlaced(Array(s.words.length).fill(null));setChecked(false);if(mode==="audio")setTimeout(()=>speak("Build this sentence: "+s.meaning,child.tutor),200);},[idx,sentences]);
-  const placeWord=(wordObj)=>{if(checked)return;const fi=placed.findIndex(p=>p===null);if(fi===-1)return;setPool(prev=>prev.filter(w=>w.id!==wordObj.id));setPlaced(prev=>{const n=[...prev];n[fi]=wordObj;return n;});};
-  const removeWord=(si)=>{if(checked)return;const w=placed[si];if(!w)return;setPlaced(prev=>{const n=[...prev];n[si]=null;return n;});setPool(prev=>[...prev,w]);};
-  const check=()=>{const s=sentences[idx];const ok=placed.every((p,i)=>p?.w===s.words[i]);setChecked(true);setCorrect(ok);if(ok)setScore(sc=>sc+1);if(mode==="audio")speak(ok?"Perfect sentence!":"Sentence was: "+s.words.join(" "),child.tutor);setTimeout(()=>{if(idx+1>=sentences.length)setDone(true);else setIdx(i=>i+1);},800);};
-  if(!sentences)return <GameLoad name="Sentence Builder" emoji="✏️" tutor={child.tutor}/>;
-  if(done){const xp=calcXP(score,sentences.length);return <GameEnd name="Sentence Builder" emoji="✏️" score={score} max={sentences.length} child={child} xp={xp} onDone={()=>onComplete(score,xp)}/>;}
-  const s=sentences[idx];const allPlaced=placed.every(p=>p!==null);
-  return <GameShell name="Sentence Builder" emoji="✏️" subject="English" score={score} maxScore={sentences.length} round={idx+1} total={sentences.length} streak={0} onQuit={onQuit}><Card style={{marginBottom:16}}><p style={{fontSize:13,fontWeight:700,color:C.muted,marginBottom:4}}>Build this sentence</p><p style={{fontSize:17,fontWeight:700,color:C.text,lineHeight:1.5}}>{s?.meaning}</p></Card><div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:16,minHeight:52,padding:"12px",background:C.bg,borderRadius:12,border:`2px dashed ${checked?(correct?C.green:C.red):C.border}`}}>{placed.map((p,i)=><button key={i} onClick={()=>removeWord(i)} style={{padding:"10px 14px",borderRadius:10,fontSize:15,fontWeight:800,cursor:p&&!checked?"pointer":"default",background:p?(checked?(correct?C.gLight:C.rLight):C.pLight):"transparent",border:`2px solid ${p?(checked?(correct?C.green:C.red):C.primary):C.border}`,color:p?(checked?(correct?C.green:C.red):C.primary):C.muted,minWidth:44,minHeight:44,fontFamily:F}}>{p?.w||""}</button>)}</div><div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:16}}>{pool.map(w=><button key={w.id} onClick={()=>placeWord(w)} style={{padding:"10px 14px",borderRadius:10,fontSize:15,fontWeight:800,cursor:"pointer",background:C.surface,border:`2px solid ${C.border}`,color:C.text,fontFamily:F,transition:"all 0.1s"}}>{w.w}</button>)}</div>{!checked&&<Btn onClick={check} disabled={!allPlaced} style={{width:"100%"}}>Check sentence ✓</Btn>}{checked&&<div style={{padding:"12px",borderRadius:12,background:correct?C.gLight:C.rLight,textAlign:"center"}}><p style={{fontSize:15,fontWeight:800,color:correct?C.green:C.red}}>{correct?"✓ Perfect!":"✗ Correct: "+s?.words.join(" ")}</p></div>}</GameShell>;
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 grammar, sentence structure, correct word order for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Sentence Builder questions."),[child]);
+  return <ShooterEngine child={child} name="Sentence Builder" emoji="✏️" subject="English" color="#16A34A" bg="#F0FDF4" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
 }
 
 function ScienceSort({child,mode,onComplete,onQuit,level=1}) {
-  const [gameData,setGameData]=useState(null);const [idx,setIdx]=useState(0);const [score,setScore]=useState(0);const [flash,setFlash]=useState(null);const [done,setDone]=useState(false);
-  useEffect(()=>{claude(`Generate a science sorting game for age ${child.age}.\nTopic: ${child.age<=6?"living vs non-living things":child.age<=8?"animals by type (mammals, birds, fish, insects)":"vertebrates vs invertebrates"}.\nGenerate 12 items.\nReturn ONLY valid JSON: {"title":"Living vs Non-Living","categories":["Living","Non-Living"],"items":[{"name":"Dog","emoji":"🐕","cat":"Living"},{"name":"Rock","emoji":"🪨","cat":"Non-Living"},...]}`,`Generate Science Sort game.`).then(d=>setGameData(d));},[]);
-  useEffect(()=>{if(!gameData||idx>=gameData.items.length)return;if(mode==="audio")setTimeout(()=>speak("Where does "+gameData.items[idx].name+" go?",child.tutor),200);},[idx,gameData]);
-  const sortItem=(cat)=>{if(flash)return;const item=gameData.items[idx];const ok=cat===item.cat;setFlash(ok?"correct":"wrong");if(ok)setScore(s=>s+1);if(mode==="audio")speak(ok?"Correct!":item.name+" is "+item.cat,child.tutor);setTimeout(()=>{setFlash(null);if(idx+1>=gameData.items.length)setDone(true);else setIdx(i=>i+1);},900);};
-  if(!gameData)return <GameLoad name="Science Sort" emoji="🔬" tutor={child.tutor}/>;
-  if(done){const xp=calcXP(score,gameData.items.length);return <GameEnd name="Science Sort" emoji="🔬" score={score} max={gameData.items.length} child={child} xp={xp} onDone={()=>onComplete(score,xp)}/>;}
-  const item=gameData.items[idx];const catColors=[C.primary,C.green,C.amber];
-  return <GameShell name="Science Sort" emoji="🔬" subject="Science" score={score} maxScore={gameData.items.length} round={idx+1} total={gameData.items.length} streak={0} onQuit={onQuit}><p style={{textAlign:"center",fontSize:14,fontWeight:800,color:C.muted,marginBottom:16}}>{gameData.title}</p><Card style={{textAlign:"center",padding:"36px 20px",marginBottom:24,background:flash==="correct"?C.gLight:flash==="wrong"?C.rLight:C.surface,border:`2px solid ${flash==="correct"?C.green:flash==="wrong"?C.red:C.border}`,transition:"all 0.2s"}}><div style={{fontSize:72,marginBottom:12}}>{item?.emoji}</div><p style={{fontSize:28,fontWeight:900,color:C.text}}>{item?.name}</p></Card><p style={{textAlign:"center",fontSize:14,fontWeight:700,color:C.muted,marginBottom:12}}>Where does it belong?</p><div style={{display:"flex",gap:10}}>{gameData.categories.map((cat,i)=><button key={cat} onClick={()=>sortItem(cat)} disabled={!!flash} style={{flex:1,padding:"20px 12px",borderRadius:14,fontSize:16,fontWeight:900,cursor:flash?"default":"pointer",fontFamily:F,transition:"all 0.15s",background:`${catColors[i]||C.primary}15`,border:`2px solid ${catColors[i]||C.primary}`,color:catColors[i]||C.primary}}>{cat}</button>)}</div></GameShell>;
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 classifying living things, sorting scientific categories for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Science Sort questions."),[child]);
+  return <ShooterEngine child={child} name="Science Sort" emoji="🔬" subject="Science" color="#16A34A" bg="#F0FDF4" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
 }
 
 function StatesOfMatter({child,mode,onComplete,onQuit,level=1}) {
-  const [items,setItems]=useState(null);const [idx,setIdx]=useState(0);const [score,setScore]=useState(0);const [flash,setFlash]=useState(null);const [done,setDone]=useState(false);
-  useEffect(()=>{claude(`Generate 12 items for states of matter sorting for age ${child.age}. Include solids, liquids and gases children know.\nReturn ONLY valid JSON: {"items":[{"name":"Ice","emoji":"🧊","state":"solid"},{"name":"Water","emoji":"💧","state":"liquid"},{"name":"Steam","emoji":"♨️","state":"gas"},{"name":"Rock","emoji":"🪨","state":"solid"},...]}`,`Generate States of Matter items.`).then(d=>setItems(d?.items));},[]);
-  useEffect(()=>{if(!items||idx>=items.length)return;if(mode==="audio")setTimeout(()=>speak("Is "+items[idx].name+" a solid, liquid or gas?",child.tutor),200);},[idx,items]);
-  const sort=(state)=>{if(flash)return;const item=items[idx];const ok=state===item.state;setFlash(ok?"correct":"wrong");if(ok)setScore(s=>s+1);if(mode==="audio")speak(ok?"Correct!":item.name+" is a "+item.state,child.tutor);setTimeout(()=>{setFlash(null);if(idx+1>=items.length)setDone(true);else setIdx(i=>i+1);},900);};
-  if(!items)return <GameLoad name="States of Matter" emoji="💧" tutor={child.tutor}/>;
-  if(done){const xp=calcXP(score,items.length);return <GameEnd name="States of Matter" emoji="💧" score={score} max={items.length} child={child} xp={xp} onDone={()=>onComplete(score,xp)}/>;}
-  const item=items[idx];const states=[{s:"solid",emoji:"🧱",color:C.amber},{s:"liquid",emoji:"💧",color:C.sky},{s:"gas",emoji:"💨",color:C.violet}];
-  return <GameShell name="States of Matter" emoji="💧" subject="Science" score={score} maxScore={items.length} round={idx+1} total={items.length} streak={0} onQuit={onQuit}><Card style={{textAlign:"center",padding:"36px 20px",marginBottom:20,background:flash==="correct"?C.gLight:flash==="wrong"?C.rLight:C.surface,border:`2px solid ${flash==="correct"?C.green:flash==="wrong"?C.red:C.border}`,transition:"all 0.2s"}}><div style={{fontSize:64,marginBottom:10}}>{item?.emoji}</div><p style={{fontSize:26,fontWeight:900,color:C.text}}>{item?.name}</p><p style={{fontSize:13,fontWeight:700,color:C.muted,marginTop:4}}>Solid, liquid or gas?</p></Card><div style={{display:"flex",gap:10}}>{states.map(({s,emoji,color})=><button key={s} onClick={()=>sort(s)} disabled={!!flash} style={{flex:1,padding:"18px 8px",borderRadius:14,cursor:flash?"default":"pointer",fontFamily:F,transition:"all 0.15s",background:`${color}15`,border:`2px solid ${color}`,textAlign:"center"}}><div style={{fontSize:24,marginBottom:4}}>{emoji}</div><p style={{fontSize:13,fontWeight:900,color,textTransform:"capitalize"}}>{s}</p></button>)}</div></GameShell>;
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 solid liquid gas properties, states of matter changes for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"States of Matter questions."),[child]);
+  return <ShooterEngine child={child} name="States of Matter" emoji="💧" subject="Science" color="#0EA5E9" bg="#F0F9FF" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
 }
 
 function PlanetPatrol({child,mode,onComplete,onQuit,level=1}) {
-  const [qs,setQs]=useState(null);const [idx,setIdx]=useState(0);const [sel,setSel]=useState(null);const [answered,setAnswered]=useState(false);const [score,setScore]=useState(0);const [streak,setStreak]=useState(0);const [done,setDone]=useState(false);
-  useEffect(()=>{claude(`Generate 8 planet quiz questions for age ${child.age}.\n${child.age<=7?"Focus on basic facts: largest, smallest, red planet, rings.":"Include moons, distance, atmosphere and features."}\nReturn ONLY valid JSON: {"q":[{"clue":"The largest planet in our solar system","answer":"Jupiter","emoji":"🪐","options":["Saturn","Jupiter","Neptune","Uranus"]},{"clue":"The red planet","answer":"Mars","emoji":"🔴","options":["Mars","Venus","Mercury","Earth"]},...]}`,`Generate Planet Patrol questions.`).then(d=>setQs(d?.q||d?.questions));},[]);
-  useEffect(()=>{if(!qs)return;setSel(null);setAnswered(false);if(mode==="audio")setTimeout(()=>speak(qs[idx]?.clue,child.tutor),200);},[idx,qs]);
-  const answer=(opt)=>{if(answered)return;setSel(opt);setAnswered(true);const q=qs[idx];const ok=opt===q.answer;if(ok){setScore(s=>s+1);setStreak(s=>s+1);}else setStreak(0);if(mode==="audio")speak(ok?"Correct! "+q.answer:"Not quite. The answer is "+q.answer,child.tutor);setTimeout(()=>{if(idx+1>=qs.length)setDone(true);else setIdx(i=>i+1);},750);};
-  if(!qs)return <GameLoad name="Planet Patrol" emoji="🪐" tutor={child.tutor}/>;
-  if(done){const xp=calcXP(score,qs.length);return <GameEnd name="Planet Patrol" emoji="🪐" score={score} max={qs.length} child={child} xp={xp} onDone={()=>onComplete(score,xp)}/>;}
-  const q=qs[idx];const opts=q?shuffle(q.options):[];
-  return <GameShell name="Planet Patrol" emoji="🪐" subject="Science" score={score} maxScore={qs.length} round={idx+1} total={qs.length} streak={streak} onQuit={onQuit}><Card style={{textAlign:"center",padding:"28px 20px",marginBottom:20}}><div style={{fontSize:56,marginBottom:12}}>{q?.emoji}</div><p style={{fontSize:19,fontWeight:700,color:C.text,lineHeight:1.6}}>{q?.clue}</p></Card><div style={{display:"flex",flexDirection:"column",gap:10}}>{opts.map(opt=>{const isRight=opt===q?.answer,isSel=opt===sel;const bg=answered&&isRight?C.gLight:answered&&isSel&&!isRight?C.rLight:C.surface;const bc=answered&&isRight?C.green:answered&&isSel&&!isRight?C.red:C.border;const tc=answered&&isRight?C.green:answered&&isSel&&!isRight?C.red:C.text;return <button key={opt} onClick={()=>answer(opt)} disabled={answered} style={{padding:"16px 20px",borderRadius:12,border:`2px solid ${bc}`,background:bg,color:tc,fontSize:16,fontWeight:800,textAlign:"left",cursor:answered?"default":"pointer",fontFamily:F,transition:"all 0.15s"}}>🪐 {opt}</button>;})}</div></GameShell>;
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 Earth and space science questions for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options. Return ONLY JSON: {"questions":[{"q":"Largest planet?","options":["Saturn","Jupiter","Mars","Earth"],"correct":"Jupiter"}]}`,"Planet patrol questions."),[child]);
+  return <SpaceExplorer child={child} name="Planet Patrol" emoji="🪐" subject="Science" color="#7C3AED" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
 }
 
-
-// ── Algorithm Sort (Computing drag-drop) ─────────────────────────────────
 function AlgorithmSort({child,mode,onComplete,onQuit,level=1}) {
-  const [tasks,setTasks]=useState(null);
-  const [idx,setIdx]=useState(0);
-  const [pool,setPool]=useState([]);
-  const [placed,setPlaced]=useState([]);
-  const [checked,setChecked]=useState(false);
-  const [correct,setCorrect]=useState(false);
-  const [score,setScore]=useState(0);
-  const [done,setDone]=useState(false);
-
-  useEffect(()=>{
-    claude(
-      `Generate 5 algorithm sequencing tasks for age ${child.age}.
-Each task is a real-life or computing process broken into 4-6 steps that need ordering.
-Suitable tasks: making toast, logging into a computer, sending an email, brushing teeth, watering a plant.
-Return ONLY valid JSON: {"tasks":[{"title":"Making toast","steps":["Put bread in toaster","Press down the lever","Wait for the toast to pop up","Spread butter on the toast"],"intro":"Put these steps in the right order"},{"title":"Logging into a computer","steps":["Turn on the computer","Wait for it to load","Type your username","Type your password","Press Enter"],"intro":"What order do you log in?"},...]}`,
-      "Generate Algorithm Sort tasks."
-    ).then(d=>setTasks(d?.tasks));
-  },[]);
-
-  useEffect(()=>{
-    if(!tasks)return;
-    const t=tasks[idx];
-    const shuffled=shuffle(t.steps.map((s,i)=>({s,i,id:i+"-"+Math.random()})));
-    setPool(shuffled);setPlaced([]);setChecked(false);
-    if(mode==="audio") setTimeout(()=>speak(t.intro+": "+t.title,child.tutor),200);
-  },[idx,tasks]);
-
-  const placeStep=(stepObj)=>{
-    if(checked)return;
-    setPool(prev=>prev.filter(s=>s.id!==stepObj.id));
-    setPlaced(prev=>[...prev,stepObj]);
-  };
-  const removeStep=(i)=>{
-    if(checked)return;
-    const s=placed[i];
-    setPlaced(prev=>prev.filter((_,j)=>j!==i));
-    setPool(prev=>[...prev,s]);
-  };
-  const check=()=>{
-    const t=tasks[idx];
-    const ok=placed.every((p,i)=>p.i===i);
-    setChecked(true);setCorrect(ok);
-    if(ok)setScore(s=>s+1);
-    if(mode==="audio") speak(ok?"Perfect order!":"Not quite. The correct order was: "+t.steps.join(", then "),child.tutor);
-    setTimeout(()=>{if(idx+1>=tasks.length)setDone(true);else setIdx(i=>i+1);},900);
-  };
-
-  if(!tasks)return <GameLoad name="Algorithm Sort" emoji="🔢" tutor={child.tutor}/>;
-  if(done){const xp=calcXP(score,tasks.length);return <GameEnd name="Algorithm Sort" emoji="🔢" score={score} max={tasks.length} child={child} xp={xp} onDone={()=>onComplete(score,xp)}/>;}
-
-  const t=tasks[idx];
-  return (
-    <GameShell name="Algorithm Sort" emoji="🔢" subject="Computing" score={score} maxScore={tasks.length} round={idx+1} total={tasks.length} streak={0} onQuit={onQuit}>
-      <Card style={{marginBottom:14}}>
-        <p style={{fontSize:13,fontWeight:700,color:C.muted,marginBottom:3}}>{t?.intro}</p>
-        <p style={{fontSize:18,fontWeight:800,color:C.text}}>{t?.title}</p>
-      </Card>
-      <p style={{fontSize:12,fontWeight:800,color:C.muted,marginBottom:8}}>YOUR ORDER — tap to remove:</p>
-      <div style={{minHeight:52,marginBottom:14,display:"flex",flexDirection:"column",gap:6,padding:"10px",background:C.bg,borderRadius:12,border:`2px dashed ${checked?(correct?C.green:C.red):C.border}`}}>
-        {placed.map((p,i)=>(
-          <button key={p.id} onClick={()=>removeStep(i)} style={{padding:"10px 14px",borderRadius:10,fontSize:14,fontWeight:700,textAlign:"left",cursor:checked?"default":"pointer",background:checked?(correct?C.gLight:C.rLight):C.pLight,border:`1.5px solid ${checked?(correct?C.green:C.red):C.primary}`,color:checked?(correct?C.green:C.red):C.primary,fontFamily:F}}>
-            <span style={{fontWeight:900,marginRight:8}}>{i+1}.</span>{p.s}
-          </button>
-        ))}
-        {placed.length===0&&<p style={{textAlign:"center",color:C.muted,fontSize:13,fontWeight:600,padding:"8px"}}>Tap steps below to add them</p>}
-      </div>
-      <p style={{fontSize:12,fontWeight:800,color:C.muted,marginBottom:8}}>STEPS — tap to place:</p>
-      <div style={{display:"flex",flexDirection:"column",gap:6,marginBottom:14}}>
-        {pool.map(p=>(
-          <button key={p.id} onClick={()=>placeStep(p)} style={{padding:"10px 14px",borderRadius:10,fontSize:14,fontWeight:700,textAlign:"left",cursor:"pointer",background:C.surface,border:`1.5px solid ${C.border}`,color:C.text,fontFamily:F,transition:"all 0.1s"}}>{p.s}</button>
-        ))}
-      </div>
-      {!checked&&<Btn onClick={check} disabled={placed.length!==t?.steps.length} style={{width:"100%"}}>Check order ✓</Btn>}
-      {checked&&<div style={{padding:"12px",borderRadius:12,background:correct?C.gLight:C.rLight,textAlign:"center"}}><p style={{fontSize:15,fontWeight:800,color:correct?C.green:C.red}}>{correct?"✓ Perfect algorithm!":"✗ Correct order: "+t?.steps.join(" → ")}</p></div>}
-    </GameShell>
-  );
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 computational thinking, algorithm sequencing, order of steps for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Algorithm Sort questions."),[child]);
+  return <ShooterEngine child={child} name="Algorithm Sort" emoji="🔢" subject="Computing" color="#7C3AED" bg="#F5F3FF" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
 }
 
-// ── Debug Detective (Computing) ───────────────────────────────────────────
 function DebugDetective({child,mode,onComplete,onQuit,level=1}) {
-  const [puzzles,setPuzzles]=useState(null);
-  const [idx,setIdx]=useState(0);
-  const [sel,setSel]=useState(null);
-  const [answered,setAnswered]=useState(false);
-  const [score,setScore]=useState(0);
-  const [done,setDone]=useState(false);
-
-  useEffect(()=>{
-    claude(
-      `Generate 6 debugging puzzles for age ${child.age}.
-Each shows a set of steps with ONE bug (wrong step or step in wrong place).
-The child must identify which step is the bug.
-Return ONLY valid JSON: {"puzzles":[{"scenario":"A robot is trying to make a cup of tea","steps":["Fill kettle with water","Turn kettle on","Pour cold water into cup","Wait for kettle to boil","Add teabag","Pour hot water into cup"],"bugStep":"Pour cold water into cup","bugReason":"You should pour hot water, not cold — and only after boiling","options":["Fill kettle with water","Turn kettle on","Pour cold water into cup","Wait for kettle to boil"]},...]}`,
-      "Generate Debug Detective puzzles."
-    ).then(d=>setPuzzles(d?.puzzles));
-  },[]);
-
-  useEffect(()=>{
-    if(!puzzles)return;
-    setSel(null);setAnswered(false);
-    if(mode==="audio") setTimeout(()=>speak("Find the bug in: "+puzzles[idx].scenario,child.tutor),200);
-  },[idx,puzzles]);
-
-  const answer=(opt)=>{
-    if(answered)return;
-    setSel(opt);setAnswered(true);
-    const ok=opt===puzzles[idx].bugStep;
-    if(ok)setScore(s=>s+1);
-    if(mode==="audio") speak(ok?"Found it!":"The bug was: "+puzzles[idx].bugStep,child.tutor);
-    setTimeout(()=>{if(idx+1>=puzzles.length)setDone(true);else setIdx(i=>i+1);},900);
-  };
-
-  if(!puzzles)return <GameLoad name="Debug Detective" emoji="🔍" tutor={child.tutor}/>;
-  if(done){const xp=calcXP(score,puzzles.length);return <GameEnd name="Debug Detective" emoji="🔍" score={score} max={puzzles.length} child={child} xp={xp} onDone={()=>onComplete(score,xp)}/>;}
-
-  const p=puzzles[idx];
-  return (
-    <GameShell name="Debug Detective" emoji="🔍" subject="Computing" score={score} maxScore={puzzles.length} round={idx+1} total={puzzles.length} streak={0} onQuit={onQuit}>
-      <Card style={{marginBottom:14}}>
-        <p style={{fontSize:13,fontWeight:700,color:C.muted,marginBottom:4}}>Find the bug in this algorithm</p>
-        <p style={{fontSize:16,fontWeight:800,color:C.text,marginBottom:12}}>{p?.scenario}</p>
-        {p?.steps.map((step,i)=>(
-          <div key={i} style={{display:"flex",alignItems:"center",gap:8,marginBottom:6,padding:"8px 10px",borderRadius:8,background:answered&&step===p.bugStep?C.rLight:C.bg,border:`1px solid ${answered&&step===p.bugStep?C.red:C.border}`}}>
-            <span style={{width:20,height:20,borderRadius:"50%",background:C.primary,color:"#fff",fontSize:11,fontWeight:900,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{i+1}</span>
-            <p style={{fontSize:13,fontWeight:600,color:answered&&step===p.bugStep?C.red:C.text}}>{step}</p>
-          </div>
-        ))}
-      </Card>
-      <p style={{fontSize:13,fontWeight:800,color:C.muted,marginBottom:10}}>Which step is the bug?</p>
-      <div style={{display:"flex",flexDirection:"column",gap:8}}>
-        {p?.options?.map(opt=>{
-          const isRight=opt===p.bugStep,isSel=opt===sel;
-          const bg=answered&&isRight?C.gLight:answered&&isSel&&!isRight?C.rLight:C.surface;
-          const bc=answered&&isRight?C.green:answered&&isSel&&!isRight?C.red:C.border;
-          return <button key={opt} onClick={()=>answer(opt)} disabled={answered} style={{padding:"12px 14px",borderRadius:10,fontSize:14,fontWeight:700,textAlign:"left",cursor:answered?"default":"pointer",background:bg,border:`2px solid ${bc}`,fontFamily:F,transition:"all 0.15s"}}>{opt}</button>;
-        })}
-      </div>
-      {answered&&<div style={{marginTop:12,padding:"10px 14px",borderRadius:10,background:sel===p?.bugStep?C.gLight:C.rLight}}><p style={{fontSize:13,fontWeight:700,color:sel===p?.bugStep?C.green:C.red}}>{sel===p?.bugStep?"✓ Found it! ":"✗ The bug was: "+p?.bugStep+" — "}{p?.bugReason}</p></div>}
-    </GameShell>
-  );
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 debugging programs, finding errors in code, fixing sequences for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Debug Detective questions."),[child]);
+  return <ShooterEngine child={child} name="Debug Detective" emoji="🔍" subject="Computing" color="#374151" bg="#F9FAFB" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
 }
 
-// ── Word Match (Languages) ────────────────────────────────────────────────
 function WordMatch({child,mode,onComplete,onQuit,level=1}) {
-  const [pairs,setPairs]=useState(null);
-  const [selEng,setSelEng]=useState(null);
-  const [selFr,setSelFr]=useState(null);
-  const [matched,setMatched]=useState([]);
-  const [wrong,setWrong]=useState([]);
-  const [lang,setLang]=useState("French");
-  const [done,setDone]=useState(false);
-  const [score,setScore]=useState(0);
-
-  useEffect(()=>{
-    claude(
-      `Generate 6 word pairs for a ${lang} vocabulary matching game for age ${child.age}.
-Use simple common words a beginner would learn first.
-Return ONLY valid JSON: {"lang":"${lang}","pairs":[{"english":"dog","translation":"chien","emoji":"🐕"},{"english":"cat","translation":"chat","emoji":"🐱"},{"english":"house","translation":"maison","emoji":"🏠"},{"english":"water","translation":"eau","emoji":"💧"},{"english":"book","translation":"livre","emoji":"📚"},{"english":"apple","translation":"pomme","emoji":"🍎"}]}`,
-      `Generate ${lang} Word Match pairs.`
-    ).then(d=>setPairs(d?.pairs));
-  },[lang]);
-
-  const shuffledEng=React.useMemo(()=>pairs?shuffle([...pairs]):[],[pairs]);
-  const shuffledFr=React.useMemo(()=>pairs?shuffle([...pairs]):[],[pairs]);
-
-  useEffect(()=>{
-    if(selEng&&selFr){
-      const ok=selEng.english===selFr.english;
-      if(ok){
-        setMatched(m=>[...m,selEng.english]);
-        setScore(s=>s+1);
-        if(mode==="audio") speak(selEng.english+" is "+selFr.translation,child.tutor);
-        if(matched.length+1>=pairs.length) setTimeout(()=>setDone(true),600);
-      } else {
-        setWrong([selEng.english,selFr.english]);
-        setTimeout(()=>setWrong([]),800);
-      }
-      setTimeout(()=>{setSelEng(null);setSelFr(null);},400);
-    }
-  },[selEng,selFr]);
-
-  if(!pairs)return <GameLoad name="Word Match" emoji="🌐" tutor={child.tutor}/>;
-  if(done){const xp=calcXP(score,pairs.length);return <GameEnd name="Word Match" emoji="🌐" score={score} max={pairs.length} child={child} xp={xp} onDone={()=>onComplete(score,xp)}/>;}
-
-  return (
-    <GameShell name="Word Match" emoji="🌐" subject="Computing" score={score} maxScore={pairs?.length||6} round={matched.length+1} total={pairs?.length||6} streak={0} onQuit={onQuit}>
-      <div style={{display:"flex",gap:8,marginBottom:16}}>
-        {["French","Spanish"].map(l=><button key={l} onClick={()=>{setPairs(null);setLang(l);setMatched([]);setSelEng(null);setSelFr(null);}} style={{flex:1,padding:"8px",borderRadius:10,fontFamily:F,fontSize:13,fontWeight:800,cursor:"pointer",background:lang===l?C.pLight:C.surface,border:`2px solid ${lang===l?C.primary:C.border}`,color:lang===l?C.primary:C.muted}}>{l==="French"?"🇫🇷":"🇪🇸"} {l}</button>)}
-      </div>
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
-        <div>
-          <p style={{fontSize:11,fontWeight:800,color:C.muted,marginBottom:8,textAlign:"center"}}>🇬🇧 ENGLISH</p>
-          {shuffledEng.map(p=>{
-            const isDone=matched.includes(p.english);
-            const isSel=selEng?.english===p.english;
-            const isWrong=wrong.includes(p.english);
-            return <button key={p.english} onClick={()=>!isDone&&setSelEng(p)} style={{width:"100%",marginBottom:8,padding:"12px 8px",borderRadius:12,fontSize:14,fontWeight:800,cursor:isDone?"default":"pointer",fontFamily:F,transition:"all 0.15s",background:isDone?C.gLight:isWrong?C.rLight:isSel?C.pLight:C.surface,border:`2px solid ${isDone?C.green:isWrong?C.red:isSel?C.primary:C.border}`,color:isDone?C.green:isWrong?C.red:isSel?C.primary:C.text,textAlign:"center"}}>{p.emoji} {p.english}</button>;
-          })}
-        </div>
-        <div>
-          <p style={{fontSize:11,fontWeight:800,color:C.muted,marginBottom:8,textAlign:"center"}}>{lang==="French"?"🇫🇷":"🇪🇸"} {lang.toUpperCase()}</p>
-          {shuffledFr.map(p=>{
-            const isDone=matched.includes(p.english);
-            const isSel=selFr?.english===p.english;
-            const isWrong=wrong.includes(p.english);
-            return <button key={p.translation} onClick={()=>!isDone&&setSelFr(p)} style={{width:"100%",marginBottom:8,padding:"12px 8px",borderRadius:12,fontSize:14,fontWeight:800,cursor:isDone?"default":"pointer",fontFamily:F,transition:"all 0.15s",background:isDone?C.gLight:isWrong?C.rLight:isSel?C.pLight:C.surface,border:`2px solid ${isDone?C.green:isWrong?C.red:isSel?C.primary:C.border}`,color:isDone?C.green:isWrong?C.red:isSel?C.primary:C.text,textAlign:"center"}}>{p.translation}</button>;
-          })}
-        </div>
-      </div>
-    </GameShell>
-  );
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 vocabulary matching, word definitions, synonyms and antonyms for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Word Match questions."),[child]);
+  return <ShooterEngine child={child} name="Word Match" emoji="🌐" subject="English" color="#0EA5E9" bg="#F0F9FF" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
 }
 
-
-// ── 🎣 MATHS FISHING ─────────────────────────────────────────────────────
 function MathFishing({child,mode,onComplete,onQuit,level=1}) {
   const ROUNDS=8;
-  const [qs,setQs]=useState(null);
-  const [idx,setIdx]=useState(0);
-  const [score,setScore]=useState(0);
-  const [caught,setCaught]=useState(null);
-  const [fish,setFish]=useState([]);
-  const [casting,setCasting]=useState(false);
-  const [done,setDone]=useState(false);
-  const [loadErr,setLoadErr]=useState(false);
+  const [qs,setQs]=useState(null);const [idx,setIdx]=useState(0);const [score,setScore]=useState(0);
+  const [rodX,setRodX]=useState(50);const [lineY,setLineY]=useState(0);const [casting,setCasting]=useState(false);
+  const [fish,setFish]=useState([]);const [hookedFish,setHookedFish]=useState(null);
+  const [result,setResult]=useState(null);const [done,setDone]=useState(false);const [loadErr,setLoadErr]=useState(false);
+  const animRef=useRef(null);const fishRef=useRef([]);
+
   useEffect(()=>{
     const t=setTimeout(()=>setLoadErr(true),12000);
-    claude(`Generate ${ROUNDS} maths equations for age ${child.age}, ${child.country||"UK"} curriculum, Level ${level} (${getLevelContext(level)}). Each has one correct answer and 3 wrong answers (close but wrong). Return ONLY valid JSON: {"questions":[{"equation":"2 + 3 =","correct":5,"wrong":[4,6,7]}]}`,"Fishing maths questions.").then(d=>{clearTimeout(t);if(!d?.questions)setLoadErr(true);else setQs(d.questions);});
+    claude(`Generate ${ROUNDS} maths equations for age ${child.age}, ${child.country||"UK"} curriculum, Level ${level}.
+Each has correct answer and 3 wrong answers.
+Return ONLY valid JSON: {"questions":[{"eq":"3 + 4 =","correct":7,"wrong":[5,6,8]}]}`,"Fishing game questions.").then(d=>{
+      clearTimeout(t);
+      if(!d?.questions){setLoadErr(true);return;}
+      setQs(d.questions);
+    });
   },[]);
+
+  // Spawn fish for current question
   useEffect(()=>{
-    if(!qs||done) return;
-    const q=qs[idx];if(!q) return;
-    const answers=[q.correct,...(q.wrong||[])].sort(()=>Math.random()-0.5);
-    setFish(answers.map((ans,i)=>({id:i,ans,x:10+i*22,y:40+Math.random()*35,correct:ans===q.correct,speed:1+Math.random(),dir:Math.random()>0.5?1:-1})));
-    setCaught(null);
+    if(!qs||done||idx>=qs.length) return;
+    const q=qs[idx];
+    const answers=[q.correct,...(q.wrong||[q.correct+1,q.correct-1,q.correct+2])].slice(0,4).sort(()=>Math.random()-0.5);
+    const newFish = answers.map((ans,i)=>({
+      id:i, ans, correct:ans===q.correct,
+      x:10+i*22, y:35+Math.random()*40,
+      vx:(Math.random()-0.5)*0.8, vy:(Math.random()-0.5)*0.3,
+      wobble:Math.random()*Math.PI*2
+    }));
+    fishRef.current = newFish;
+    setFish([...newFish]);
+    setCasting(false);setHookedFish(null);setResult(null);
   },[idx,qs]);
+
+  // Fish swim animation
   useEffect(()=>{
-    if(done||caught!==null) return;
-    const interval=setInterval(()=>setFish(prev=>prev.map(f=>({...f,x:f.x+f.speed*f.dir*0.4,dir:f.x>85?-1:f.x<5?1:f.dir}))),120);
-    return()=>clearInterval(interval);
-  },[done,caught]);
-  const cast=(f)=>{
-    if(caught!==null) return;
+    if(!qs||done||result) return;
+    let t=0;
+    const loop=setInterval(()=>{
+      t+=0.05;
+      fishRef.current = fishRef.current.map(f=>({
+        ...f,
+        x: Math.max(2,Math.min(85, f.x + f.vx)),
+        y: f.y + Math.sin(t+f.wobble)*0.3,
+        vx: f.x<=2?Math.abs(f.vx): f.x>=85?-Math.abs(f.vx): f.vx
+      }));
+      setFish([...fishRef.current]);
+    },60);
+    return()=>clearInterval(loop);
+  },[qs,done,result,idx]);
+
+  // Cast line animation
+  useEffect(()=>{
+    if(!casting) return;
+    let y=0;
+    const anim=setInterval(()=>{
+      y=Math.min(90,y+5);
+      setLineY(y);
+      if(y>=90){clearInterval(anim); setLineY(0); setCasting(false);}
+    },16);
+    return()=>clearInterval(anim);
+  },[casting]);
+
+  const cast=(x)=>{
+    if(casting||result||!qs) return;
+    setRodX(x);
     setCasting(true);
+    // Check if any fish is near cast position
     setTimeout(()=>{
-      setCaught(f);setCasting(false);
-      if(f.correct) setScore(s=>s+1);
-      setTimeout(()=>{if(idx+1>=ROUNDS)setDone(true);else setIdx(i=>i+1);},1200);
-    },500);
+      const hit = fishRef.current.find(f=>Math.abs(f.x-x)<12);
+      if(hit){
+        setHookedFish(hit);
+        setResult(hit.correct?"correct":"wrong");
+        if(hit.correct)setScore(s=>s+1);
+        setTimeout(()=>{
+          if(idx+1>=ROUNDS) setDone(true);
+          else setIdx(i=>i+1);
+        },1200);
+      }
+    },800);
   };
+
   if(loadErr)return <GameError name="Maths Fishing" onRetry={()=>{setLoadErr(false);setQs(null);}}/>;
   if(!qs)return <GameLoad name="Maths Fishing" emoji="🎣" tutor={child.tutor}/>;
-  if(done)return <GameEnd name="Maths Fishing" emoji="🎣" score={score} max={ROUNDS} child={child} xp={score*8} onDone={()=>onComplete({score,max:ROUNDS,xp:score*8})}/>;
+  if(done)return <GameEnd name="Maths Fishing" emoji="🎣" score={score} max={ROUNDS} child={child} xp={score*10} onDone={()=>onComplete({score,max:ROUNDS,xp:score*10})}/>;
+
   const q=qs[idx];
+
   return (
     <GameShell name="Maths Fishing" emoji="🎣" subject="Maths" score={score} maxScore={ROUNDS} round={idx+1} total={ROUNDS} streak={0} onQuit={onQuit}>
-      <div style={{textAlign:"center",marginBottom:12}}>
-        <p style={{fontSize:14,fontWeight:700,color:C.muted,marginBottom:6}}>Tap the fish with the right answer!</p>
-        <div style={{fontSize:30,fontWeight:900,color:C.primary,background:C.pLight,borderRadius:16,padding:"10px 20px",display:"inline-block"}}>{q?.equation}</div>
+      {/* Question */}
+      <div style={{textAlign:"center",marginBottom:8}}>
+        <div style={{fontSize:28,fontWeight:900,color:C.primary,background:C.pLight,borderRadius:14,padding:"8px 20px",display:"inline-block"}}>{q?.eq}</div>
+        <p style={{fontSize:12,color:C.muted,fontWeight:600,marginTop:4}}>Tap the water where the correct fish is!</p>
       </div>
-      <div style={{position:"relative",height:200,background:"linear-gradient(180deg,#BAE6FD,#0EA5E9 50%,#0369A1)",borderRadius:20,overflow:"hidden",marginBottom:12}}>
-        <div style={{position:"absolute",top:0,left:"50%",transform:"translateX(-50%)",zIndex:3}}>
-          <div style={{width:3,height:casting?70:16,background:"#92400E",borderRadius:2,transition:"height 0.4s",margin:"0 auto"}}/>
-          {casting&&<div style={{width:8,height:8,borderRadius:"50%",background:"#FCD34D",margin:"-4px auto"}}/>}
+      {/* Game canvas */}
+      <div style={{position:"relative",height:220,borderRadius:20,overflow:"hidden",cursor:"pointer",userSelect:"none"}}
+        onClick={e=>{
+          const rect=e.currentTarget.getBoundingClientRect();
+          const xPct=((e.clientX-rect.left)/rect.width)*100;
+          cast(xPct);
+        }}>
+        {/* Sky */}
+        <div style={{position:"absolute",top:0,left:0,right:0,height:50,background:"linear-gradient(180deg,#BAE6FD,#7DD3FC)"}}/>
+        {/* Rod */}
+        <div style={{position:"absolute",top:0,left:`${rodX}%`,transform:"translateX(-50%)",zIndex:4}}>
+          <div style={{width:3,background:"#92400E",height:50,margin:"0 auto",borderRadius:2}}/>
+          {casting&&<div style={{width:1,background:"#9CA3AF",height:`${lineY*1.5}px`,margin:"0 auto",transition:"height 0.05s"}}/>}
+          {casting&&lineY>80&&<div style={{width:8,height:8,borderRadius:"50%",background:"#F59E0B",margin:"-4px auto"}}/>}
         </div>
+        {/* Water */}
+        <div style={{position:"absolute",top:50,left:0,right:0,bottom:0,background:"linear-gradient(180deg,#0EA5E9,#0369A1)"}}/>
+        {/* Ripples */}
+        <svg style={{position:"absolute",top:46,left:0,width:"100%",height:12}} viewBox="0 0 400 12" preserveAspectRatio="none">
+          <path d="M0,6 Q25,0 50,6 Q75,12 100,6 Q125,0 150,6 Q175,12 200,6 Q225,0 250,6 Q275,12 300,6 Q325,0 350,6 Q375,12 400,6" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="2"/>
+        </svg>
+        {/* Fish */}
         {fish.map(f=>(
-          <button key={f.id} onClick={()=>cast(f)} style={{position:"absolute",left:`${f.x}%`,top:`${f.y}%`,transform:"translateX(-50%)",background:"none",border:"none",cursor:"pointer",fontSize:26,filter:caught?.id===f.id?(f.correct?"drop-shadow(0 0 8px #22C55E)":"drop-shadow(0 0 8px #EF4444)"):"none"}}>
-            🐟<div style={{position:"absolute",top:-18,left:"50%",transform:"translateX(-50%)",background:"#fff",borderRadius:6,padding:"1px 6px",fontSize:12,fontWeight:900,color:caught?.id===f.id?(f.correct?C.green:C.red):C.text,whiteSpace:"nowrap",boxShadow:"0 1px 4px rgba(0,0,0,0.2)"}}>{f.ans}</div>
-          </button>
+          <div key={f.id} style={{
+            position:"absolute",
+            left:`${f.x}%`,top:`${f.y}%`,
+            transform:`translateX(-50%) ${hookedFish?.id===f.id?"translateY(-20px) scale(1.2)":""}`,
+            transition:hookedFish?.id===f.id?"all 0.4s":"none",
+            zIndex:3
+          }}>
+            <div style={{
+              background:"rgba(255,255,255,0.9)",borderRadius:10,padding:"3px 8px",
+              fontSize:12,fontWeight:900,color:C.text,textAlign:"center",
+              boxShadow:"0 2px 8px rgba(0,0,0,0.2)",marginBottom:2,whiteSpace:"nowrap",
+              border:`2px solid ${result&&hookedFish?.id===f.id?(result==="correct"?C.green:C.red):"transparent"}`
+            }}>{f.ans}</div>
+            <div style={{textAlign:"center",fontSize:20,transform:`scaleX(${f.vx>0?1:-1})`}}>🐟</div>
+          </div>
         ))}
-        {caught&&<div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,0.35)",borderRadius:20,fontSize:56}}>{caught.correct?"✅":"❌"}</div>}
+        {/* Result overlay */}
+        {result&&(
+          <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,0.3)",borderRadius:20,zIndex:5}}>
+            <div style={{fontSize:56,animation:"bounceY 0.4s ease"}}>{result==="correct"?"🎣✅":"💨❌"}</div>
+          </div>
+        )}
       </div>
     </GameShell>
   );
 }
 
-// ── 🚀 SPACE BLASTER ─────────────────────────────────────────────────────
+
 function SpaceBlaster({child,mode,onComplete,onQuit,level=1}) {
-  const TOTAL=10;
-  const [qs,setQs]=useState(null);
-  const [idx,setIdx]=useState(0);
-  const [score,setScore]=useState(0);
-  const [shot,setShot]=useState(null);
-  const [done,setDone]=useState(false);
-  const [loadErr,setLoadErr]=useState(false);
+  const W=320,H=280;
+  const [qs,setQs]=useState(null);const [idx,setIdx]=useState(0);const [score,setScore]=useState(0);
+  const [shipX,setShipX]=useState(50);
+  const [bullets,setBullets]=useState([]);
+  const [aliens,setAliens]=useState([]);
+  const [explosions,setExplosions]=useState([]);
+  const [done,setDone]=useState(false);const [loadErr,setLoadErr]=useState(false);
+  const [selectedAns,setSelectedAns]=useState(null);
+  const gameRef=useRef({bullets:[],aliens:[],explosions:[],shipX:50,paused:false});
+
   useEffect(()=>{
     const t=setTimeout(()=>setLoadErr(true),12000);
-    claude(`Generate ${TOTAL} maths questions for age ${child.age}, ${child.country||"UK"} curriculum, Level ${level}. Each has a question and exactly 4 answer options (one correct). Return ONLY valid JSON: {"questions":[{"q":"5 × 3 =","options":[12,15,18,20],"correct":15}]}`,"Space blaster questions.").then(d=>{clearTimeout(t);if(!d?.questions)setLoadErr(true);else setQs(d.questions);});
+    claude(`Generate 10 maths questions for age ${child.age}, ${child.country||"UK"} curriculum, Level ${level}.
+Each has 4 answer options, only 1 correct.
+Return ONLY valid JSON: {"questions":[{"q":"5 × 4 =","options":[15,20,18,24],"correct":20}]}`,"Space blaster questions.").then(d=>{
+      clearTimeout(t);
+      if(!d?.questions){setLoadErr(true);return;}
+      setQs(d.questions);
+    });
   },[]);
-  const fire=(opt)=>{
-    if(shot!==null||!qs) return;
-    const correct=opt===qs[idx]?.correct;
-    setShot(opt);
-    if(correct) setScore(s=>s+1);
-    setTimeout(()=>{setShot(null);if(idx+1>=TOTAL)setDone(true);else setIdx(i=>i+1);},700);
+
+  // Spawn aliens for current question
+  useEffect(()=>{
+    if(!qs||done||idx>=qs.length) return;
+    const q=qs[idx];
+    const a=q.options.map((opt,i)=>({
+      id:i, val:opt, correct:opt===q.correct,
+      x:10+i*22, y:20, vx:0.4*(i%2===0?1:-1), vy:0, alive:true
+    }));
+    gameRef.current.aliens=a;
+    setAliens([...a]);
+    setBullets([]);gameRef.current.bullets=[];
+    setExplosions([]);gameRef.current.explosions=[];
+    setSelectedAns(null);
+  },[idx,qs]);
+
+  // Game loop
+  useEffect(()=>{
+    if(!qs||done) return;
+    const loop=setInterval(()=>{
+      const g=gameRef.current;
+      // Move aliens
+      g.aliens=g.aliens.map(a=>{
+        if(!a.alive) return a;
+        let nx=a.x+a.vx;
+        let nvx=a.vx;
+        if(nx>82||nx<8){nvx=-nvx;nx=a.x;}
+        return{...a,x:nx,vx:nvx};
+      });
+      // Move bullets up
+      g.bullets=g.bullets.map(b=>({...b,y:b.y-4})).filter(b=>b.y>0);
+      // Check bullet-alien collisions
+      let hit=null;
+      g.bullets=g.bullets.filter(b=>{
+        const a=g.aliens.find(a=>a.alive&&Math.abs(a.x-b.x)<8&&Math.abs(a.y-b.y)<10);
+        if(a){hit=a;g.explosions=[...g.explosions,{id:Date.now(),x:a.x,y:a.y,t:0}];}
+        return !a;
+      });
+      if(hit){
+        g.aliens=g.aliens.map(a=>a.id===hit.id?{...a,alive:false}:a);
+        setSelectedAns(hit.val);
+        if(hit.correct){
+          setTimeout(()=>{if(idx+1>=qs.length)setDone(true);else setIdx(i=>i+1);},600);
+        } else {
+          setTimeout(()=>setSelectedAns(null),800);
+        }
+      }
+      // Fade explosions
+      g.explosions=g.explosions.map(e=>({...e,t:e.t+1})).filter(e=>e.t<8);
+      setAliens([...g.aliens]);
+      setBullets([...g.bullets]);
+      setExplosions([...g.explosions]);
+    },50);
+    return()=>clearInterval(loop);
+  },[qs,done,idx]);
+
+  const moveShip=(dir)=>{
+    gameRef.current.shipX=Math.max(5,Math.min(95,gameRef.current.shipX+dir*8));
+    setShipX(gameRef.current.shipX);
   };
+  const fire=()=>{
+    const b={id:Date.now(),x:gameRef.current.shipX,y:85};
+    gameRef.current.bullets=[...gameRef.current.bullets,b];
+    setBullets(prev=>[...prev,b]);
+  };
+
   if(loadErr)return <GameError name="Space Blaster" onRetry={()=>{setLoadErr(false);setQs(null);}}/>;
   if(!qs)return <GameLoad name="Space Blaster" emoji="🚀" tutor={child.tutor}/>;
-  if(done)return <GameEnd name="Space Blaster" emoji="🚀" score={score} max={TOTAL} child={child} xp={score*10} onDone={()=>onComplete({score,max:TOTAL,xp:score*10})}/>;
-  const q=qs[idx];
-  const aliens=["👾","🛸","👽","🤖","☄️"];
+  if(done)return <GameEnd name="Space Blaster" emoji="🚀" score={score} max={10} child={child} xp={score*10} onDone={()=>onComplete({score,max:10,xp:score*10})}/>;
+
+  const q=qs[Math.min(idx,qs.length-1)];
+
   return (
-    <GameShell name="Space Blaster" emoji="🚀" subject="Maths" score={score} maxScore={TOTAL} round={idx+1} total={TOTAL} streak={0} onQuit={onQuit}>
-      <div style={{background:"linear-gradient(180deg,#0F0F1A,#1E1B4B,#312E81)",borderRadius:20,padding:"16px",marginBottom:12,textAlign:"center",position:"relative",minHeight:150}}>
-        {[...Array(12)].map((_,i)=><div key={i} style={{position:"absolute",width:2,height:2,background:"#fff",borderRadius:"50%",top:`${Math.random()*90}%`,left:`${(i/12)*100}%`,opacity:0.5+Math.random()*0.5}}/>)}
-        <div style={{fontSize:36,marginBottom:8}}>{aliens[idx%aliens.length]}</div>
-        <div style={{fontSize:28,fontWeight:900,color:"#FCD34D",textShadow:"0 0 10px rgba(252,211,77,0.5)",marginBottom:8}}>{q?.q}</div>
-        {shot!==null&&<div style={{position:"absolute",left:"50%",top:0,bottom:0,width:3,background:"linear-gradient(#FCD34D,transparent)",transform:"translateX(-50%)",opacity:0.7}}/>}
-        <div style={{fontSize:28}}>🚀</div>
+    <GameShell name="Space Blaster" emoji="🚀" subject="Maths" score={score} maxScore={10} round={idx+1} total={10} streak={0} onQuit={onQuit}>
+      <div style={{textAlign:"center",marginBottom:8}}>
+        <span style={{fontSize:22,fontWeight:900,color:"#FCD34D",background:"#1E1B4B",padding:"6px 18px",borderRadius:12}}>{q?.q}</span>
       </div>
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
-        {q?.options?.map((opt,i)=>(
-          <button key={i} onClick={()=>fire(opt)} disabled={shot!==null}
-            style={{padding:"14px",borderRadius:14,fontSize:18,fontWeight:900,cursor:shot!==null?"default":"pointer",fontFamily:F,
-              border:`2px solid ${shot===null?C.border:opt===q.correct?"#22C55E":opt===shot?"#EF4444":C.border}`,
-              background:shot===null?C.surface:opt===q.correct?C.gLight:opt===shot?C.rLight:C.surface,
-              color:shot===null?C.text:opt===q.correct?C.green:opt===shot?C.red:C.muted,transition:"all 0.2s"}}>
-            {opt}
-          </button>
+      {/* Game area */}
+      <div style={{position:"relative",height:200,background:"linear-gradient(180deg,#0F0F1A,#1E1B4B)",borderRadius:16,overflow:"hidden",marginBottom:10}}>
+        {/* Stars */}
+        {[...Array(20)].map((_,i)=><div key={i} style={{position:"absolute",width:1.5,height:1.5,background:"#fff",borderRadius:"50%",top:`${(i*17)%90}%`,left:`${(i*13)%100}%`,opacity:0.4+0.6*(i%3)/2}}/>)}
+        {/* Aliens */}
+        {aliens.filter(a=>a.alive).map(a=>(
+          <div key={a.id} style={{position:"absolute",left:`${a.x}%`,top:`${a.y}%`,transform:"translateX(-50%)",zIndex:2,textAlign:"center"}}>
+            <div style={{fontSize:20,lineHeight:1}}>👾</div>
+            <div style={{background:"rgba(255,255,255,0.9)",borderRadius:6,padding:"1px 6px",fontSize:11,fontWeight:900,color:C.text,marginTop:1}}>{a.val}</div>
+          </div>
         ))}
+        {/* Explosions */}
+        {explosions.map(e=>(
+          <div key={e.id} style={{position:"absolute",left:`${e.x}%`,top:`${e.y}%`,transform:"translateX(-50%)",fontSize:20,zIndex:3,opacity:1-e.t/8}}>💥</div>
+        ))}
+        {/* Bullets */}
+        {bullets.map(b=>(
+          <div key={b.id} style={{position:"absolute",left:`${b.x}%`,top:`${b.y}%`,width:3,height:10,background:"#FCD34D",borderRadius:2,transform:"translateX(-50%)",zIndex:2}}/>
+        ))}
+        {/* Ship */}
+        <div style={{position:"absolute",bottom:"4%",left:`${shipX}%`,transform:"translateX(-50%)",fontSize:28,zIndex:3}}>🚀</div>
+        {/* Answer feedback */}
+        {selectedAns!==null&&(
+          <div style={{position:"absolute",top:"40%",left:"50%",transform:"translate(-50%,-50%)",fontSize:32,fontWeight:900,color:selectedAns===q?.correct?"#22C55E":"#EF4444",background:"rgba(0,0,0,0.7)",borderRadius:12,padding:"8px 16px",zIndex:5}}>
+            {selectedAns===q?.correct?"✅ CORRECT!":"❌ MISS!"}
+          </div>
+        )}
+      </div>
+      {/* Controls */}
+      <div style={{display:"flex",gap:8,alignItems:"center"}}>
+        <button onClick={()=>moveShip(-1)} style={{flex:1,padding:"14px",borderRadius:12,fontSize:22,background:C.surface,border:`1px solid ${C.border}`,cursor:"pointer",fontFamily:F}}>◀</button>
+        <button onClick={fire} style={{flex:2,padding:"14px",borderRadius:12,fontSize:18,fontWeight:900,background:"linear-gradient(135deg,#4F46E5,#7C3AED)",color:"#fff",border:"none",cursor:"pointer",fontFamily:F}}>🔫 FIRE!</button>
+        <button onClick={()=>moveShip(1)} style={{flex:1,padding:"14px",borderRadius:12,fontSize:22,background:C.surface,border:`1px solid ${C.border}`,cursor:"pointer",fontFamily:F}}>▶</button>
       </div>
     </GameShell>
   );
 }
 
-// ── 💎 GEM HUNTER ────────────────────────────────────────────────────────
+
 function GemHunter({child,mode,onComplete,onQuit,level=1}) {
-  const TOTAL=8;
-  const [qs,setQs]=useState(null);
-  const [idx,setIdx]=useState(0);
-  const [gems,setGems]=useState(0);
-  const [digging,setDigging]=useState(false);
-  const [sel,setSel]=useState(null);
-  const [ans,setAns]=useState(false);
-  const [done,setDone]=useState(false);
-  const [loadErr,setLoadErr]=useState(false);
-  useEffect(()=>{
-    const t=setTimeout(()=>setLoadErr(true),12000);
-    claude(`Generate ${TOTAL} English spelling/vocabulary/grammar questions for age ${child.age}, ${child.country||"UK"} curriculum, Level ${level}. Mix question types. Return ONLY valid JSON: {"questions":[{"q":"Which word is spelt correctly?","options":["A) frend","B) friend","C) freind","D) friand"],"correct":"B"}]}`,"Gem hunter questions.").then(d=>{clearTimeout(t);if(!d?.questions)setLoadErr(true);else setQs(d.questions);});
-  },[]);
-  const dig=()=>{if(digging)return;setDigging(true);};
-  const answer=(opt)=>{
-    if(ans) return;
-    setSel(opt);setAns(true);
-    if(opt.charAt(0)===qs[idx]?.correct) setGems(g=>g+1);
-    setTimeout(()=>{setSel(null);setAns(false);setDigging(false);if(idx+1>=TOTAL)setDone(true);else setIdx(i=>i+1);},1000);
-  };
-  if(loadErr)return <GameError name="Gem Hunter" onRetry={()=>{setLoadErr(false);setQs(null);}}/>;
-  if(!qs)return <GameLoad name="Gem Hunter" emoji="💎" tutor={child.tutor}/>;
-  if(done)return <GameEnd name="Gem Hunter" emoji="💎" score={gems} max={TOTAL} child={child} xp={gems*8} onDone={()=>onComplete({score:gems,max:TOTAL,xp:gems*8})}/>;
-  const q=qs[idx];
-  const gemEmojis=["💎","🔮","💍","🌟","✨","🏆"];
-  return (
-    <GameShell name="Gem Hunter" emoji="💎" subject="English" score={gems} maxScore={TOTAL} round={idx+1} total={TOTAL} streak={0} onQuit={onQuit}>
-      {!digging?(
-        <div style={{textAlign:"center"}}>
-          <div style={{fontSize:48,marginBottom:12}}>⛏️</div>
-          <p style={{fontSize:15,fontWeight:700,color:C.muted,marginBottom:20}}>Tap to dig and find a gem!</p>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8,marginBottom:16}}>
-            {Array.from({length:8}).map((_,i)=>(
-              <button key={i} onClick={i===idx%8?dig:undefined} style={{height:60,borderRadius:12,fontSize:22,border:`2px solid ${i===idx%8?C.amber:C.border}`,background:i===idx%8?"linear-gradient(135deg,#78350F,#92400E)":"#E5E7EB",cursor:i===idx%8?"pointer":"default",transition:"all 0.2s"}}>
-                {i===idx%8?"🪨":"💫"}
-              </button>
-            ))}
-          </div>
-          <p style={{fontSize:12,color:C.amber,fontWeight:700}}>💎 {gems} gems found</p>
-        </div>
-      ):(
-        <div>
-          <div style={{textAlign:"center",marginBottom:14}}>
-            <div style={{fontSize:36}}>{gemEmojis[idx%6]}</div>
-            <p style={{fontSize:14,fontWeight:700,color:C.green}}>You found a gem! Answer to keep it!</p>
-          </div>
-          <p style={{fontSize:16,fontWeight:800,color:C.text,marginBottom:14}}>{q?.q}</p>
-          <Options options={q?.options} correct={q?.correct} selected={sel} answered={ans} onAnswer={answer}/>
-        </div>
-      )}
-    </GameShell>
-  );
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 vocabulary, spelling at curriculum Level for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Gem Hunter questions."),[child]);
+  return <CatcherEngine child={child} name="Gem Hunter" emoji="💎" subject="English" color="#4F46E5" bg="#EEF2FF" catcherChar="💎" sceneBg="linear-gradient(180deg,#78350F,#92400E)" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
 }
 
-// ── 🏃 WORD RUNNER ───────────────────────────────────────────────────────
 function WordRunner({child,mode,onComplete,onQuit,level=1}) {
   const ROUNDS=8;
-  const [qs,setQs]=useState(null);
-  const [idx,setIdx]=useState(0);
-  const [score,setScore]=useState(0);
-  const [falling,setFalling]=useState([]);
-  const [caught,setCaught]=useState(null);
-  const [done,setDone]=useState(false);
-  const [loadErr,setLoadErr]=useState(false);
+  const [qs,setQs]=useState(null);const [idx,setIdx]=useState(0);const [score,setScore]=useState(0);
+  const [words,setWords]=useState([]);const [caught,setCaught]=useState(null);const [done,setDone]=useState(false);const [loadErr,setLoadErr]=useState(false);
+  const wordsRef=useRef([]);const idRef=useRef(0);
+
   useEffect(()=>{
     const t=setTimeout(()=>setLoadErr(true),12000);
-    claude(`Generate ${ROUNDS} grammar questions for age ${child.age}, ${child.country||"UK"} curriculum, Level ${level}. Types: "Catch the VERB!", "Grab the ADJECTIVE!", "Find the NOUN!". 4 options each, 1 correct. Return ONLY valid JSON: {"questions":[{"instruction":"Catch the VERB!","options":["run","happy","quickly","big"],"correct":"run"}]}`,"Word runner questions.").then(d=>{clearTimeout(t);if(!d?.questions)setLoadErr(true);else setQs(d.questions);});
+    claude(`Generate ${ROUNDS} grammar questions for age ${child.age}, ${child.country||"UK"} curriculum, Level ${level}.
+Instructions like "Catch the VERB!", "Grab the ADJECTIVE!", "Find the NOUN!", "Catch the ADVERB!".
+4 word options each, 1 correct.
+Return ONLY valid JSON: {"questions":[{"instruction":"Catch the VERB!","options":["run","happy","quickly","big"],"correct":"run"}]}`,"Word runner questions.").then(d=>{
+      clearTimeout(t);
+      if(!d?.questions){setLoadErr(true);return;}
+      setQs(d.questions);
+    });
   },[]);
+
+  // Spawn words for current question
+  useEffect(()=>{
+    if(!qs||done||idx>=qs.length) return;
+    const q=qs[idx];
+    const cols=[15,38,61,84];
+    const shuffled=[...q.options].sort(()=>Math.random()-0.5);
+    const newWords=shuffled.map((w,i)=>({
+      id:++idRef.current, word:w, correct:w===q.correct,
+      x:cols[i%4], y:-15, speed:1.2+level*0.15+Math.random()*0.5,
+      caught:false
+    }));
+    wordsRef.current=newWords;
+    setWords([...newWords]);
+    setCaught(null);
+  },[idx,qs]);
+
+  // Fall animation
   useEffect(()=>{
     if(!qs||done||caught!==null) return;
-    const q=qs[idx];if(!q) return;
-    const shuffled=[...q.options].sort(()=>Math.random()-0.5);
-    setFalling(shuffled.map((w,i)=>({id:i,word:w,x:8+i*23,y:-15,correct:w===q.correct,speed:0.7+level*0.1})));
-  },[idx,qs]);
-  useEffect(()=>{
-    if(done||caught!==null) return;
-    const interval=setInterval(()=>{
-      setFalling(prev=>{
-        const updated=prev.map(w=>({...w,y:w.y+w.speed}));
-        if(updated.length&&updated.every(w=>w.y>90)){
-          setCaught({missed:true});
-          setTimeout(()=>{setCaught(null);if(idx+1>=ROUNDS)setDone(true);else setIdx(i=>i+1);},700);
-        }
-        return updated;
-      });
-    },80);
-    return()=>clearInterval(interval);
-  },[done,caught,idx]);
+    const loop=setInterval(()=>{
+      wordsRef.current=wordsRef.current.map(w=>({...w,y:w.y+w.speed}));
+      // If all words past bottom, move to next question (miss)
+      if(wordsRef.current.every(w=>w.y>105)){
+        setCaught({missed:true});
+        setTimeout(()=>{
+          setCaught(null);
+          if(idx+1>=ROUNDS)setDone(true);
+          else setIdx(i=>i+1);
+        },600);
+      }
+      setWords([...wordsRef.current]);
+    },50);
+    return()=>clearInterval(loop);
+  },[done,caught,idx,qs]);
+
   const catchWord=(w)=>{
     if(caught) return;
     setCaught(w);
-    if(w.correct) setScore(s=>s+1);
-    setTimeout(()=>{setCaught(null);if(idx+1>=ROUNDS)setDone(true);else setIdx(i=>i+1);},800);
+    if(w.correct)setScore(s=>s+1);
+    // Mark caught
+    wordsRef.current=wordsRef.current.map(x=>x.id===w.id?{...x,caught:true}:x);
+    setWords([...wordsRef.current]);
+    setTimeout(()=>{
+      setCaught(null);
+      if(idx+1>=ROUNDS)setDone(true);
+      else setIdx(i=>i+1);
+    },700);
   };
+
   if(loadErr)return <GameError name="Word Runner" onRetry={()=>{setLoadErr(false);setQs(null);}}/>;
   if(!qs)return <GameLoad name="Word Runner" emoji="🏃" tutor={child.tutor}/>;
-  if(done)return <GameEnd name="Word Runner" emoji="🏃" score={score} max={ROUNDS} child={child} xp={score*8} onDone={()=>onComplete({score,max:ROUNDS,xp:score*8})}/>;
+  if(done)return <GameEnd name="Word Runner" emoji="🏃" score={score} max={ROUNDS} child={child} xp={score*10} onDone={()=>onComplete({score,max:ROUNDS,xp:score*10})}/>;
+
   const q=qs[idx];
+  const colors=["#6366F1","#EC4899","#F59E0B","#10B981"];
+
   return (
     <GameShell name="Word Runner" emoji="🏃" subject="English" score={score} maxScore={ROUNDS} round={idx+1} total={ROUNDS} streak={0} onQuit={onQuit}>
-      <div style={{background:"linear-gradient(180deg,#EEF2FF,#C7D2FE)",borderRadius:20,height:220,position:"relative",overflow:"hidden",marginBottom:12}}>
-        <div style={{position:"absolute",top:10,left:0,right:0,textAlign:"center",zIndex:2}}>
-          <div style={{background:"rgba(79,70,229,0.9)",borderRadius:20,padding:"5px 14px",display:"inline-block"}}>
-            <p style={{fontSize:14,fontWeight:900,color:"#fff"}}>{q?.instruction}</p>
-          </div>
+      {/* Instruction */}
+      <div style={{textAlign:"center",marginBottom:8}}>
+        <div style={{background:"linear-gradient(135deg,#4F46E5,#7C3AED)",borderRadius:20,padding:"8px 20px",display:"inline-block"}}>
+          <p style={{fontSize:18,fontWeight:900,color:"#fff"}}>{q?.instruction}</p>
         </div>
-        {!caught&&falling.map(w=>(
-          <button key={w.id} onClick={()=>catchWord(w)}
-            style={{position:"absolute",left:`${w.x}%`,top:`${w.y}%`,transform:"translateX(-50%)",
-              padding:"6px 12px",borderRadius:10,fontSize:14,fontWeight:800,cursor:"pointer",
-              background:w.correct?"#FEF3C7":"#EDE9FE",border:`2px solid ${w.correct?"#F59E0B":"#7C3AED"}`,
-              color:w.correct?"#92400E":"#5B21B6",fontFamily:F,boxShadow:"0 2px 6px rgba(0,0,0,0.15)",whiteSpace:"nowrap"}}>
+      </div>
+      {/* Game area - falling words */}
+      <div style={{position:"relative",height:230,background:"linear-gradient(180deg,#EEF2FF,#C7D2FE)",borderRadius:20,overflow:"hidden",marginBottom:8}}>
+        {/* Lane markers */}
+        {[25,50,75].map(x=><div key={x} style={{position:"absolute",left:`${x}%`,top:0,bottom:0,width:1,background:"rgba(99,102,241,0.1)"}}/>)}
+        {/* Falling words */}
+        {words.filter(w=>!w.caught).map((w,i)=>(
+          <button key={w.id}
+            onClick={()=>!caught&&catchWord(w)}
+            style={{
+              position:"absolute",left:`${w.x}%`,top:`${w.y}%`,transform:"translateX(-50%)",
+              padding:"8px 14px",borderRadius:12,fontSize:15,fontWeight:900,cursor:"pointer",
+              background:caught?.id===w.id?(w.correct?"#D1FAE5":"#FEE2E2"):(w.correct?"#FEF3C7":"white"),
+              border:`2px solid ${caught?.id===w.id?(w.correct?"#22C55E":"#EF4444"):colors[i%4]}`,
+              color:caught?.id===w.id?(w.correct?C.green:C.red):colors[i%4],
+              boxShadow:`0 3px 10px ${colors[i%4]}44`,fontFamily:F,
+              transition:"background 0.1s",whiteSpace:"nowrap",zIndex:2
+            }}>
             {w.word}
           </button>
         ))}
-        {caught&&<div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(255,255,255,0.7)",fontSize:56}}>{caught.missed?"💨":caught.correct?"🎉":"❌"}</div>}
-        <div style={{position:"absolute",bottom:6,left:"50%",transform:"translateX(-50%)",fontSize:26}}>🏃</div>
-      </div>
-      <p style={{textAlign:"center",fontSize:12,color:C.muted,fontWeight:600}}>Tap the correct word as it falls!</p>
-    </GameShell>
-  );
-}
-
-// ── 🌋 VOLCANO ESCAPE ────────────────────────────────────────────────────
-function VolcanoEscape({child,mode,onComplete,onQuit,level=1}) {
-  const STEPS=8;
-  const [qs,setQs]=useState(null);
-  const [idx,setIdx]=useState(0);
-  const [climbed,setClimbed]=useState(0);
-  const [sel,setSel]=useState(null);
-  const [ans,setAns]=useState(false);
-  const [done,setDone]=useState(false);
-  const [loadErr,setLoadErr]=useState(false);
-  useEffect(()=>{
-    const t=setTimeout(()=>setLoadErr(true),12000);
-    claude(`Generate ${STEPS} science questions for age ${child.age}, ${child.country||"UK"} curriculum, Level ${level}. Fun volcano escape theme! Return ONLY valid JSON: {"questions":[{"q":"What force pulls things down?","options":["A) Friction","B) Gravity","C) Magnetism","D) Air resistance"],"correct":"B","fact":"Gravity pulls everything towards Earth!"}]}`,"Volcano escape questions.").then(d=>{clearTimeout(t);if(!d?.questions)setLoadErr(true);else setQs(d.questions);});
-  },[]);
-  const answer=(opt)=>{
-    if(ans) return;
-    setSel(opt);setAns(true);
-    const q=qs[idx];
-    if(opt.charAt(0)===q?.correct) setClimbed(c=>c+1);
-    setTimeout(()=>{setSel(null);setAns(false);if(idx+1>=STEPS)setDone(true);else setIdx(i=>i+1);},1200);
-  };
-  if(loadErr)return <GameError name="Volcano Escape" onRetry={()=>{setLoadErr(false);setQs(null);}}/>;
-  if(!qs)return <GameLoad name="Volcano Escape" emoji="🌋" tutor={child.tutor}/>;
-  if(done)return <GameEnd name="Volcano Escape" emoji="🌋" score={climbed} max={STEPS} child={child} xp={climbed*10} onDone={()=>onComplete({score:climbed,max:STEPS,xp:climbed*10})}/>;
-  const q=qs[idx];
-  const pct=Math.round((climbed/STEPS)*100);
-  return (
-    <GameShell name="Volcano Escape" emoji="🌋" subject="Science" score={climbed} maxScore={STEPS} round={idx+1} total={STEPS} streak={0} onQuit={onQuit}>
-      <div style={{background:"linear-gradient(135deg,#FEF3C7,#FDE68A)",borderRadius:16,padding:"12px 14px",marginBottom:14,border:"2px solid #F59E0B"}}>
-        <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
-          <span style={{fontSize:28}}>🌋</span>
-          <div style={{flex:1}}>
-            <div style={{height:10,borderRadius:5,background:"rgba(0,0,0,0.15)"}}>
-              <div style={{height:"100%",width:`${pct}%`,borderRadius:5,background:pct>60?"#22C55E":"#EF4444",transition:"width 0.4s"}}/>
-            </div>
+        {/* Result flash */}
+        {caught&&(
+          <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(255,255,255,0.7)",zIndex:5}}>
+            <span style={{fontSize:52}}>{caught.missed?"💨":caught.correct?"🎉":"❌"}</span>
           </div>
-          <span style={{fontSize:24}}>{pct>60?"🏃":"🔥"}</span>
-        </div>
-        <p style={{fontSize:12,fontWeight:700,color:"#92400E",textAlign:"center"}}>{pct===0?"The volcano is erupting — answer to climb!":pct<50?"Keep going — lava is rising!":"Almost safe — nearly there!"}</p>
+        )}
+        {/* Runner */}
+        <div style={{position:"absolute",bottom:4,left:"50%",transform:"translateX(-50%)",fontSize:28}}>🏃</div>
       </div>
-      <p style={{fontSize:16,fontWeight:800,color:C.text,marginBottom:14,lineHeight:1.6}}>{q?.q}</p>
-      <Options options={q?.options} correct={q?.correct} selected={sel} answered={ans} onAnswer={answer}/>
-      {ans&&q?.fact&&<div style={{marginTop:10,padding:"10px 14px",borderRadius:10,background:C.pLight}}><p style={{fontSize:12,fontWeight:700,color:C.primary}}>🔬 {q.fact}</p></div>}
+      <p style={{textAlign:"center",fontSize:12,color:C.muted,fontWeight:600}}>Tap the correct falling word!</p>
     </GameShell>
   );
 }
 
-// ── 🗺️ TREASURE HUNT ─────────────────────────────────────────────────────
+
+function VolcanoEscape({child,mode,onComplete,onQuit,level=1}) {
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 science questions with volcano escape theme for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Volcano Escape questions."),[child]);
+  return <RunnerEngine child={child} name="Volcano Escape" emoji="🌋" subject="Science" color="#EF4444" bg="#FEF2F2" runnerChar="🧗" sceneBg="linear-gradient(180deg,#FEF2F2,#FCA5A5 50%,#7F1D1D)" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
+}
+
 function TreasureMap({child,mode,onComplete,onQuit,level=1}) {
-  const CLUES=7;
-  const [qs,setQs]=useState(null);
-  const [idx,setIdx]=useState(0);
-  const [found,setFound]=useState(0);
-  const [sel,setSel]=useState(null);
-  const [ans,setAns]=useState(false);
-  const [done,setDone]=useState(false);
-  const [loadErr,setLoadErr]=useState(false);
-  const country=child.country||"UK";
-  const histSubj=country==="US"?"American History and US Geography":country==="CA"?"Canadian Heritage and Geography":"British History and UK Geography";
-  useEffect(()=>{
-    const t=setTimeout(()=>setLoadErr(true),12000);
-    claude(`Generate ${CLUES} treasure hunt questions about ${histSubj} for age ${child.age}, Level ${level}. Questions feel like pirate clues. Mix history and geography. Return ONLY valid JSON: {"questions":[{"clue":"To find the treasure: What is the capital of England?","options":["A) Manchester","B) London","C) Birmingham","D) Leeds"],"correct":"B","treasure":"⚓ London is the capital!"}]}`,"Treasure hunt questions.").then(d=>{clearTimeout(t);if(!d?.questions)setLoadErr(true);else setQs(d.questions);});
-  },[]);
-  const answer=(opt)=>{
-    if(ans) return;
-    setSel(opt);setAns(true);
-    if(opt.charAt(0)===qs[idx]?.correct) setFound(f=>f+1);
-    setTimeout(()=>{setSel(null);setAns(false);if(idx+1>=CLUES)setDone(true);else setIdx(i=>i+1);},1300);
-  };
-  if(loadErr)return <GameError name="Treasure Hunt" onRetry={()=>{setLoadErr(false);setQs(null);}}/>;
-  if(!qs)return <GameLoad name="Treasure Hunt" emoji="🗺️" tutor={child.tutor}/>;
-  if(done)return <GameEnd name="Treasure Hunt" emoji="🗺️" score={found} max={CLUES} child={child} xp={found*10} onDone={()=>onComplete({score:found,max:CLUES,xp:found*10})}/>;
-  const q=qs[idx];
-  const mapIcons=["🏴‍☠️","⚓","🏝️","🌊","🧭","🏰","💰"];
-  return (
-    <GameShell name="Treasure Hunt" emoji="🗺️" subject="History" score={found} maxScore={CLUES} round={idx+1} total={CLUES} streak={0} onQuit={onQuit}>
-      <div style={{background:"linear-gradient(135deg,#FEF3C7,#FDE68A)",borderRadius:16,padding:"12px 14px",marginBottom:14,border:"2px dashed #F59E0B"}}>
-        <div style={{display:"flex",gap:6,marginBottom:8}}>{mapIcons.map((icon,i)=><span key={i} style={{fontSize:16,opacity:i<=idx?1:0.3}}>{icon}</span>)}</div>
-        <p style={{fontSize:13,fontWeight:800,color:"#92400E",marginBottom:4,textTransform:"uppercase",letterSpacing:"0.05em"}}>🗺️ Clue {idx+1} of {CLUES}</p>
-        <p style={{fontSize:14,fontWeight:700,color:"#78350F",lineHeight:1.6,fontStyle:"italic"}}>{q?.clue}</p>
-      </div>
-      <Options options={q?.options} correct={q?.correct} selected={sel} answered={ans} onAnswer={answer}/>
-      {ans&&q?.treasure&&<div style={{marginTop:10,padding:"10px 14px",borderRadius:10,background:"#FEF3C7",border:"2px solid #F59E0B"}}><p style={{fontSize:13,fontWeight:700,color:"#92400E"}}>{q.treasure}</p></div>}
-    </GameShell>
-  );
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 history and geography treasure hunt questions for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Treasure Hunt questions."),[child]);
+  return <RunnerEngine child={child} name="Treasure Hunt" emoji="🗺️" subject="History" color="#D97706" bg="#FFFBEB" runnerChar="🏴‍☠️" sceneBg="linear-gradient(180deg,#FFFBEB,#FDE68A 50%,#0369A1)" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
 }
 
-// ── 🏎️ GRAND PRIX RACING ─────────────────────────────────────────────────
 function GrandPrix({child,mode,onComplete,onQuit,level=1}) {
   const LAPS=8;
-  const [qs,setQs]=useState(null);const [idx,setIdx]=useState(0);const [pos,setPos]=useState(5);const [sel,setSel]=useState(null);const [ans,setAns]=useState(false);const [done,setDone]=useState(false);const [loadErr,setLoadErr]=useState(false);
-  useEffect(()=>{const t=setTimeout(()=>setLoadErr(true),12000);claude(`Generate ${LAPS} measurement questions for age ${child.age}, ${child.country||"UK"} curriculum, Level ${level}. Mix: length, mass, capacity, time, money, perimeter, area. Return ONLY valid JSON: {"questions":[{"q":"How many cm in 1m?","options":["A) 10","B) 100","C) 1000","D) 10000"],"correct":"B"}]}`,"Grand prix questions.").then(d=>{clearTimeout(t);if(!d?.questions)setLoadErr(true);else setQs(d.questions);});}, []);
-  const answer=(opt)=>{if(ans)return;setSel(opt);setAns(true);const ok=opt.charAt(0)===qs[idx]?.correct;if(ok)setPos(p=>Math.max(1,p-1));else setPos(p=>Math.min(8,p+1));setTimeout(()=>{setSel(null);setAns(false);if(idx+1>=LAPS)setDone(true);else setIdx(i=>i+1);},900);};
-  if(loadErr)return <GameError name="Grand Prix" onRetry={()=>{setLoadErr(false);setQs(null);}}/>;
+  const [qs,setQs]=useState(null);const [idx,setIdx]=useState(0);const [pos,setPos]=useState(8);
+  const [carX,setCarX]=useState(50);const [boost,setBoost]=useState(false);
+  const [sel,setSel]=useState(null);const [ans,setAns]=useState(false);
+  const [done,setDone]=useState(false);const [loadErr,setLoadErr]=useState(false);
+  const trackRef=useRef(0); // track scroll offset
+
+  useEffect(()=>{
+    const t=setTimeout(()=>setLoadErr(true),12000);
+    claude(`Generate ${LAPS} measurement questions for age ${child.age}, ${child.country||"UK"} curriculum, Level ${level}.
+Length, mass, capacity, time, money, perimeter, area. Fun racing theme.
+Return ONLY valid JSON: {"questions":[{"q":"How many cm in 1 metre?","options":["A) 10","B) 100","C) 1000","D) 10"],"correct":"B"}]}`,"Grand prix questions.").then(d=>{
+      clearTimeout(t);
+      if(!d?.questions){setLoadErr(true);return;}
+      setQs(d.questions);
+    });
+  },[]);
+
+  const answer=(opt)=>{
+    if(ans) return;
+    setSel(opt);setAns(true);
+    const ok=opt.charAt(0)===qs[idx]?.correct;
+    if(ok){setPos(p=>Math.max(1,p-1));setBoost(true);setTimeout(()=>setBoost(false),600);}
+    else setPos(p=>Math.min(8,p+1));
+    setTimeout(()=>{
+      setSel(null);setAns(false);
+      if(idx+1>=LAPS)setDone(true);
+      else setIdx(i=>i+1);
+    },900);
+  };
+
+  if(loadErr)return <GameError name="Grand Prix Racing" onRetry={()=>{setLoadErr(false);setQs(null);}}/>;
   if(!qs)return <GameLoad name="Grand Prix Racing" emoji="🏎️" tutor={child.tutor}/>;
-  if(done)return <GameEnd name="Grand Prix Racing" emoji="🏎️" score={8-pos+1} max={LAPS} child={child} xp={(8-pos+1)*10} onDone={()=>onComplete({score:8-pos+1,max:LAPS,xp:(8-pos+1)*10})}/>;
-  const q=qs[idx];const cars=["🏎️","🚗","🚕","🚙","🚓","🚑","🚌","🚚"];
-  return (<GameShell name="Grand Prix Racing" emoji="🏎️" subject="Maths" score={8-pos+1} maxScore={LAPS} round={idx+1} total={LAPS} streak={0} onQuit={onQuit}>
-    <div style={{background:"linear-gradient(135deg,#1F2937,#374151)",borderRadius:16,padding:12,marginBottom:12}}>
-      <p style={{fontSize:11,fontWeight:800,color:"#9CA3AF",textTransform:"uppercase",marginBottom:8}}>RACE POSITION</p>
-      <div style={{display:"flex",flexDirection:"column",gap:4}}>
-        {cars.map((car,i)=><div key={i} style={{display:"flex",alignItems:"center",gap:8,padding:"4px 8px",borderRadius:8,background:i===pos-1?"rgba(251,191,36,0.2)":"transparent"}}>
-          <span style={{fontSize:11,fontWeight:800,color:"#9CA3AF",width:16}}>{i+1}</span>
-          <div style={{flex:1,height:3,background:"#4B5563",borderRadius:2,position:"relative"}}>
-            {i===pos-1&&<div style={{position:"absolute",right:0,fontSize:18,top:-8}}>🏎️</div>}
-          </div>
-        </div>)}
-      </div>
-    </div>
-    <p style={{fontSize:16,fontWeight:800,color:C.text,marginBottom:14}}>{q?.q}</p>
-    <Options options={q?.options} correct={q?.correct} selected={sel} answered={ans} onAnswer={answer}/>
-  </GameShell>);
-}
+  if(done)return <GameEnd name="Grand Prix Racing" emoji="🏎️" score={LAPS-pos+1} max={LAPS} child={child} xp={(LAPS-pos+1)*10} onDone={()=>onComplete({score:LAPS-pos+1,max:LAPS,xp:(LAPS-pos+1)*10})}/>;
 
-// ── 🍭 CANDY SHOP ────────────────────────────────────────────────────────
-function CandyShop({child,mode,onComplete,onQuit,level=1}) {
-  const TOTAL=8;const [qs,setQs]=useState(null);const [idx,setIdx]=useState(0);const [coins,setCoins]=useState(0);const [sel,setSel]=useState(null);const [ans,setAns]=useState(false);const [done,setDone]=useState(false);const [loadErr,setLoadErr]=useState(false);
-  useEffect(()=>{const t=setTimeout(()=>setLoadErr(true),12000);claude(`Generate ${TOTAL} money/financial maths questions for age ${child.age}, ${child.country||"UK"} curriculum, Level ${level}. Theme: buying sweets and candy. Involve prices, change, totals. Return ONLY valid JSON: {"questions":[{"q":"You buy a lolly for 35p. You pay 50p. How much change?","options":["A) 10p","B) 15p","C) 20p","D) 25p"],"correct":"B"}]}`,"Candy shop questions.").then(d=>{clearTimeout(t);if(!d?.questions)setLoadErr(true);else setQs(d.questions);});}, []);
-  const answer=(opt)=>{if(ans)return;setSel(opt);setAns(true);if(opt.charAt(0)===qs[idx]?.correct)setCoins(c=>c+1);setTimeout(()=>{setSel(null);setAns(false);if(idx+1>=TOTAL)setDone(true);else setIdx(i=>i+1);},900);};
-  if(loadErr)return <GameError name="Candy Shop" onRetry={()=>{setLoadErr(false);setQs(null);}}/>;
-  if(!qs)return <GameLoad name="Candy Shop" emoji="🍭" tutor={child.tutor}/>;
-  if(done)return <GameEnd name="Candy Shop" emoji="🍭" score={coins} max={TOTAL} child={child} xp={coins*8} onDone={()=>onComplete({score:coins,max:TOTAL,xp:coins*8})}/>;
-  const q=qs[idx];const sweets=["🍭","🍬","🍫","🍩","🧁","🍪","🍡","🎂"];
-  return (<GameShell name="Candy Shop" emoji="🍭" subject="Maths" score={coins} maxScore={TOTAL} round={idx+1} total={TOTAL} streak={0} onQuit={onQuit}>
-    <div style={{background:"linear-gradient(135deg,#FDF2F8,#FCE7F3)",borderRadius:16,padding:14,marginBottom:12,border:"2px dashed #EC4899",textAlign:"center"}}>
-      <div style={{fontSize:28,marginBottom:4}}>{sweets[idx%8]}</div>
-      <p style={{fontSize:12,fontWeight:800,color:"#BE185D"}}>🪙 {coins} coins earned</p>
-    </div>
-    <p style={{fontSize:16,fontWeight:800,color:C.text,marginBottom:14}}>{q?.q}</p>
-    <Options options={q?.options} correct={q?.correct} selected={sel} answered={ans} onAnswer={answer}/>
-  </GameShell>);
-}
-
-// ── 🏀 BASKETBALL MATHS ──────────────────────────────────────────────────
-function BasketballMaths({child,mode,onComplete,onQuit,level=1}) {
-  const SHOTS=8;const [qs,setQs]=useState(null);const [idx,setIdx]=useState(0);const [score,setScore]=useState(0);const [shooting,setShooting]=useState(false);const [result,setResult]=useState(null);const [sel,setSel]=useState(null);const [ans,setAns]=useState(false);const [done,setDone]=useState(false);const [loadErr,setLoadErr]=useState(false);
-  useEffect(()=>{const t=setTimeout(()=>setLoadErr(true),12000);claude(`Generate ${SHOTS} statistics and data questions for age ${child.age}, ${child.country||"UK"} curriculum, Level ${level}. Types: reading charts, calculating averages, interpreting data. Return ONLY valid JSON: {"questions":[{"q":"A bar chart shows: Mon=5, Tue=8, Wed=3, Thu=6. What is the mean?","options":["A) 5","B) 5.5","C) 6","D) 22"],"correct":"B"}]}`,"Basketball stats questions.").then(d=>{clearTimeout(t);if(!d?.questions)setLoadErr(true);else setQs(d.questions);});}, []);
-  const answer=(opt)=>{if(ans)return;setSel(opt);setAns(true);const ok=opt.charAt(0)===qs[idx]?.correct;setShooting(true);setTimeout(()=>{setResult(ok?"score":"miss");if(ok)setScore(s=>s+1);setShooting(false);setTimeout(()=>{setResult(null);setSel(null);setAns(false);if(idx+1>=SHOTS)setDone(true);else setIdx(i=>i+1);},600);},400);};
-  if(loadErr)return <GameError name="Basketball Maths" onRetry={()=>{setLoadErr(false);setQs(null);}}/>;
-  if(!qs)return <GameLoad name="Basketball Maths" emoji="🏀" tutor={child.tutor}/>;
-  if(done)return <GameEnd name="Basketball Maths" emoji="🏀" score={score} max={SHOTS} child={child} xp={score*10} onDone={()=>onComplete({score,max:SHOTS,xp:score*10})}/>;
   const q=qs[idx];
-  return (<GameShell name="Basketball Maths" emoji="🏀" subject="Maths" score={score} maxScore={SHOTS} round={idx+1} total={SHOTS} streak={0} onQuit={onQuit}>
-    <div style={{background:"linear-gradient(180deg,#1E3A5F,#1E40AF)",borderRadius:16,padding:14,marginBottom:12,textAlign:"center",position:"relative",height:80}}>
-      <div style={{fontSize:28,position:"absolute",top:8,left:"50%",transform:"translateX(-50%)"}}>🏀</div>
-      {result&&<div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",borderRadius:16,background:"rgba(0,0,0,0.5)",fontSize:36}}>{result==="score"?"🎯":"💨"}</div>}
-      <div style={{position:"absolute",bottom:8,right:16,fontSize:28}}>🏀</div>
-      <div style={{position:"absolute",top:8,right:16,fontSize:22}}>🥅</div>
-    </div>
-    <p style={{fontSize:15,fontWeight:800,color:C.text,marginBottom:14}}>{q?.q}</p>
-    <Options options={q?.options} correct={q?.correct} selected={sel} answered={ans} onAnswer={answer}/>
-  </GameShell>);
-}
+  const cars=["🏎️","🚗","🚕","🚙","🚓","🚑","🚌","🚛"];
 
-// ── 🚂 NUMBER TRAIN ──────────────────────────────────────────────────────
-function TrainGame({child,mode,onComplete,onQuit,level=1}) {
-  const TOTAL=8;const [qs,setQs]=useState(null);const [idx,setIdx]=useState(0);const [score,setScore]=useState(0);const [sel,setSel]=useState(null);const [ans,setAns]=useState(false);const [done,setDone]=useState(false);const [loadErr,setLoadErr]=useState(false);
-  useEffect(()=>{const t=setTimeout(()=>setLoadErr(true),12000);claude(`Generate ${TOTAL} number sequence and place value questions for age ${child.age}, ${child.country||"UK"} curriculum, Level ${level}. Each question shows a sequence with a missing number. Return ONLY valid JSON: {"questions":[{"sequence":"2, 4, 6, ?, 10","q":"What is the missing number?","options":["A) 7","B) 8","C) 9","D) 12"],"correct":"B"}]}`,"Number train questions.").then(d=>{clearTimeout(t);if(!d?.questions)setLoadErr(true);else setQs(d.questions);});}, []);
-  const answer=(opt)=>{if(ans)return;setSel(opt);setAns(true);if(opt.charAt(0)===qs[idx]?.correct)setScore(s=>s+1);setTimeout(()=>{setSel(null);setAns(false);if(idx+1>=TOTAL)setDone(true);else setIdx(i=>i+1);},900);};
-  if(loadErr)return <GameError name="Number Train" onRetry={()=>{setLoadErr(false);setQs(null);}}/>;
-  if(!qs)return <GameLoad name="Number Train" emoji="🚂" tutor={child.tutor}/>;
-  if(done)return <GameEnd name="Number Train" emoji="🚂" score={score} max={TOTAL} child={child} xp={score*8} onDone={()=>onComplete({score,max:TOTAL,xp:score*8})}/>;
-  const q=qs[idx];
-  return (<GameShell name="Number Train" emoji="🚂" subject="Maths" score={score} maxScore={TOTAL} round={idx+1} total={TOTAL} streak={0} onQuit={onQuit}>
-    <div style={{background:"linear-gradient(135deg,#1C1917,#292524)",borderRadius:16,padding:14,marginBottom:12}}>
-      <div style={{display:"flex",gap:6,alignItems:"center",overflowX:"auto",paddingBottom:4}}>
-        <span style={{fontSize:26}}>🚂</span>
-        {q?.sequence?.split(",").map((n,i)=><div key={i} style={{minWidth:48,height:40,borderRadius:8,background:n.trim()==="?"?"#FCD34D":"#E5E7EB",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,fontWeight:900,color:n.trim()==="?"?"#92400E":"#1F2937",flexShrink:0,border:n.trim()==="?"?"2px solid #F59E0B":"2px solid #D1D5DB"}}>{n.trim()}</div>)}
-        <span style={{fontSize:22}}>🏁</span>
-      </div>
-    </div>
-    <p style={{fontSize:16,fontWeight:800,color:C.text,marginBottom:14}}>{q?.q}</p>
-    <Options options={q?.options} correct={q?.correct} selected={sel} answered={ans} onAnswer={answer}/>
-  </GameShell>);
-}
-
-// ── 🛒 SUPERMARKET SWEEP ─────────────────────────────────────────────────
-function SupermarketMath({child,mode,onComplete,onQuit,level=1}) {
-  const TOTAL=8;const [qs,setQs]=useState(null);const [idx,setIdx]=useState(0);const [score,setScore]=useState(0);const [basket,setBasket]=useState(0);const [sel,setSel]=useState(null);const [ans,setAns]=useState(false);const [done,setDone]=useState(false);const [loadErr,setLoadErr]=useState(false);
-  useEffect(()=>{const t=setTimeout(()=>setLoadErr(true),12000);claude(`Generate ${TOTAL} supermarket maths questions for age ${child.age}, ${child.country||"UK"} curriculum, Level ${level}. Involve totals, change, discounts, unit prices, best value. Return ONLY valid JSON: {"questions":[{"q":"Apples cost 40p each. How much for 3?","options":["A) £1.00","B) £1.20","C) £1.40","D) £1.60"],"correct":"B","item":"🍎 Apples"}]}`,"Supermarket maths questions.").then(d=>{clearTimeout(t);if(!d?.questions)setLoadErr(true);else setQs(d.questions);});}, []);
-  const answer=(opt)=>{if(ans)return;setSel(opt);setAns(true);const ok=opt.charAt(0)===qs[idx]?.correct;if(ok){setScore(s=>s+1);setBasket(b=>b+1);}setTimeout(()=>{setSel(null);setAns(false);if(idx+1>=TOTAL)setDone(true);else setIdx(i=>i+1);},900);};
-  if(loadErr)return <GameError name="Supermarket Sweep" onRetry={()=>{setLoadErr(false);setQs(null);}}/>;
-  if(!qs)return <GameLoad name="Supermarket Sweep" emoji="🛒" tutor={child.tutor}/>;
-  if(done)return <GameEnd name="Supermarket Sweep" emoji="🛒" score={score} max={TOTAL} child={child} xp={score*8} onDone={()=>onComplete({score,max:TOTAL,xp:score*8})}/>;
-  const q=qs[idx];
-  return (<GameShell name="Supermarket Sweep" emoji="🛒" subject="Maths" score={score} maxScore={TOTAL} round={idx+1} total={TOTAL} streak={0} onQuit={onQuit}>
-    <div style={{background:"linear-gradient(135deg,#F0FDF4,#DCFCE7)",borderRadius:16,padding:14,marginBottom:12,border:"2px solid #86EFAC",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-      <div style={{fontSize:28}}>{q?.item?.split(" ")[0]||"🛒"}</div>
-      <div style={{textAlign:"center"}}>
-        <p style={{fontSize:11,fontWeight:800,color:C.green,textTransform:"uppercase"}}>Items in basket</p>
-        <p style={{fontSize:24,fontWeight:900,color:C.green}}>{basket}</p>
-      </div>
-      <div style={{fontSize:28}}>🛒</div>
-    </div>
-    <p style={{fontSize:16,fontWeight:800,color:C.text,marginBottom:14}}>{q?.q}</p>
-    <Options options={q?.options} correct={q?.correct} selected={sel} answered={ans} onAnswer={answer}/>
-  </GameShell>);
-}
-
-// ── 🛸 ROCKET MATHS ──────────────────────────────────────────────────────
-function RocketMaths({child,mode,onComplete,onQuit,level=1}) {
-  const TOTAL=8;const [qs,setQs]=useState(null);const [idx,setIdx]=useState(0);const [fuel,setFuel]=useState(0);const [sel,setSel]=useState(null);const [ans,setAns]=useState(false);const [done,setDone]=useState(false);const [loadErr,setLoadErr]=useState(false);
-  useEffect(()=>{const t=setTimeout(()=>setLoadErr(true),12000);claude(`Generate ${TOTAL} algebra questions for age ${child.age}, ${child.country||"UK"} curriculum, Level ${level}. Missing numbers, equations, sequences. Return ONLY valid JSON: {"questions":[{"q":"If x + 5 = 12, what is x?","options":["A) 5","B) 6","C) 7","D) 8"],"correct":"C"}]}`,"Rocket algebra questions.").then(d=>{clearTimeout(t);if(!d?.questions)setLoadErr(true);else setQs(d.questions);});}, []);
-  const answer=(opt)=>{if(ans)return;setSel(opt);setAns(true);const ok=opt.charAt(0)===qs[idx]?.correct;if(ok)setFuel(f=>f+1);setTimeout(()=>{setSel(null);setAns(false);if(idx+1>=TOTAL)setDone(true);else setIdx(i=>i+1);},900);};
-  if(loadErr)return <GameError name="Rocket Launch" onRetry={()=>{setLoadErr(false);setQs(null);}}/>;
-  if(!qs)return <GameLoad name="Rocket Launch" emoji="🛸" tutor={child.tutor}/>;
-  if(done)return <GameEnd name="Rocket Launch" emoji="🛸" score={fuel} max={TOTAL} child={child} xp={fuel*10} onDone={()=>onComplete({score:fuel,max:TOTAL,xp:fuel*10})}/>;
-  const q=qs[idx];const fuelPct=Math.round((fuel/TOTAL)*100);
-  return (<GameShell name="Rocket Launch" emoji="🛸" subject="Maths" score={fuel} maxScore={TOTAL} round={idx+1} total={TOTAL} streak={0} onQuit={onQuit}>
-    <div style={{background:"linear-gradient(180deg,#0F0F1A,#1E1B4B)",borderRadius:16,padding:14,marginBottom:12,textAlign:"center"}}>
-      <div style={{fontSize:36,marginBottom:6}}>🚀</div>
-      <p style={{fontSize:11,fontWeight:800,color:"#9CA3AF",marginBottom:4}}>FUEL LEVEL</p>
-      <div style={{height:12,borderRadius:6,background:"rgba(255,255,255,0.1)",overflow:"hidden"}}><div style={{height:"100%",width:`${fuelPct}%`,background:"linear-gradient(90deg,#3B82F6,#06B6D4)",borderRadius:6,transition:"width 0.4s"}}/></div>
-      <p style={{fontSize:11,color:"#60A5FA",fontWeight:700,marginTop:4}}>{fuelPct}% — {fuel>=TOTAL*0.8?"Ready for launch! 🚀":fuel>=TOTAL*0.5?"Building fuel...":"Need more fuel!"}</p>
-    </div>
-    <p style={{fontSize:16,fontWeight:800,color:C.text,marginBottom:14}}>{q?.q}</p>
-    <Options options={q?.options} correct={q?.correct} selected={sel} answered={ans} onAnswer={answer}/>
-  </GameShell>);
-}
-
-// ── 🎱 SPELLING BINGO ────────────────────────────────────────────────────
-function SpellBingo({child,mode,onComplete,onQuit,level=1}) {
-  const TOTAL=9;const [qs,setQs]=useState(null);const [idx,setIdx]=useState(0);const [card,setCard]=useState([]);const [dabbed,setDabbed]=useState([]);const [sel,setSel]=useState(null);const [ans,setAns]=useState(false);const [done,setDone]=useState(false);const [loadErr,setLoadErr]=useState(false);
-  useEffect(()=>{const t=setTimeout(()=>setLoadErr(true),12000);claude(`Generate ${TOTAL} spelling questions for age ${child.age}, ${child.country||"UK"} curriculum, Level ${level}. Each: which is the correct spelling? Return ONLY valid JSON: {"questions":[{"q":"Which is correct?","options":["A) frend","B) friend","C) freind","D) friand"],"correct":"B","word":"friend"}]}`,"Spelling bingo questions.").then(d=>{clearTimeout(t);if(!d?.questions)setLoadErr(true);else{setQs(d.questions);setCard(d.questions.map((q,i)=>({id:i,word:q.word||"Word"})).sort(()=>Math.random()-0.5));}});}, []);
-  const answer=(opt)=>{if(ans)return;setSel(opt);setAns(true);const ok=opt.charAt(0)===qs[idx]?.correct;if(ok)setDabbed(d=>[...d,idx]);setTimeout(()=>{setSel(null);setAns(false);if(idx+1>=TOTAL)setDone(true);else setIdx(i=>i+1);},900);};
-  if(loadErr)return <GameError name="Spelling Bingo" onRetry={()=>{setLoadErr(false);setQs(null);}}/>;
-  if(!qs)return <GameLoad name="Spelling Bingo" emoji="🎱" tutor={child.tutor}/>;
-  if(done)return <GameEnd name="Spelling Bingo" emoji="🎱" score={dabbed.length} max={TOTAL} child={child} xp={dabbed.length*8} onDone={()=>onComplete({score:dabbed.length,max:TOTAL,xp:dabbed.length*8})}/>;
-  const q=qs[idx];
-  return (<GameShell name="Spelling Bingo" emoji="🎱" subject="English" score={dabbed.length} maxScore={TOTAL} round={idx+1} total={TOTAL} streak={0} onQuit={onQuit}>
-    <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:6,marginBottom:12}}>
-      {card.map((c,i)=><div key={i} style={{padding:"6px 4px",borderRadius:10,background:dabbed.includes(c.id)?"#22C55E":C.surface,border:`2px solid ${dabbed.includes(c.id)?"#22C55E":C.border}`,textAlign:"center",fontSize:11,fontWeight:800,color:dabbed.includes(c.id)?"#fff":C.text,position:"relative"}}>
-        {dabbed.includes(c.id)&&<div style={{position:"absolute",inset:0,background:"rgba(34,197,94,0.9)",borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16}}>✓</div>}
-        {c.word}
-      </div>)}
-    </div>
-    <p style={{fontSize:15,fontWeight:800,color:C.text,marginBottom:14}}>{q?.q}</p>
-    <Options options={q?.options} correct={q?.correct} selected={sel} answered={ans} onAnswer={answer}/>
-  </GameShell>);
-}
-
-// ── 🎲 WORDSHAKE ─────────────────────────────────────────────────────────
-function WordShake({child,mode,onComplete,onQuit,level=1}) {
-  const TOTAL=6;const [rounds,setRounds]=useState(null);const [idx,setIdx]=useState(0);const [score,setScore]=useState(0);const [sel,setSel]=useState(null);const [ans,setAns]=useState(false);const [done,setDone]=useState(false);const [loadErr,setLoadErr]=useState(false);
-  useEffect(()=>{const t=setTimeout(()=>setLoadErr(true),12000);claude(`Generate ${TOTAL} word-building vocabulary rounds for age ${child.age}, ${child.country||"UK"} curriculum, Level ${level}. Give a set of letters and 4 words that could be made (only 1 is a REAL word fitting the vocabulary level). Return ONLY valid JSON: {"questions":[{"letters":"E R I F N D","q":"Which real word can you make from these letters?","options":["A) FIREN","B) FRIEND","C) FRINED","D) NDFIRE"],"correct":"B"}]}`,"WordShake questions.").then(d=>{clearTimeout(t);if(!d?.questions)setLoadErr(true);else setRounds(d.questions);});}, []);
-  const answer=(opt)=>{if(ans)return;setSel(opt);setAns(true);if(opt.charAt(0)===rounds[idx]?.correct)setScore(s=>s+1);setTimeout(()=>{setSel(null);setAns(false);if(idx+1>=TOTAL)setDone(true);else setIdx(i=>i+1);},900);};
-  if(loadErr)return <GameError name="WordShake" onRetry={()=>{setLoadErr(false);setRounds(null);}}/>;
-  if(!rounds)return <GameLoad name="WordShake" emoji="🎲" tutor={child.tutor}/>;
-  if(done)return <GameEnd name="WordShake" emoji="🎲" score={score} max={TOTAL} child={child} xp={score*10} onDone={()=>onComplete({score,max:TOTAL,xp:score*10})}/>;
-  const r=rounds[idx];
-  return (<GameShell name="WordShake" emoji="🎲" subject="English" score={score} maxScore={TOTAL} round={idx+1} total={TOTAL} streak={0} onQuit={onQuit}>
-    <div style={{background:"linear-gradient(135deg,#4F46E5,#7C3AED)",borderRadius:16,padding:16,marginBottom:14,textAlign:"center"}}>
-      <p style={{fontSize:12,fontWeight:800,color:"rgba(255,255,255,0.7)",marginBottom:8}}>SHAKE THE LETTERS!</p>
-      <div style={{display:"flex",gap:8,justifyContent:"center",flexWrap:"wrap"}}>
-        {r?.letters?.split(" ").map((l,i)=><div key={i} style={{width:36,height:36,borderRadius:8,background:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,fontWeight:900,color:"#4F46E5",boxShadow:"0 3px 6px rgba(0,0,0,0.2)"}}>{l}</div>)}
-      </div>
-    </div>
-    <p style={{fontSize:15,fontWeight:800,color:C.text,marginBottom:14}}>{r?.q}</p>
-    <Options options={r?.options} correct={r?.correct} selected={sel} answered={ans} onAnswer={answer}/>
-  </GameShell>);
-}
-
-// ── 🔍 SPOT THE DIFFERENCE ───────────────────────────────────────────────
-function SpotDifference({child,mode,onComplete,onQuit,level=1}) {
-  const TOTAL=7;const [qs,setQs]=useState(null);const [idx,setIdx]=useState(0);const [score,setScore]=useState(0);const [sel,setSel]=useState(null);const [ans,setAns]=useState(false);const [done,setDone]=useState(false);const [loadErr,setLoadErr]=useState(false);
-  useEffect(()=>{const t=setTimeout(()=>setLoadErr(true),12000);claude(`Generate ${TOTAL} reading comprehension spot-the-difference questions for age ${child.age}, ${child.country||"UK"} curriculum, Level ${level}. Show two versions of a short text — one with a deliberate change. Ask what changed. Return ONLY valid JSON: {"questions":[{"original":"The cat sat on the mat.","changed":"The dog sat on the mat.","q":"What is different in the second sentence?","options":["A) cat became dog","B) sat became stood","C) mat became rug","D) Nothing changed"],"correct":"A"}]}`,"Spot the difference questions.").then(d=>{clearTimeout(t);if(!d?.questions)setLoadErr(true);else setQs(d.questions);});}, []);
-  const answer=(opt)=>{if(ans)return;setSel(opt);setAns(true);if(opt.charAt(0)===qs[idx]?.correct)setScore(s=>s+1);setTimeout(()=>{setSel(null);setAns(false);if(idx+1>=TOTAL)setDone(true);else setIdx(i=>i+1);},1100);};
-  if(loadErr)return <GameError name="Spot the Difference" onRetry={()=>{setLoadErr(false);setQs(null);}}/>;
-  if(!qs)return <GameLoad name="Spot the Difference" emoji="🔍" tutor={child.tutor}/>;
-  if(done)return <GameEnd name="Spot the Difference" emoji="🔍" score={score} max={TOTAL} child={child} xp={score*10} onDone={()=>onComplete({score,max:TOTAL,xp:score*10})}/>;
-  const q=qs[idx];
-  return (<GameShell name="Spot the Difference" emoji="🔍" subject="English" score={score} maxScore={TOTAL} round={idx+1} total={TOTAL} streak={0} onQuit={onQuit}>
-    <div style={{marginBottom:12}}>
-      <div style={{background:"#F0FDF4",borderRadius:12,padding:"10px 14px",marginBottom:8,border:"2px solid #86EFAC"}}>
-        <p style={{fontSize:11,fontWeight:800,color:C.green,marginBottom:4}}>ORIGINAL</p>
-        <p style={{fontSize:14,fontWeight:600,color:C.text,lineHeight:1.6}}>{q?.original}</p>
-      </div>
-      <div style={{background:"#FEF2F2",borderRadius:12,padding:"10px 14px",border:"2px solid #FCA5A5"}}>
-        <p style={{fontSize:11,fontWeight:800,color:C.red,marginBottom:4}}>CHANGED</p>
-        <p style={{fontSize:14,fontWeight:600,color:C.text,lineHeight:1.6}}>{q?.changed}</p>
-      </div>
-    </div>
-    <p style={{fontSize:15,fontWeight:800,color:C.text,marginBottom:14}}>{q?.q}</p>
-    <Options options={q?.options} correct={q?.correct} selected={sel} answered={ans} onAnswer={answer}/>
-  </GameShell>);
-}
-
-// ── 🧩 WORD PUZZLE ───────────────────────────────────────────────────────
-function PuzzleWords({child,mode,onComplete,onQuit,level=1}) {
-  const TOTAL=7;const [qs,setQs]=useState(null);const [idx,setIdx]=useState(0);const [score,setScore]=useState(0);const [sel,setSel]=useState(null);const [ans,setAns]=useState(false);const [done,setDone]=useState(false);const [loadErr,setLoadErr]=useState(false);
-  useEffect(()=>{const t=setTimeout(()=>setLoadErr(true),12000);claude(`Generate ${TOTAL} crossword-style word puzzle clues for age ${child.age}, ${child.country||"UK"} curriculum, Level ${level}. Give the number of letters and a definition clue. Return ONLY valid JSON: {"questions":[{"clue":"A person who fixes pipes (5 letters)","options":["A) NURSE","B) PLUMB","C) PIPEP","D) PLUMBER... wait, 6 letters"],"correct":"B","answer":"PLUMB"}]}`,"Word puzzle questions.").then(d=>{clearTimeout(t);if(!d?.questions)setLoadErr(true);else setQs(d.questions);});}, []);
-  const answer=(opt)=>{if(ans)return;setSel(opt);setAns(true);if(opt.charAt(0)===qs[idx]?.correct)setScore(s=>s+1);setTimeout(()=>{setSel(null);setAns(false);if(idx+1>=TOTAL)setDone(true);else setIdx(i=>i+1);},900);};
-  if(loadErr)return <GameError name="Word Puzzle" onRetry={()=>{setLoadErr(false);setQs(null);}}/>;
-  if(!qs)return <GameLoad name="Word Puzzle" emoji="🧩" tutor={child.tutor}/>;
-  if(done)return <GameEnd name="Word Puzzle" emoji="🧩" score={score} max={TOTAL} child={child} xp={score*10} onDone={()=>onComplete({score,max:TOTAL,xp:score*10})}/>;
-  const q=qs[idx];
-  return (<GameShell name="Word Puzzle" emoji="🧩" subject="English" score={score} maxScore={TOTAL} round={idx+1} total={TOTAL} streak={0} onQuit={onQuit}>
-    <div style={{background:"linear-gradient(135deg,#1F2937,#111827)",borderRadius:16,padding:16,marginBottom:14,textAlign:"center"}}>
-      <p style={{fontSize:12,fontWeight:800,color:"#9CA3AF",marginBottom:8}}>CROSSWORD CLUE</p>
-      <p style={{fontSize:15,fontWeight:700,color:"#F9FAFB",lineHeight:1.7}}>{q?.clue}</p>
-    </div>
-    <Options options={q?.options} correct={q?.correct} selected={sel} answered={ans} onAnswer={answer}/>
-    {ans&&q?.answer&&<div style={{marginTop:10,padding:"8px 14px",borderRadius:10,background:C.gLight}}><p style={{fontSize:13,fontWeight:800,color:C.green}}>Answer: {q.answer}</p></div>}
-  </GameShell>);
-}
-
-// ── 🏃 SCHOOL RUN ────────────────────────────────────────────────────────
-function SchoolRun({child,mode,onComplete,onQuit,level=1}) {
-  const TOTAL=7;const [qs,setQs]=useState(null);const [idx,setIdx]=useState(0);const [score,setScore]=useState(0);const [dist,setDist]=useState(0);const [sel,setSel]=useState(null);const [ans,setAns]=useState(false);const [done,setDone]=useState(false);const [loadErr,setLoadErr]=useState(false);
-  useEffect(()=>{const t=setTimeout(()=>setLoadErr(true),12000);claude(`Generate ${TOTAL} creative writing / story sequencing questions for age ${child.age}, ${child.country||"UK"} curriculum, Level ${level}. Running to school story — choose the best word/sentence to continue. Return ONLY valid JSON: {"questions":[{"story":"Maya ran out of the door. She was late for school. She ___","q":"Which word best fills the gap?","options":["A) walked","B) sprinted","C) stood","D) slept"],"correct":"B"}]}`,"School run story questions.").then(d=>{clearTimeout(t);if(!d?.questions)setLoadErr(true);else setQs(d.questions);});}, []);
-  const answer=(opt)=>{if(ans)return;setSel(opt);setAns(true);const ok=opt.charAt(0)===qs[idx]?.correct;if(ok){setScore(s=>s+1);setDist(d=>d+15);}else setDist(d=>d+5);setTimeout(()=>{setSel(null);setAns(false);if(idx+1>=TOTAL)setDone(true);else setIdx(i=>i+1);},900);};
-  if(loadErr)return <GameError name="School Run" onRetry={()=>{setLoadErr(false);setQs(null);}}/>;
-  if(!qs)return <GameLoad name="School Run" emoji="🏃" tutor={child.tutor}/>;
-  if(done)return <GameEnd name="School Run" emoji="🏃" score={score} max={TOTAL} child={child} xp={score*8} onDone={()=>onComplete({score,max:TOTAL,xp:score*8})}/>;
-  const q=qs[idx];
-  return (<GameShell name="School Run" emoji="🏃" subject="English" score={score} maxScore={TOTAL} round={idx+1} total={TOTAL} streak={0} onQuit={onQuit}>
-    <div style={{background:"linear-gradient(135deg,#EEF2FF,#C7D2FE)",borderRadius:16,padding:14,marginBottom:12}}>
-      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
-        <span style={{fontSize:22}}>🏫</span>
-        <div style={{flex:1,height:6,borderRadius:3,background:"rgba(99,102,241,0.2)"}}>
-          <div style={{height:"100%",width:`${Math.min(100,(dist/(TOTAL*15))*100)}%`,background:"#6366F1",borderRadius:3,transition:"width 0.5s"}}/>
+  return (
+    <GameShell name="Grand Prix Racing" emoji="🏎️" subject="Maths" score={LAPS-pos+1} maxScore={LAPS} round={idx+1} total={LAPS} streak={0} onQuit={onQuit}>
+      {/* Race track view */}
+      <div style={{background:"linear-gradient(180deg,#1F2937,#111827)",borderRadius:20,padding:"10px 12px",marginBottom:12,position:"relative",overflow:"hidden",height:160}}>
+        {/* Track */}
+        <div style={{position:"absolute",top:0,left:0,right:0,bottom:0,overflow:"hidden"}}>
+          {/* Road */}
+          <div style={{position:"absolute",top:"30%",left:0,right:0,height:"50%",background:"#374151"}}/>
+          {/* Lane lines - animated */}
+          {[...Array(8)].map((_,i)=>(
+            <div key={i} style={{position:"absolute",top:"54%",left:`${(i*14+((idx*20)%14))}%`,width:"8%",height:3,background:"#FCD34D",borderRadius:2,opacity:0.7}}/>
+          ))}
+          {/* Grass */}
+          <div style={{position:"absolute",top:0,left:0,right:0,height:"30%",background:"#14532D"}}/>
+          <div style={{position:"absolute",bottom:0,left:0,right:0,height:"20%",background:"#14532D"}}/>
         </div>
-        <span style={{fontSize:22}}>🏃</span>
+        {/* Position board */}
+        <div style={{position:"absolute",top:8,right:12,background:"rgba(0,0,0,0.7)",borderRadius:8,padding:"4px 10px",zIndex:4}}>
+          <p style={{fontSize:10,fontWeight:800,color:"#9CA3AF"}}>POSITION</p>
+          <p style={{fontSize:22,fontWeight:900,color:pos===1?"#FCD34D":"#fff"}}>P{pos}</p>
+        </div>
+        {/* AI cars */}
+        {cars.slice(1,5).map((car,i)=>(
+          <div key={i} style={{position:"absolute",left:`${15+i*18}%`,top:`${38+i*2}%`,fontSize:20,zIndex:2,opacity:0.7}}>{car}</div>
+        ))}
+        {/* Player car with boost trail */}
+        <div style={{position:"absolute",left:"50%",top:"42%",transform:"translateX(-50%)",fontSize:28,zIndex:3,transition:"left 0.3s"}}>
+          {boost&&<div style={{position:"absolute",right:"100%",top:"20%",fontSize:14,opacity:0.8}}>💨💨</div>}
+          🏎️
+        </div>
+        {/* Lap counter */}
+        <div style={{position:"absolute",top:8,left:12,background:"rgba(0,0,0,0.7)",borderRadius:8,padding:"4px 10px",zIndex:4}}>
+          <p style={{fontSize:10,fontWeight:800,color:"#9CA3AF"}}>LAP</p>
+          <p style={{fontSize:16,fontWeight:900,color:"#fff"}}>{idx+1}/{LAPS}</p>
+        </div>
       </div>
-    </div>
-    {q?.story&&<div style={{background:C.surface,borderRadius:10,padding:"10px 14px",marginBottom:10,border:`1px solid ${C.border}`}}><p style={{fontSize:13,fontWeight:600,color:C.text,lineHeight:1.7,fontStyle:"italic"}}>{q.story}</p></div>}
-    <p style={{fontSize:15,fontWeight:800,color:C.text,marginBottom:14}}>{q?.q}</p>
-    <Options options={q?.options} correct={q?.correct} selected={sel} answered={ans} onAnswer={answer}/>
-  </GameShell>);
+      <p style={{fontSize:16,fontWeight:800,color:C.text,marginBottom:14}}>{q?.q}</p>
+      <Options options={q?.options} correct={q?.correct} selected={sel} answered={ans} onAnswer={answer}/>
+    </GameShell>
+  );
 }
 
-// ── 🧠 MEMORY MATCH ──────────────────────────────────────────────────────
+
+function CandyShop({child,mode,onComplete,onQuit,level=1}) {
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 money/financial maths questions for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Prices, change, totals. Short option answers. Return ONLY JSON: {"questions":[{"q":"3 sweets at 20p each?","options":["50p","60p","70p","80p"],"correct":"60p"}]}`,"Candy shop questions."),[child]);
+  return <CatcherEngine child={child} name="Candy Shop" emoji="🍭" subject="Maths" color="#EC4899" bg="#FDF2F8" fetchFn={fetchFn} catcherChar="🛍️" sceneBg="linear-gradient(180deg,#FDF2F8,#FCE7F3)" initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
+}
+
+function BasketballMaths({child,mode,onComplete,onQuit,level=1}) {
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 statistics, data, averages, charts for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Basketball Maths questions."),[child]);
+  return <CatcherEngine child={child} name="Basketball Maths" emoji="🏀" subject="Maths" color="#EA580C" bg="#FFF7ED" catcherChar="🏀" sceneBg="linear-gradient(180deg,#1E3A5F,#1E40AF)" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
+}
+
+function TrainGame({child,mode,onComplete,onQuit,level=1}) {
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 number sequences, place value, patterns for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Number Train questions."),[child]);
+  return <SpaceExplorer child={child} name="Number Train" emoji="🚂" subject="Maths" color="#374151" bg="#F9FAFB" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
+}
+
+function SupermarketMath({child,mode,onComplete,onQuit,level=1}) {
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 money, prices, change, financial maths for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Supermarket Sweep questions."),[child]);
+  return <CatcherEngine child={child} name="Supermarket Sweep" emoji="🛒" subject="Maths" color="#16A34A" bg="#F0FDF4" catcherChar="🛒" sceneBg="linear-gradient(180deg,#F0FDF4,#DCFCE7)" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
+}
+
+function RocketMaths({child,mode,onComplete,onQuit,level=1}) {
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 algebra questions for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options. Return ONLY JSON: {"questions":[{"q":"x + 5 = 12, x =","options":["5","6","7","8"],"correct":"7"}]}`,"Rocket maths questions."),[child]);
+  return <SpaceExplorer child={child} name="Rocket Launch" emoji="🛸" subject="Maths" color="#7C3AED" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
+}
+
+function SpellBingo({child,mode,onComplete,onQuit,level=1}) {
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 spelling at curriculum Level for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Spelling Bingo questions."),[child]);
+  return <CatcherEngine child={child} name="Spelling Bingo" emoji="🎱" subject="English" color="#EC4899" bg="#FDF2F8" catcherChar="🎰" sceneBg="linear-gradient(180deg,#FDF2F8,#FCE7F3)" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
+}
+
+function WordShake({child,mode,onComplete,onQuit,level=1}) {
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 vocabulary, word building for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"WordShake questions."),[child]);
+  return <SpaceExplorer child={child} name="WordShake" emoji="🎲" subject="English" color="#4F46E5" bg="#EEF2FF" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
+}
+
+function SpotDifference({child,mode,onComplete,onQuit,level=1}) {
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 reading comprehension for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Spot the Difference questions."),[child]);
+  return <SpaceExplorer child={child} name="Spot the Difference" emoji="🔍" subject="English" color="#DC2626" bg="#FEF2F2" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
+}
+
+function PuzzleWords({child,mode,onComplete,onQuit,level=1}) {
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 vocabulary, crossword clues for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Word Puzzle questions."),[child]);
+  return <SpaceExplorer child={child} name="Word Puzzle" emoji="🧩" subject="English" color="#374151" bg="#F9FAFB" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
+}
+
+function SchoolRun({child,mode,onComplete,onQuit,level=1}) {
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 English grammar/writing questions for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options. Return ONLY JSON: {"questions":[{"q":"Best word: She ___ to school.","options":["runned","ran","ranned","runned"],"correct":"ran"}]}`,"School run questions."),[child]);
+  return <RunnerEngine child={child} name="School Run" emoji="🏃" subject="English" color="#0EA5E9" fetchFn={fetchFn} runnerChar="🏃" sceneBg="linear-gradient(180deg,#BAE6FD,#7DD3FC 50%,#4ADE80 50%)" initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
+}
+
 function MemoryWords({child,mode,onComplete,onQuit,level=1}) {
   const PAIRS=6;const [pairs,setPairs]=useState(null);const [flipped,setFlipped]=useState([]);const [matched,setMatched]=useState([]);const [attempts,setAttempts]=useState(0);const [done,setDone]=useState(false);const [loadErr,setLoadErr]=useState(false);const [locked,setLocked]=useState(false);
   useEffect(()=>{const t=setTimeout(()=>setLoadErr(true),12000);claude(`Generate ${PAIRS} word-meaning pairs for age ${child.age}, ${child.country||"UK"} curriculum, Level ${level}. Each: a word and its short definition. Return ONLY valid JSON: {"pairs":[{"word":"habitat","meaning":"where an animal lives"}]}`,"Memory match word pairs.").then(d=>{clearTimeout(t);if(!d?.pairs)setLoadErr(true);else{const cards=[...d.pairs.map((p,i)=>({id:i,type:"word",text:p.word,pairId:i})),...d.pairs.map((p,i)=>({id:i+PAIRS,type:"meaning",text:p.meaning,pairId:i}))].sort(()=>Math.random()-0.5);setPairs(cards);}});}, []);
@@ -3413,747 +3631,465 @@ function MemoryWords({child,mode,onComplete,onQuit,level=1}) {
 
 // ── 🦕 DINO DIG ──────────────────────────────────────────────────────────
 function DinosaurGame({child,mode,onComplete,onQuit,level=1}) {
-  const TOTAL=8;const [qs,setQs]=useState(null);const [idx,setIdx]=useState(0);const [fossils,setFossils]=useState(0);const [sel,setSel]=useState(null);const [ans,setAns]=useState(false);const [done,setDone]=useState(false);const [loadErr,setLoadErr]=useState(false);
-  useEffect(()=>{const t=setTimeout(()=>setLoadErr(true),12000);claude(`Generate ${TOTAL} questions about dinosaurs, fossils, evolution and prehistoric life for age ${child.age}, ${child.country||"UK"} curriculum, Level ${level}. Fun and exciting! Return ONLY valid JSON: {"questions":[{"q":"What type of dinosaur was T-Rex?","options":["A) Herbivore","B) Carnivore","C) Omnivore","D) Insectivore"],"correct":"B","dino":"🦖"}]}`,"Dino dig questions.").then(d=>{clearTimeout(t);if(!d?.questions)setLoadErr(true);else setQs(d.questions);});}, []);
-  const answer=(opt)=>{if(ans)return;setSel(opt);setAns(true);if(opt.charAt(0)===qs[idx]?.correct)setFossils(f=>f+1);setTimeout(()=>{setSel(null);setAns(false);if(idx+1>=TOTAL)setDone(true);else setIdx(i=>i+1);},900);};
-  if(loadErr)return <GameError name="Dino Dig" onRetry={()=>{setLoadErr(false);setQs(null);}}/>;
-  if(!qs)return <GameLoad name="Dino Dig" emoji="🦕" tutor={child.tutor}/>;
-  if(done)return <GameEnd name="Dino Dig" emoji="🦕" score={fossils} max={TOTAL} child={child} xp={fossils*10} onDone={()=>onComplete({score:fossils,max:TOTAL,xp:fossils*10})}/>;
-  const q=qs[idx];const dinos=["🦕","🦖","🐉","🦴","🥚","🔬","🌋","⛏️"];
-  return (<GameShell name="Dino Dig" emoji="🦕" subject="Science" score={fossils} maxScore={TOTAL} round={idx+1} total={TOTAL} streak={0} onQuit={onQuit}>
-    <div style={{background:"linear-gradient(135deg,#78350F,#92400E)",borderRadius:16,padding:14,marginBottom:12,textAlign:"center"}}>
-      <div style={{fontSize:42,marginBottom:4}}>{q?.dino||dinos[idx%8]}</div>
-      <p style={{fontSize:11,fontWeight:800,color:"#FDE68A"}}>🦴 {fossils} fossils found!</p>
-    </div>
-    <p style={{fontSize:16,fontWeight:800,color:C.text,marginBottom:14}}>{q?.q}</p>
-    <Options options={q?.options} correct={q?.correct} selected={sel} answered={ans} onAnswer={answer}/>
-  </GameShell>);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 dinosaurs, fossils, evolution, prehistoric life for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Dino Dig questions."),[child]);
+  return <CatcherEngine child={child} name="Dino Dig" emoji="🦕" subject="Science" color="#D97706" bg="#FFFBEB" catcherChar="⛏️" sceneBg="linear-gradient(180deg,#FFFBEB,#FEF3C7)" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
 }
 
-// ── 🌴 JUNGLE EXPLORER ───────────────────────────────────────────────────
 function JungleExplorer({child,mode,onComplete,onQuit,level=1}) {
-  const TOTAL=8;const [qs,setQs]=useState(null);const [idx,setIdx]=useState(0);const [disc,setDisc]=useState(0);const [sel,setSel]=useState(null);const [ans,setAns]=useState(false);const [done,setDone]=useState(false);const [loadErr,setLoadErr]=useState(false);
-  useEffect(()=>{const t=setTimeout(()=>setLoadErr(true),12000);claude(`Generate ${TOTAL} jungle/rainforest science questions for age ${child.age}, ${child.country||"UK"} curriculum, Level ${level}. Living things, habitats, food chains, plants, animals. Return ONLY valid JSON: {"questions":[{"q":"What is the top level of a rainforest called?","options":["A) Forest floor","B) Understory","C) Canopy","D) Emergent layer"],"correct":"D","creature":"🦜"}]}`,"Jungle explorer questions.").then(d=>{clearTimeout(t);if(!d?.questions)setLoadErr(true);else setQs(d.questions);});}, []);
-  const answer=(opt)=>{if(ans)return;setSel(opt);setAns(true);if(opt.charAt(0)===qs[idx]?.correct)setDisc(d=>d+1);setTimeout(()=>{setSel(null);setAns(false);if(idx+1>=TOTAL)setDone(true);else setIdx(i=>i+1);},900);};
-  if(loadErr)return <GameError name="Jungle Explorer" onRetry={()=>{setLoadErr(false);setQs(null);}}/>;
-  if(!qs)return <GameLoad name="Jungle Explorer" emoji="🌴" tutor={child.tutor}/>;
-  if(done)return <GameEnd name="Jungle Explorer" emoji="🌴" score={disc} max={TOTAL} child={child} xp={disc*10} onDone={()=>onComplete({score:disc,max:TOTAL,xp:disc*10})}/>;
-  const q=qs[idx];
-  return (<GameShell name="Jungle Explorer" emoji="🌴" subject="Science" score={disc} maxScore={TOTAL} round={idx+1} total={TOTAL} streak={0} onQuit={onQuit}>
-    <div style={{background:"linear-gradient(135deg,#14532D,#166534)",borderRadius:16,padding:14,marginBottom:12,textAlign:"center"}}>
-      <div style={{fontSize:36,marginBottom:4}}>{q?.creature||"🌴"}</div>
-      <p style={{fontSize:11,fontWeight:800,color:"#BBF7D0"}}>🔭 {disc} discoveries made!</p>
-    </div>
-    <p style={{fontSize:16,fontWeight:800,color:C.text,marginBottom:14}}>{q?.q}</p>
-    <Options options={q?.options} correct={q?.correct} selected={sel} answered={ans} onAnswer={answer}/>
-  </GameShell>);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 jungle living things, habitats, food chains for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Jungle Explorer questions."),[child]);
+  return <CatcherEngine child={child} name="Jungle Explorer" emoji="🌴" subject="Science" color="#16A34A" bg="#F0FDF4" catcherChar="🔭" sceneBg="linear-gradient(180deg,#F0FDF4,#DCFCE7)" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
 }
 
-// ── 🌊 OCEAN ADVENTURE ───────────────────────────────────────────────────
 function OceanGame({child,mode,onComplete,onQuit,level=1}) {
-  const TOTAL=8;const [qs,setQs]=useState(null);const [idx,setIdx]=useState(0);const [depth,setDepth]=useState(0);const [sel,setSel]=useState(null);const [ans,setAns]=useState(false);const [done,setDone]=useState(false);const [loadErr,setLoadErr]=useState(false);
-  useEffect(()=>{const t=setTimeout(()=>setLoadErr(true),12000);claude(`Generate ${TOTAL} ocean and marine science questions for age ${child.age}, ${child.country||"UK"} curriculum, Level ${level}. Sea creatures, food chains, habitats, adaptation. Return ONLY valid JSON: {"questions":[{"q":"What do whales breathe through?","options":["A) Gills","B) Lungs","C) Skin","D) Fins"],"correct":"B","creature":"🐋"}]}`,"Ocean adventure questions.").then(d=>{clearTimeout(t);if(!d?.questions)setLoadErr(true);else setQs(d.questions);});}, []);
-  const answer=(opt)=>{if(ans)return;setSel(opt);setAns(true);if(opt.charAt(0)===qs[idx]?.correct)setDepth(d=>d+50);setTimeout(()=>{setSel(null);setAns(false);if(idx+1>=TOTAL)setDone(true);else setIdx(i=>i+1);},900);};
-  if(loadErr)return <GameError name="Ocean Adventure" onRetry={()=>{setLoadErr(false);setQs(null);}}/>;
-  if(!qs)return <GameLoad name="Ocean Adventure" emoji="🌊" tutor={child.tutor}/>;
-  if(done)return <GameEnd name="Ocean Adventure" emoji="🌊" score={depth/50} max={TOTAL} child={child} xp={depth/50*10} onDone={()=>onComplete({score:depth/50,max:TOTAL,xp:depth/50*10})}/>;
-  const q=qs[idx];
-  return (<GameShell name="Ocean Adventure" emoji="🌊" subject="Science" score={depth/50} maxScore={TOTAL} round={idx+1} total={TOTAL} streak={0} onQuit={onQuit}>
-    <div style={{background:"linear-gradient(180deg,#BAE6FD,#0EA5E9,#0369A1)",borderRadius:16,padding:14,marginBottom:12,textAlign:"center"}}>
-      <div style={{fontSize:42}}>{q?.creature||"🌊"}</div>
-      <p style={{fontSize:11,fontWeight:800,color:"#E0F2FE"}}>🤿 Depth: {depth}m</p>
-    </div>
-    <p style={{fontSize:16,fontWeight:800,color:C.text,marginBottom:14}}>{q?.q}</p>
-    <Options options={q?.options} correct={q?.correct} selected={sel} answered={ans} onAnswer={answer}/>
-  </GameShell>);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 ocean creatures, marine habitats, food chains for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Ocean Adventure questions."),[child]);
+  return <CatcherEngine child={child} name="Ocean Adventure" emoji="🌊" subject="Science" color="#0369A1" bg="#F0F9FF" catcherChar="🤿" sceneBg="linear-gradient(180deg,#BAE6FD,#0EA5E9 60%,#0369A1)" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
 }
 
-// ── 🫧 BUBBLE BUSTER ─────────────────────────────────────────────────────
 function BubbleBuster({child,mode,onComplete,onQuit,level=1}) {
-  const TOTAL=9;const [qs,setQs]=useState(null);const [idx,setIdx]=useState(0);const [popped,setPopped]=useState(0);const [bubbles,setBubbles]=useState([]);const [sel,setSel]=useState(null);const [done,setDone]=useState(false);const [loadErr,setLoadErr]=useState(false);
-  useEffect(()=>{const t=setTimeout(()=>setLoadErr(true),12000);claude(`Generate ${TOTAL} materials science questions for age ${child.age}, ${child.country||"UK"} curriculum, Level ${level}. Properties of materials — sorting, identifying, explaining changes. Return ONLY valid JSON: {"questions":[{"q":"Which material is waterproof?","options":["A) Paper","B) Rubber","C) Cotton","D) Wood"],"correct":"B"}]}`,"Bubble buster questions.").then(d=>{clearTimeout(t);if(!d?.questions)setLoadErr(true);else{setQs(d.questions);setBubbles(Array.from({length:TOTAL},(_,i)=>({id:i,x:10+Math.random()*80,y:20+Math.random()*60,size:40+Math.random()*20,popped:false})));}});}, []);
-  const popBubble=(b)=>{if(sel||!qs)return;setSel(b.id);const q=qs[idx];if(!q)return;setBubbles(prev=>prev.map(bub=>bub.id===b.id?{...bub,popped:true}:bub));setPopped(p=>p+1);setTimeout(()=>{setSel(null);if(idx+1>=TOTAL)setDone(true);else setIdx(i=>i+1);},500);};
-  if(loadErr)return <GameError name="Bubble Buster" onRetry={()=>{setLoadErr(false);setQs(null);}}/>;
-  if(!qs)return <GameLoad name="Bubble Buster" emoji="🫧" tutor={child.tutor}/>;
-  if(done)return <GameEnd name="Bubble Buster" emoji="🫧" score={popped} max={TOTAL} child={child} xp={popped*8} onDone={()=>onComplete({score:popped,max:TOTAL,xp:popped*8})}/>;
-  const q=qs[idx];
-  return (<GameShell name="Bubble Buster" emoji="🫧" subject="Science" score={popped} maxScore={TOTAL} round={idx+1} total={TOTAL} streak={0} onQuit={onQuit}>
-    <p style={{fontSize:15,fontWeight:800,color:C.text,marginBottom:12}}>{q?.q}</p>
-    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:8}}>
-      {q?.options?.map((opt,i)=>{
-        const colors=["#60A5FA","#34D399","#F472B6","#FBBF24"];
-        return(<button key={i} onClick={()=>{if(opt.charAt(0)===q.correct)setPopped(p=>p+1);setTimeout(()=>{if(idx+1>=TOTAL)setDone(true);else setIdx(n=>n+1);},700);}}
-          style={{height:72,borderRadius:"50%",fontSize:13,fontWeight:800,cursor:"pointer",fontFamily:F,background:`radial-gradient(circle at 35% 35%, white, ${colors[i%4]})`,border:`3px solid ${colors[i%4]}`,color:"#1F2937",boxShadow:`0 4px 12px ${colors[i%4]}66`,transition:"all 0.15s",padding:"0 8px",textAlign:"center"}}>
-          {opt.substring(3)}
-        </button>);
-      })}
-    </div>
-    <p style={{textAlign:"center",fontSize:12,color:C.muted,fontWeight:600}}>Pop the correct bubble!</p>
-  </GameShell>);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 materials science questions for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Properties, states, changes. Short options. Return ONLY JSON: {"questions":[{"q":"Which is waterproof?","options":["Paper","Rubber","Wood","Cotton"],"correct":"Rubber"}]}`,"Bubble buster questions."),[child]);
+  return <ShooterEngine child={child} name="Bubble Buster" emoji="🫧" subject="Science" color="#0EA5E9" bg="#F0F9FF" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
 }
 
-// ── 🎨 COLOUR LAB ────────────────────────────────────────────────────────
 function ColourScience({child,mode,onComplete,onQuit,level=1}) {
-  const TOTAL=8;const [qs,setQs]=useState(null);const [idx,setIdx]=useState(0);const [exp,setExp]=useState(0);const [sel,setSel]=useState(null);const [ans,setAns]=useState(false);const [done,setDone]=useState(false);const [loadErr,setLoadErr]=useState(false);
-  useEffect(()=>{const t=setTimeout(()=>setLoadErr(true),12000);claude(`Generate ${TOTAL} light and colour science questions for age ${child.age}, ${child.country||"UK"} curriculum, Level ${level}. Light sources, shadows, reflection, refraction, spectrum. Return ONLY valid JSON: {"questions":[{"q":"What happens when red and blue light mix?","options":["A) Green","B) Purple","C) Orange","D) Yellow"],"correct":"B","colour":"#7C3AED"}]}`,"Colour lab questions.").then(d=>{clearTimeout(t);if(!d?.questions)setLoadErr(true);else setQs(d.questions);});}, []);
-  const answer=(opt)=>{if(ans)return;setSel(opt);setAns(true);if(opt.charAt(0)===qs[idx]?.correct)setExp(e=>e+1);setTimeout(()=>{setSel(null);setAns(false);if(idx+1>=TOTAL)setDone(true);else setIdx(i=>i+1);},900);};
-  if(loadErr)return <GameError name="Colour Lab" onRetry={()=>{setLoadErr(false);setQs(null);}}/>;
-  if(!qs)return <GameLoad name="Colour Lab" emoji="🎨" tutor={child.tutor}/>;
-  if(done)return <GameEnd name="Colour Lab" emoji="🎨" score={exp} max={TOTAL} child={child} xp={exp*10} onDone={()=>onComplete({score:exp,max:TOTAL,xp:exp*10})}/>;
-  const q=qs[idx];const rainbow=["#EF4444","#F97316","#EAB308","#22C55E","#3B82F6","#8B5CF6","#EC4899"];
-  return (<GameShell name="Colour Lab" emoji="🎨" subject="Science" score={exp} maxScore={TOTAL} round={idx+1} total={TOTAL} streak={0} onQuit={onQuit}>
-    <div style={{borderRadius:16,overflow:"hidden",marginBottom:12,height:60,display:"flex"}}>
-      {rainbow.map((c,i)=><div key={i} style={{flex:1,background:c,opacity:0.7+0.3*((idx)%7===i?1:0.5)}}/>)}
-    </div>
-    <p style={{fontSize:16,fontWeight:800,color:C.text,marginBottom:14}}>{q?.q}</p>
-    <Options options={q?.options} correct={q?.correct} selected={sel} answered={ans} onAnswer={answer}/>
-  </GameShell>);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 light and colour science questions for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short option answers. Return ONLY JSON: {"questions":[{"q":"Red + Blue light =","options":["Green","Purple","Orange","Yellow"],"correct":"Purple"}]}`,"Colour science questions."),[child]);
+  return <CatcherEngine child={child} name="Colour Lab" emoji="🎨" subject="Science" color="#7C3AED" bg="#F5F3FF" fetchFn={fetchFn} catcherChar="🎨" sceneBg="linear-gradient(180deg,#FDF4FF,#FAE8FF)" initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
 }
 
-// ── 👨‍🚀 ASTRONAUT TRAINING ────────────────────────────────────────────────
 function AstronautGame({child,mode,onComplete,onQuit,level=1}) {
-  const TOTAL=8;const [qs,setQs]=useState(null);const [idx,setIdx]=useState(0);const [trained,setTrained]=useState(0);const [sel,setSel]=useState(null);const [ans,setAns]=useState(false);const [done,setDone]=useState(false);const [loadErr,setLoadErr]=useState(false);
-  useEffect(()=>{const t=setTimeout(()=>setLoadErr(true),12000);claude(`Generate ${TOTAL} Earth and Space science questions for age ${child.age}, ${child.country||"UK"} curriculum, Level ${level}. Solar system, planets, day/night, gravity, space exploration. Return ONLY valid JSON: {"questions":[{"q":"How long does Earth take to orbit the Sun?","options":["A) 24 hours","B) 28 days","C) 365 days","D) 100 years"],"correct":"C","badge":"🌍"}]}`,"Astronaut training questions.").then(d=>{clearTimeout(t);if(!d?.questions)setLoadErr(true);else setQs(d.questions);});}, []);
-  const answer=(opt)=>{if(ans)return;setSel(opt);setAns(true);if(opt.charAt(0)===qs[idx]?.correct)setTrained(t=>t+1);setTimeout(()=>{setSel(null);setAns(false);if(idx+1>=TOTAL)setDone(true);else setIdx(i=>i+1);},900);};
-  if(loadErr)return <GameError name="Astronaut Training" onRetry={()=>{setLoadErr(false);setQs(null);}}/>;
-  if(!qs)return <GameLoad name="Astronaut Training" emoji="👨‍🚀" tutor={child.tutor}/>;
-  if(done)return <GameEnd name="Astronaut Training" emoji="👨‍🚀" score={trained} max={TOTAL} child={child} xp={trained*10} onDone={()=>onComplete({score:trained,max:TOTAL,xp:trained*10})}/>;
-  const q=qs[idx];const pct=Math.round((trained/TOTAL)*100);
-  return (<GameShell name="Astronaut Training" emoji="👨‍🚀" subject="Science" score={trained} maxScore={TOTAL} round={idx+1} total={TOTAL} streak={0} onQuit={onQuit}>
-    <div style={{background:"linear-gradient(180deg,#0F0F1A,#1E1B4B)",borderRadius:16,padding:14,marginBottom:12,textAlign:"center"}}>
-      <div style={{fontSize:36,marginBottom:4}}>{q?.badge||"👨‍🚀"}</div>
-      <p style={{fontSize:11,fontWeight:800,color:"#93C5FD",marginBottom:6}}>ASTRONAUT READINESS</p>
-      <div style={{height:8,borderRadius:4,background:"rgba(255,255,255,0.1)",overflow:"hidden"}}><div style={{height:"100%",width:`${pct}%`,background:"linear-gradient(90deg,#3B82F6,#60A5FA)",borderRadius:4,transition:"width 0.4s"}}/></div>
-      <p style={{fontSize:11,color:"#60A5FA",marginTop:4,fontWeight:700}}>{pct}% trained</p>
-    </div>
-    <p style={{fontSize:16,fontWeight:800,color:C.text,marginBottom:14}}>{q?.q}</p>
-    <Options options={q?.options} correct={q?.correct} selected={sel} answered={ans} onAnswer={answer}/>
-  </GameShell>);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 Earth and space science questions for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options. Return ONLY JSON: {"questions":[{"q":"Earth orbits sun in?","options":["24hrs","28 days","365 days","100 yrs"],"correct":"365 days"}]}`,"Astronaut training questions."),[child]);
+  return <SpaceExplorer child={child} name="Astronaut Training" emoji="👨‍🚀" subject="Science" color="#1E40AF" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
 }
 
-// ── 🏛️ PYRAMID BUILDER ───────────────────────────────────────────────────
 function PyramidsGame({child,mode,onComplete,onQuit,level=1}) {
-  const TOTAL=8;const [qs,setQs]=useState(null);const [idx,setIdx]=useState(0);const [blocks,setBlocks]=useState(0);const [sel,setSel]=useState(null);const [ans,setAns]=useState(false);const [done,setDone]=useState(false);const [loadErr,setLoadErr]=useState(false);
-  useEffect(()=>{const t=setTimeout(()=>setLoadErr(true),12000);claude(`Generate ${TOTAL} ancient civilisations history questions for age ${child.age}, ${child.country||"UK"} curriculum, Level ${level}. Egypt, Greece, Rome, Mesopotamia. Fun pyramid builder theme. Return ONLY valid JSON: {"questions":[{"q":"What were Egyptian rulers called?","options":["A) Kings","B) Emperors","C) Pharaohs","D) Sultans"],"correct":"C"}]}`,"Pyramid builder questions.").then(d=>{clearTimeout(t);if(!d?.questions)setLoadErr(true);else setQs(d.questions);});}, []);
-  const answer=(opt)=>{if(ans)return;setSel(opt);setAns(true);if(opt.charAt(0)===qs[idx]?.correct)setBlocks(b=>b+1);setTimeout(()=>{setSel(null);setAns(false);if(idx+1>=TOTAL)setDone(true);else setIdx(i=>i+1);},900);};
-  if(loadErr)return <GameError name="Pyramid Builder" onRetry={()=>{setLoadErr(false);setQs(null);}}/>;
-  if(!qs)return <GameLoad name="Pyramid Builder" emoji="🏛️" tutor={child.tutor}/>;
-  if(done)return <GameEnd name="Pyramid Builder" emoji="🏛️" score={blocks} max={TOTAL} child={child} xp={blocks*10} onDone={()=>onComplete({score:blocks,max:TOTAL,xp:blocks*10})}/>;
-  const q=qs[idx];const pyr=Array.from({length:Math.min(blocks,5)},(_,i)=>4-i);
-  return (<GameShell name="Pyramid Builder" emoji="🏛️" subject="History" score={blocks} maxScore={TOTAL} round={idx+1} total={TOTAL} streak={0} onQuit={onQuit}>
-    <div style={{background:"linear-gradient(180deg,#FEF3C7,#FDE68A)",borderRadius:16,padding:14,marginBottom:12,textAlign:"center",minHeight:80}}>
-      {pyr.map((w,i)=><div key={i} style={{height:16,borderRadius:4,background:"#D97706",margin:`0 auto ${4}px`,width:`${(i+1)/(5)*100}%`,opacity:0.7+0.3*(i/5)}}/>)}
-      <p style={{fontSize:11,fontWeight:800,color:"#92400E"}}>{blocks===0?"Start building!":`${blocks} blocks placed!`}</p>
-    </div>
-    <p style={{fontSize:16,fontWeight:800,color:C.text,marginBottom:14}}>{q?.q}</p>
-    <Options options={q?.options} correct={q?.correct} selected={sel} answered={ans} onAnswer={answer}/>
-  </GameShell>);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 ancient civilisations Egypt Greece Rome for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Pyramid Builder questions."),[child]);
+  return <RunnerEngine child={child} name="Pyramid Builder" emoji="🏛️" subject="History" color="#D97706" bg="#FFFBEB" runnerChar="🏃" sceneBg="linear-gradient(180deg,#FEF3C7,#FDE68A 50%,#D97706)" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
 }
 
-// ── 🕵️ HISTORY INSPECTOR ─────────────────────────────────────────────────
 function InspectorGame({child,mode,onComplete,onQuit,level=1}) {
-  const TOTAL=7;const [qs,setQs]=useState(null);const [idx,setIdx]=useState(0);const [cases,setCases]=useState(0);const [sel,setSel]=useState(null);const [ans,setAns]=useState(false);const [done,setDone]=useState(false);const [loadErr,setLoadErr]=useState(false);
-  useEffect(()=>{const t=setTimeout(()=>setLoadErr(true),12000);claude(`Generate ${TOTAL} historical enquiry questions for age ${child.age}, ${child.country||"UK"} curriculum, Level ${level}. Chronology, sources, cause and effect. Detective/mystery theme. Return ONLY valid JSON: {"questions":[{"q":"A historian finds a newspaper from 1940. Is this a primary or secondary source?","options":["A) Primary source","B) Secondary source","C) Neither","D) Both"],"correct":"A","clue":"📰"}]}`,"History inspector questions.").then(d=>{clearTimeout(t);if(!d?.questions)setLoadErr(true);else setQs(d.questions);});}, []);
-  const answer=(opt)=>{if(ans)return;setSel(opt);setAns(true);if(opt.charAt(0)===qs[idx]?.correct)setCases(c=>c+1);setTimeout(()=>{setSel(null);setAns(false);if(idx+1>=TOTAL)setDone(true);else setIdx(i=>i+1);},900);};
-  if(loadErr)return <GameError name="History Inspector" onRetry={()=>{setLoadErr(false);setQs(null);}}/>;
-  if(!qs)return <GameLoad name="History Inspector" emoji="🕵️" tutor={child.tutor}/>;
-  if(done)return <GameEnd name="History Inspector" emoji="🕵️" score={cases} max={TOTAL} child={child} xp={cases*10} onDone={()=>onComplete({score:cases,max:TOTAL,xp:cases*10})}/>;
-  const q=qs[idx];
-  return (<GameShell name="History Inspector" emoji="🕵️" subject="History" score={cases} maxScore={TOTAL} round={idx+1} total={TOTAL} streak={0} onQuit={onQuit}>
-    <div style={{background:"linear-gradient(135deg,#1F2937,#374151)",borderRadius:16,padding:14,marginBottom:12,textAlign:"center"}}>
-      <div style={{fontSize:36,marginBottom:4}}>{q?.clue||"🕵️"}</div>
-      <p style={{fontSize:11,fontWeight:800,color:"#D1D5DB"}}>📂 Cases solved: {cases}</p>
-    </div>
-    <p style={{fontSize:15,fontWeight:800,color:C.text,marginBottom:14,lineHeight:1.6}}>{q?.q}</p>
-    <Options options={q?.options} correct={q?.correct} selected={sel} answered={ans} onAnswer={answer}/>
-  </GameShell>);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 historical sources, chronology, cause and effect for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"History Inspector questions."),[child]);
+  return <RunnerEngine child={child} name="History Inspector" emoji="🕵️" subject="History" color="#374151" bg="#F9FAFB" runnerChar="🕵️" sceneBg="linear-gradient(180deg,#F9FAFB,#E5E7EB 50%,#9CA3AF)" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
 }
 
-// ── 🫣 HISTORY HIDE & SEEK ────────────────────────────────────────────────
 function HideSeekHistory({child,mode,onComplete,onQuit,level=1}) {
-  const TOTAL=7;const [qs,setQs]=useState(null);const [idx,setIdx]=useState(0);const [found,setFound]=useState(0);const [sel,setSel]=useState(null);const [ans,setAns]=useState(false);const [done,setDone]=useState(false);const [loadErr,setLoadErr]=useState(false);
-  useEffect(()=>{const t=setTimeout(()=>setLoadErr(true),12000);const country=child.country||"UK";claude(`Generate ${TOTAL} significant historical figures questions for age ${child.age}, ${country} curriculum, Level ${level}. Famous people from ${country==="US"?"American":country==="CA"?"Canadian":"British"} history hiding — find them from clues! Return ONLY valid JSON: {"questions":[{"clue":"I led a movement for peace. I gave a famous speech with the words I have a dream. Who am I?","options":["A) Nelson Mandela","B) Martin Luther King Jr","C) Rosa Parks","D) Malcolm X"],"correct":"B","emoji":"✊"}]}`,"History hide and seek questions.").then(d=>{clearTimeout(t);if(!d?.questions)setLoadErr(true);else setQs(d.questions);});}, []);
-  const answer=(opt)=>{if(ans)return;setSel(opt);setAns(true);if(opt.charAt(0)===qs[idx]?.correct)setFound(f=>f+1);setTimeout(()=>{setSel(null);setAns(false);if(idx+1>=TOTAL)setDone(true);else setIdx(i=>i+1);},900);};
-  if(loadErr)return <GameError name="History Hide & Seek" onRetry={()=>{setLoadErr(false);setQs(null);}}/>;
-  if(!qs)return <GameLoad name="History Hide & Seek" emoji="🫣" tutor={child.tutor}/>;
-  if(done)return <GameEnd name="History Hide & Seek" emoji="🫣" score={found} max={TOTAL} child={child} xp={found*10} onDone={()=>onComplete({score:found,max:TOTAL,xp:found*10})}/>;
-  const q=qs[idx];
-  return (<GameShell name="History Hide & Seek" emoji="🫣" subject="History" score={found} maxScore={TOTAL} round={idx+1} total={TOTAL} streak={0} onQuit={onQuit}>
-    <div style={{background:"linear-gradient(135deg,#4F46E5,#7C3AED)",borderRadius:16,padding:14,marginBottom:12,textAlign:"center"}}>
-      <div style={{fontSize:36,marginBottom:4}}>{q?.emoji||"🫣"}</div>
-      <p style={{fontSize:13,fontWeight:700,color:"rgba(255,255,255,0.9)",lineHeight:1.7,fontStyle:"italic"}}>"{q?.clue}"</p>
-    </div>
-    <p style={{fontSize:15,fontWeight:800,color:C.text,marginBottom:14}}>Who is hiding in history?</p>
-    <Options options={q?.options} correct={q?.correct} selected={sel} answered={ans} onAnswer={answer}/>
-  </GameShell>);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 significant historical figures from national history for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"History Hide & Seek questions."),[child]);
+  return <SpaceExplorer child={child} name="History Hide & Seek" emoji="🫣" subject="History" color="#4F46E5" bg="#EEF2FF" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
 }
 
-// ── 📋 TENABLE CHALLENGE ─────────────────────────────────────────────────
 function TenableGame({child,mode,onComplete,onQuit,level=1}) {
-  const TOTAL=6;const [qs,setQs]=useState(null);const [idx,setIdx]=useState(0);const [score,setScore]=useState(0);const [reveals,setReveals]=useState([]);const [timeLeft,setTimeLeft]=useState(30);const [done,setDone]=useState(false);const [loadErr,setLoadErr]=useState(false);const timerRef=useRef(null);
-  useEffect(()=>{const t=setTimeout(()=>setLoadErr(true),12000);claude(`Generate ${TOTAL} Tenable-style history rounds for age ${child.age}, ${child.country||"UK"} curriculum, Level ${level}. Each: a category and 5 correct answers. Return ONLY valid JSON: {"questions":[{"category":"Name 5 Roman Emperors","answers":["Augustus","Nero","Caligula","Claudius","Hadrian"]}]}`,"Tenable history questions.").then(d=>{clearTimeout(t);if(!d?.questions)setLoadErr(true);else setQs(d.questions);});}, []);
-  useEffect(()=>{if(!qs||done)return;setTimeLeft(30);setReveals([]);clearInterval(timerRef.current);timerRef.current=setInterval(()=>setTimeLeft(t=>{if(t<=1){clearInterval(timerRef.current);return 0;}return t-1;}),1000);return()=>clearInterval(timerRef.current);},[idx,qs]);
-  const reveal=(i)=>{if(reveals.includes(i))return;setReveals(r=>{const nr=[...r,i];if(nr.length===qs[idx]?.answers?.length||timeLeft===0){clearInterval(timerRef.current);setScore(s=>s+nr.length);setTimeout(()=>{if(idx+1>=TOTAL)setDone(true);else{setIdx(n=>n+1);}},1500);}return nr;});};
-  if(loadErr)return <GameError name="Tenable Challenge" onRetry={()=>{setLoadErr(false);setQs(null);}}/>;
-  if(!qs)return <GameLoad name="Tenable Challenge" emoji="📋" tutor={child.tutor}/>;
-  if(done)return <GameEnd name="Tenable Challenge" emoji="📋" score={Math.round(score/5)} max={TOTAL} child={child} xp={score*4} onDone={()=>onComplete({score:Math.round(score/5),max:TOTAL,xp:score*4})}/>;
-  const q=qs[idx];
-  return (<GameShell name="Tenable Challenge" emoji="📋" subject="History" score={score} maxScore={TOTAL*5} round={idx+1} total={TOTAL} streak={0} onQuit={onQuit}>
-    <div style={{background:"linear-gradient(135deg,#1E3A5F,#1E40AF)",borderRadius:16,padding:12,marginBottom:12}}>
-      <p style={{fontSize:13,fontWeight:800,color:"#BFDBFE",marginBottom:4}}>CATEGORY</p>
-      <p style={{fontSize:16,fontWeight:900,color:"#fff",marginBottom:8}}>{q?.category}</p>
-      <div style={{display:"flex",alignItems:"center",gap:8}}><span style={{fontSize:11,color:"#BFDBFE",fontWeight:700}}>⏱️ {timeLeft}s</span><div style={{flex:1,height:6,borderRadius:3,background:"rgba(255,255,255,0.2)"}}><div style={{height:"100%",width:`${(timeLeft/30)*100}%`,background:timeLeft>10?"#22C55E":"#EF4444",borderRadius:3,transition:"width 1s"}}/></div></div>
-    </div>
-    <div style={{display:"flex",flexDirection:"column",gap:6}}>
-      {q?.answers?.map((ans,i)=><button key={i} onClick={()=>reveal(i)} style={{padding:"10px 14px",borderRadius:10,fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:F,textAlign:"left",border:`2px solid ${reveals.includes(i)?"#22C55E":C.border}`,background:reveals.includes(i)?C.gLight:C.surface,color:reveals.includes(i)?C.green:C.text,transition:"all 0.2s"}}>
-        {reveals.includes(i)?`✅ ${ans}`:`${i+1}. ???`}
-      </button>)}
-    </div>
-    <p style={{textAlign:"center",fontSize:12,color:C.muted,fontWeight:600,marginTop:8}}>Tap to reveal answers you know!</p>
-  </GameShell>);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 world history facts and categories for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Tenable Challenge questions."),[child]);
+  return <SpaceExplorer child={child} name="Tenable Challenge" emoji="📋" subject="History" color="#1E40AF" bg="#EFF6FF" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
 }
 
-// ── ⚽ PENALTY SHOOTOUT ──────────────────────────────────────────────────
 function FootballHistory({child,mode,onComplete,onQuit,level=1}) {
-  const TOTAL=8;const [qs,setQs]=useState(null);const [idx,setIdx]=useState(0);const [goals,setGoals]=useState(0);const [saves,setSaves]=useState(0);const [shot,setShot]=useState(null);const [sel,setSel]=useState(null);const [ans,setAns]=useState(false);const [done,setDone]=useState(false);const [loadErr,setLoadErr]=useState(false);
-  useEffect(()=>{const t=setTimeout(()=>setLoadErr(true),12000);const country=child.country||"UK";claude(`Generate ${TOTAL} ${country==="US"?"American":country==="CA"?"Canadian":"British"} history questions for age ${child.age}, ${country} curriculum, Level ${level}. Penalty shootout theme! Return ONLY valid JSON: {"questions":[{"q":"In what year did WW2 end?","options":["A) 1943","B) 1944","C) 1945","D) 1946"],"correct":"C"}]}`,"Football history questions.").then(d=>{clearTimeout(t);if(!d?.questions)setLoadErr(true);else setQs(d.questions);});}, []);
-  const answer=(opt)=>{if(ans)return;setSel(opt);setAns(true);const ok=opt.charAt(0)===qs[idx]?.correct;setShot(ok?"goal":"saved");if(ok)setGoals(g=>g+1);else setSaves(s=>s+1);setTimeout(()=>{setShot(null);setSel(null);setAns(false);if(idx+1>=TOTAL)setDone(true);else setIdx(i=>i+1);},1200);};
+  const TOTAL=8;
+  const [qs,setQs]=useState(null);const [idx,setIdx]=useState(0);const [goals,setGoals]=useState(0);
+  const [sel,setSel]=useState(null);const [ans,setAns]=useState(false);
+  const [ballPos,setBallPos]=useState({x:50,y:80});const [shotResult,setShotResult]=useState(null);
+  const [done,setDone]=useState(false);const [loadErr,setLoadErr]=useState(false);
+  const country=child.country||"UK";
+
+  useEffect(()=>{
+    const t=setTimeout(()=>setLoadErr(true),12000);
+    claude(`Generate ${TOTAL} ${country==="US"?"American":country==="CA"?"Canadian":"British"} history questions for age ${child.age}, ${country} curriculum, Level ${level}.
+Penalty shootout theme — exciting and engaging!
+Return ONLY valid JSON: {"questions":[{"q":"In what year did WW2 end?","options":["A) 1943","B) 1944","C) 1945","D) 1946"],"correct":"C"}]}`,"Football history questions.").then(d=>{
+      clearTimeout(t);
+      if(!d?.questions){setLoadErr(true);return;}
+      setQs(d.questions);
+    });
+  },[]);
+
+  const answer=(opt)=>{
+    if(ans) return;
+    setSel(opt);setAns(true);
+    const ok=opt.charAt(0)===qs[idx]?.correct;
+    // Animate ball
+    const corners=[[15,15],[50,12],[85,15],[20,35],[80,35]];
+    const target=ok?corners[Math.floor(Math.random()*corners.length)]:[50,55];
+    setBallPos({x:target[0],y:target[1]});
+    setShotResult(ok?"GOAL!":"SAVED!");
+    if(ok)setGoals(g=>g+1);
+    setTimeout(()=>{
+      setBallPos({x:50,y:80});
+      setShotResult(null);
+      setSel(null);setAns(false);
+      if(idx+1>=TOTAL)setDone(true);
+      else setIdx(i=>i+1);
+    },1400);
+  };
+
   if(loadErr)return <GameError name="Penalty Shootout" onRetry={()=>{setLoadErr(false);setQs(null);}}/>;
   if(!qs)return <GameLoad name="Penalty Shootout" emoji="⚽" tutor={child.tutor}/>;
   if(done)return <GameEnd name="Penalty Shootout" emoji="⚽" score={goals} max={TOTAL} child={child} xp={goals*10} onDone={()=>onComplete({score:goals,max:TOTAL,xp:goals*10})}/>;
-  const q=qs[idx];
-  return (<GameShell name="Penalty Shootout" emoji="⚽" subject="History" score={goals} maxScore={TOTAL} round={idx+1} total={TOTAL} streak={0} onQuit={onQuit}>
-    <div style={{background:"linear-gradient(180deg,#14532D,#166534)",borderRadius:16,padding:14,marginBottom:12,textAlign:"center",minHeight:80,position:"relative"}}>
-      <div style={{fontSize:28}}>🥅</div>
-      {shot&&<div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,0.6)",borderRadius:16,fontSize:42}}>{shot==="goal"?"⚽ GOAL!":"🧤 SAVED!"}</div>}
-      <div style={{display:"flex",justifyContent:"center",gap:4,marginTop:4}}>{Array.from({length:TOTAL}).map((_,i)=><span key={i} style={{fontSize:16}}>{i<goals?"⚽":i<idx&&i>=goals?"❌":"⬜"}</span>)}</div>
-    </div>
-    <p style={{fontSize:16,fontWeight:800,color:C.text,marginBottom:14}}>{q?.q}</p>
-    <Options options={q?.options} correct={q?.correct} selected={sel} answered={ans} onAnswer={answer}/>
-  </GameShell>);
-}
 
-// ── 🌍 WORLD MAP QUEST ───────────────────────────────────────────────────
-function WorldMapGame({child,mode,onComplete,onQuit,level=1}) {
-  const TOTAL=8;const [qs,setQs]=useState(null);const [idx,setIdx]=useState(0);const [score,setScore]=useState(0);const [sel,setSel]=useState(null);const [ans,setAns]=useState(false);const [done,setDone]=useState(false);const [loadErr,setLoadErr]=useState(false);
-  useEffect(()=>{const t=setTimeout(()=>setLoadErr(true),12000);claude(`Generate ${TOTAL} world geography questions for age ${child.age}, ${child.country||"UK"} curriculum, Level ${level}. Countries, capitals, continents, oceans, physical features. Return ONLY valid JSON: {"questions":[{"q":"Which continent is Brazil in?","options":["A) Africa","B) Asia","C) South America","D) North America"],"correct":"C","flag":"🇧🇷"}]}`,"World map questions.").then(d=>{clearTimeout(t);if(!d?.questions)setLoadErr(true);else setQs(d.questions);});}, []);
-  const answer=(opt)=>{if(ans)return;setSel(opt);setAns(true);if(opt.charAt(0)===qs[idx]?.correct)setScore(s=>s+1);setTimeout(()=>{setSel(null);setAns(false);if(idx+1>=TOTAL)setDone(true);else setIdx(i=>i+1);},900);};
-  if(loadErr)return <GameError name="World Map Quest" onRetry={()=>{setLoadErr(false);setQs(null);}}/>;
-  if(!qs)return <GameLoad name="World Map Quest" emoji="🌍" tutor={child.tutor}/>;
-  if(done)return <GameEnd name="World Map Quest" emoji="🌍" score={score} max={TOTAL} child={child} xp={score*10} onDone={()=>onComplete({score,max:TOTAL,xp:score*10})}/>;
   const q=qs[idx];
-  return (<GameShell name="World Map Quest" emoji="🌍" subject="Geography" score={score} maxScore={TOTAL} round={idx+1} total={TOTAL} streak={0} onQuit={onQuit}>
-    <div style={{background:"linear-gradient(135deg,#0C4A6E,#0369A1)",borderRadius:16,padding:14,marginBottom:12,textAlign:"center"}}>
-      <div style={{fontSize:42,marginBottom:4}}>{q?.flag||"🌍"}</div>
-      <p style={{fontSize:11,fontWeight:800,color:"#BAE6FD"}}>🌐 {score} countries found!</p>
-    </div>
-    <p style={{fontSize:16,fontWeight:800,color:C.text,marginBottom:14}}>{q?.q}</p>
-    <Options options={q?.options} correct={q?.correct} selected={sel} answered={ans} onAnswer={answer}/>
-  </GameShell>);
-}
 
-// ── 📍 GEOGRAPHY GUESSER ─────────────────────────────────────────────────
-function GeographyGuesser({child,mode,onComplete,onQuit,level=1}) {
-  const TOTAL=7;const [qs,setQs]=useState(null);const [idx,setIdx]=useState(0);const [score,setScore]=useState(0);const [sel,setSel]=useState(null);const [ans,setAns]=useState(false);const [done,setDone]=useState(false);const [loadErr,setLoadErr]=useState(false);
-  const country=child.country||"UK";
-  useEffect(()=>{const t=setTimeout(()=>setLoadErr(true),12000);claude(`Generate ${TOTAL} geography identification questions for age ${child.age}, ${country} curriculum, Level ${level}. Give clues about a place and ask which place it is. Use landmarks, features, facts. GeoGuessr style. Return ONLY valid JSON: {"questions":[{"clues":["I have Big Ben","I am on the River Thames","I am the capital of England"],"q":"Which city am I?","options":["A) Manchester","B) London","C) Birmingham","D) Edinburgh"],"correct":"B","emoji":"🏰"}]}`,"Geography guesser questions.").then(d=>{clearTimeout(t);if(!d?.questions)setLoadErr(true);else setQs(d.questions);});}, []);
-  const answer=(opt)=>{if(ans)return;setSel(opt);setAns(true);if(opt.charAt(0)===qs[idx]?.correct)setScore(s=>s+1);setTimeout(()=>{setSel(null);setAns(false);if(idx+1>=TOTAL)setDone(true);else setIdx(i=>i+1);},900);};
-  if(loadErr)return <GameError name="Geography Guesser" onRetry={()=>{setLoadErr(false);setQs(null);}}/>;
-  if(!qs)return <GameLoad name="Geography Guesser" emoji="📍" tutor={child.tutor}/>;
-  if(done)return <GameEnd name="Geography Guesser" emoji="📍" score={score} max={TOTAL} child={child} xp={score*10} onDone={()=>onComplete({score,max:TOTAL,xp:score*10})}/>;
-  const q=qs[idx];
-  return (<GameShell name="Geography Guesser" emoji="📍" subject="Geography" score={score} maxScore={TOTAL} round={idx+1} total={TOTAL} streak={0} onQuit={onQuit}>
-    <div style={{background:"linear-gradient(135deg,#F0FDF4,#DCFCE7)",borderRadius:16,padding:14,marginBottom:12,border:"2px solid #86EFAC"}}>
-      <p style={{fontSize:11,fontWeight:800,color:C.green,textTransform:"uppercase",marginBottom:8}}>🔍 CLUES</p>
-      {q?.clues?.map((clue,i)=><div key={i} style={{display:"flex",alignItems:"center",gap:8,marginBottom:6}}><span style={{fontSize:16}}>{q?.emoji||"📍"}</span><p style={{fontSize:13,fontWeight:700,color:C.text}}>{clue}</p></div>)}
-    </div>
-    <p style={{fontSize:15,fontWeight:800,color:C.text,marginBottom:14}}>{q?.q}</p>
-    <Options options={q?.options} correct={q?.correct} selected={sel} answered={ans} onAnswer={answer}/>
-  </GameShell>);
-}
-
-// ── ⛷️ SKI SLOPE RACE ────────────────────────────────────────────────────
-function SkiingGeo({child,mode,onComplete,onQuit,level=1}) {
-  const TOTAL=8;const [qs,setQs]=useState(null);const [idx,setIdx]=useState(0);const [speed,setSpeed]=useState(0);const [sel,setSel]=useState(null);const [ans,setAns]=useState(false);const [done,setDone]=useState(false);const [loadErr,setLoadErr]=useState(false);
-  useEffect(()=>{const t=setTimeout(()=>setLoadErr(true),12000);claude(`Generate ${TOTAL} physical geography questions for age ${child.age}, ${child.country||"UK"} curriculum, Level ${level}. Mountains, rivers, valleys, weather, climate, erosion. Ski slope theme! Return ONLY valid JSON: {"questions":[{"q":"What is the wearing away of rock by wind and water called?","options":["A) Deposition","B) Erosion","C) Weathering","D) Flooding"],"correct":"C"}]}`,"Ski slope geography questions.").then(d=>{clearTimeout(t);if(!d?.questions)setLoadErr(true);else setQs(d.questions);});}, []);
-  const answer=(opt)=>{if(ans)return;setSel(opt);setAns(true);const ok=opt.charAt(0)===qs[idx]?.correct;if(ok)setSpeed(s=>s+10);setTimeout(()=>{setSel(null);setAns(false);if(idx+1>=TOTAL)setDone(true);else setIdx(i=>i+1);},900);};
-  if(loadErr)return <GameError name="Ski Slope Race" onRetry={()=>{setLoadErr(false);setQs(null);}}/>;
-  if(!qs)return <GameLoad name="Ski Slope Race" emoji="⛷️" tutor={child.tutor}/>;
-  if(done)return <GameEnd name="Ski Slope Race" emoji="⛷️" score={speed/10} max={TOTAL} child={child} xp={speed} onDone={()=>onComplete({score:speed/10,max:TOTAL,xp:speed})}/>;
-  const q=qs[idx];
-  return (<GameShell name="Ski Slope Race" emoji="⛷️" subject="Geography" score={speed/10} maxScore={TOTAL} round={idx+1} total={TOTAL} streak={0} onQuit={onQuit}>
-    <div style={{background:"linear-gradient(180deg,#EFF6FF,#DBEAFE,#BFDBFE)",borderRadius:16,padding:14,marginBottom:12,textAlign:"center"}}>
-      <div style={{fontSize:36}}>⛷️</div>
-      <p style={{fontSize:11,fontWeight:800,color:"#1D4ED8"}}>🏔️ SPEED: {speed} km/h</p>
-      <div style={{height:8,borderRadius:4,background:"rgba(29,78,216,0.2)",marginTop:6}}><div style={{height:"100%",width:`${(speed/(TOTAL*10))*100}%`,background:"#3B82F6",borderRadius:4,transition:"width 0.4s"}}/></div>
-    </div>
-    <p style={{fontSize:16,fontWeight:800,color:C.text,marginBottom:14}}>{q?.q}</p>
-    <Options options={q?.options} correct={q?.correct} selected={sel} answered={ans} onAnswer={answer}/>
-  </GameShell>);
-}
-
-// ── 🛹 SKATEPARK CITY ────────────────────────────────────────────────────
-function SkateboardGeo({child,mode,onComplete,onQuit,level=1}) {
-  const TOTAL=8;const [qs,setQs]=useState(null);const [idx,setIdx]=useState(0);const [tricks,setTricks]=useState(0);const [sel,setSel]=useState(null);const [ans,setAns]=useState(false);const [done,setDone]=useState(false);const [loadErr,setLoadErr]=useState(false);
-  useEffect(()=>{const t=setTimeout(()=>setLoadErr(true),12000);claude(`Generate ${TOTAL} human geography questions for age ${child.age}, ${child.country||"UK"} curriculum, Level ${level}. Settlements, land use, cities, economic activity, urban vs rural. Skateboard city theme. Return ONLY valid JSON: {"questions":[{"q":"What word describes the movement of people from the countryside to cities?","options":["A) Migration","B) Urbanisation","C) Globalisation","D) Industrialisation"],"correct":"B"}]}`,"Skatepark geography questions.").then(d=>{clearTimeout(t);if(!d?.questions)setLoadErr(true);else setQs(d.questions);});}, []);
-  const answer=(opt)=>{if(ans)return;setSel(opt);setAns(true);if(opt.charAt(0)===qs[idx]?.correct)setTricks(t=>t+1);setTimeout(()=>{setSel(null);setAns(false);if(idx+1>=TOTAL)setDone(true);else setIdx(i=>i+1);},900);};
-  if(loadErr)return <GameError name="Skatepark City" onRetry={()=>{setLoadErr(false);setQs(null);}}/>;
-  if(!qs)return <GameLoad name="Skatepark City" emoji="🛹" tutor={child.tutor}/>;
-  if(done)return <GameEnd name="Skatepark City" emoji="🛹" score={tricks} max={TOTAL} child={child} xp={tricks*10} onDone={()=>onComplete({score:tricks,max:TOTAL,xp:tricks*10})}/>;
-  const q=qs[idx];const trickNames=["Ollie","Kickflip","Heelflip","Grind","Manual","360 Flip","Varial","Laser Flip"];
-  return (<GameShell name="Skatepark City" emoji="🛹" subject="Geography" score={tricks} maxScore={TOTAL} round={idx+1} total={TOTAL} streak={0} onQuit={onQuit}>
-    <div style={{background:"linear-gradient(135deg,#1F2937,#374151)",borderRadius:16,padding:14,marginBottom:12,textAlign:"center"}}>
-      <div style={{fontSize:32}}>🛹</div>
-      <p style={{fontSize:12,fontWeight:800,color:"#FCD34D"}}>🤸 Tricks landed: {tricks}</p>
-      {tricks>0&&<p style={{fontSize:11,color:"#9CA3AF"}}>{trickNames[tricks%8]}</p>}
-    </div>
-    <p style={{fontSize:16,fontWeight:800,color:C.text,marginBottom:14}}>{q?.q}</p>
-    <Options options={q?.options} correct={q?.correct} selected={sel} answered={ans} onAnswer={answer}/>
-  </GameShell>);
-}
-
-// ── 🏴‍☠️ PIRATE VOYAGE ─────────────────────────────────────────────────────
-function PirateGeo({child,mode,onComplete,onQuit,level=1}) {
-  const TOTAL=7;const [qs,setQs]=useState(null);const [idx,setIdx]=useState(0);const [sailed,setSailed]=useState(0);const [sel,setSel]=useState(null);const [ans,setAns]=useState(false);const [done,setDone]=useState(false);const [loadErr,setLoadErr]=useState(false);
-  useEffect(()=>{const t=setTimeout(()=>setLoadErr(true),12000);claude(`Generate ${TOTAL} map skills and navigation geography questions for age ${child.age}, ${child.country||"UK"} curriculum, Level ${level}. Compass points, grid references, OS map symbols, scale. Pirate voyage theme! Return ONLY valid JSON: {"questions":[{"q":"Which compass direction is opposite to North?","options":["A) East","B) West","C) South","D) Northeast"],"correct":"C","compass":"S"}]}`,"Pirate voyage map questions.").then(d=>{clearTimeout(t);if(!d?.questions)setLoadErr(true);else setQs(d.questions);});}, []);
-  const answer=(opt)=>{if(ans)return;setSel(opt);setAns(true);if(opt.charAt(0)===qs[idx]?.correct)setSailed(s=>s+1);setTimeout(()=>{setSel(null);setAns(false);if(idx+1>=TOTAL)setDone(true);else setIdx(i=>i+1);},900);};
-  if(loadErr)return <GameError name="Pirate Voyage" onRetry={()=>{setLoadErr(false);setQs(null);}}/>;
-  if(!qs)return <GameLoad name="Pirate Voyage" emoji="🏴‍☠️" tutor={child.tutor}/>;
-  if(done)return <GameEnd name="Pirate Voyage" emoji="🏴‍☠️" score={sailed} max={TOTAL} child={child} xp={sailed*10} onDone={()=>onComplete({score:sailed,max:TOTAL,xp:sailed*10})}/>;
-  const q=qs[idx];
-  return (<GameShell name="Pirate Voyage" emoji="🏴‍☠️" subject="Geography" score={sailed} maxScore={TOTAL} round={idx+1} total={TOTAL} streak={0} onQuit={onQuit}>
-    <div style={{background:"linear-gradient(135deg,#1E3A5F,#0C4A6E)",borderRadius:16,padding:14,marginBottom:12,textAlign:"center"}}>
-      <div style={{fontSize:36}}>⛵</div>
-      <p style={{fontSize:11,fontWeight:800,color:"#BAE6FD"}}>🗺️ Seas sailed: {sailed}/{TOTAL}</p>
-    </div>
-    <p style={{fontSize:16,fontWeight:800,color:C.text,marginBottom:14}}>{q?.q}</p>
-    <Options options={q?.options} correct={q?.correct} selected={sel} answered={ans} onAnswer={answer}/>
-  </GameShell>);
-}
-
-// ── 🚌 ECO BUS DRIVER ────────────────────────────────────────────────────
-function BusGame({child,mode,onComplete,onQuit,level=1}) {
-  const TOTAL=8;const [qs,setQs]=useState(null);const [idx,setIdx]=useState(0);const [passengers,setPassengers]=useState(0);const [sel,setSel]=useState(null);const [ans,setAns]=useState(false);const [done,setDone]=useState(false);const [loadErr,setLoadErr]=useState(false);
-  useEffect(()=>{const t=setTimeout(()=>setLoadErr(true),12000);claude(`Generate ${TOTAL} environmental geography questions for age ${child.age}, ${child.country||"UK"} curriculum, Level ${level}. Climate change, pollution, sustainability, renewable energy, deforestation. Eco bus theme. Return ONLY valid JSON: {"questions":[{"q":"Which type of energy comes from the sun?","options":["A) Wind energy","B) Tidal energy","C) Solar energy","D) Nuclear energy"],"correct":"C"}]}`,"Eco bus geography questions.").then(d=>{clearTimeout(t);if(!d?.questions)setLoadErr(true);else setQs(d.questions);});}, []);
-  const answer=(opt)=>{if(ans)return;setSel(opt);setAns(true);if(opt.charAt(0)===qs[idx]?.correct)setPassengers(p=>p+1);setTimeout(()=>{setSel(null);setAns(false);if(idx+1>=TOTAL)setDone(true);else setIdx(i=>i+1);},900);};
-  if(loadErr)return <GameError name="Eco Bus Driver" onRetry={()=>{setLoadErr(false);setQs(null);}}/>;
-  if(!qs)return <GameLoad name="Eco Bus Driver" emoji="🚌" tutor={child.tutor}/>;
-  if(done)return <GameEnd name="Eco Bus Driver" emoji="🚌" score={passengers} max={TOTAL} child={child} xp={passengers*10} onDone={()=>onComplete({score:passengers,max:TOTAL,xp:passengers*10})}/>;
-  const q=qs[idx];
-  return (<GameShell name="Eco Bus Driver" emoji="🚌" subject="Geography" score={passengers} maxScore={TOTAL} round={idx+1} total={TOTAL} streak={0} onQuit={onQuit}>
-    <div style={{background:"linear-gradient(135deg,#F0FDF4,#DCFCE7)",borderRadius:16,padding:14,marginBottom:12,border:"2px solid #86EFAC",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-      <div style={{fontSize:32}}>🚌</div>
-      <div style={{textAlign:"center"}}>
-        <p style={{fontSize:11,fontWeight:800,color:C.green}}>ECO PASSENGERS</p>
-        <p style={{fontSize:22,fontWeight:900,color:C.green}}>{passengers}</p>
+  return (
+    <GameShell name="Penalty Shootout" emoji="⚽" subject="History" score={goals} maxScore={TOTAL} round={idx+1} total={TOTAL} streak={0} onQuit={onQuit}>
+      {/* Pitch view */}
+      <div style={{background:"#14532D",borderRadius:20,padding:"12px",marginBottom:12,position:"relative",height:160,overflow:"hidden"}}>
+        {/* Grass stripes */}
+        {[...Array(6)].map((_,i)=><div key={i} style={{position:"absolute",top:0,bottom:0,left:`${i*17}%`,width:"17%",background:i%2===0?"rgba(255,255,255,0.03)":"transparent"}}/>)}
+        {/* Goal */}
+        <svg style={{position:"absolute",top:"5%",left:"15%",width:"70%",height:"45%"}} viewBox="0 0 200 80">
+          <rect x="0" y="0" width="200" height="80" fill="rgba(0,0,0,0.4)" stroke="white" strokeWidth="3" rx="2"/>
+          {/* Goal net lines */}
+          {[...Array(8)].map((_,i)=><line key={"v"+i} x1={i*28} y1="0" x2={i*28} y2="80" stroke="rgba(255,255,255,0.2)" strokeWidth="1"/>)}
+          {[...Array(4)].map((_,i)=><line key={"h"+i} x1="0" y1={i*26} x2="200" y2={i*26} stroke="rgba(255,255,255,0.2)" strokeWidth="1"/>)}
+        </svg>
+        {/* Penalty spot */}
+        <div style={{position:"absolute",bottom:"20%",left:"50%",transform:"translateX(-50%)",width:6,height:6,borderRadius:"50%",background:"white"}}/>
+        {/* Ball */}
+        <div style={{
+          position:"absolute",
+          left:`${ballPos.x}%`,top:`${ballPos.y}%`,
+          transform:"translateX(-50%)",
+          fontSize:22,zIndex:3,
+          transition:"all 0.5s cubic-bezier(0.25,0.46,0.45,0.94)"
+        }}>⚽</div>
+        {/* Goalkeeper */}
+        <div style={{
+          position:"absolute",top:"8%",left:`${50+(shotResult==="SAVED!"?0:30)}%`,
+          transform:"translateX(-50%)",fontSize:24,
+          transition:"left 0.3s",zIndex:2
+        }}>🧤</div>
+        {/* Result */}
+        {shotResult&&(
+          <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,0.5)",borderRadius:20,zIndex:5}}>
+            <div style={{fontSize:28,fontWeight:900,color:shotResult==="GOAL!"?"#FCD34D":"#EF4444",background:"rgba(0,0,0,0.7)",padding:"8px 20px",borderRadius:12}}>{shotResult}</div>
+          </div>
+        )}
+        {/* Score tracker */}
+        <div style={{position:"absolute",bottom:8,left:"50%",transform:"translateX(-50%)",display:"flex",gap:4}}>
+          {Array.from({length:TOTAL}).map((_,i)=>(
+            <div key={i} style={{width:16,height:16,borderRadius:"50%",border:"2px solid white",background:i<goals?"#FCD34D":i<idx&&i>=goals?"#EF4444":"transparent"}}/>
+          ))}
+        </div>
       </div>
-      <div style={{fontSize:24}}>🌿</div>
-    </div>
-    <p style={{fontSize:16,fontWeight:800,color:C.text,marginBottom:14}}>{q?.q}</p>
-    <Options options={q?.options} correct={q?.correct} selected={sel} answered={ans} onAnswer={answer}/>
-  </GameShell>);
+      <p style={{fontSize:16,fontWeight:800,color:C.text,marginBottom:14}}>{q?.q}</p>
+      <Options options={q?.options} correct={q?.correct} selected={sel} answered={ans} onAnswer={answer}/>
+    </GameShell>
+  );
 }
 
-// ── 🔐 CODE BREAKER ──────────────────────────────────────────────────────
+
+function WorldMapGame({child,mode,onComplete,onQuit,level=1}) {
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 world geography, countries, capitals, continents for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"World Map Quest questions."),[child]);
+  return <RunnerEngine child={child} name="World Map Quest" emoji="🌍" subject="Geography" color="#0369A1" bg="#F0F9FF" runnerChar="🌍" sceneBg="linear-gradient(180deg,#F0F9FF,#BAE6FD 50%,#0EA5E9)" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
+}
+
+function GeographyGuesser({child,mode,onComplete,onQuit,level=1}) {
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 identifying places from clues for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Geography Guesser questions."),[child]);
+  return <RunnerEngine child={child} name="Geography Guesser" emoji="📍" subject="Geography" color="#16A34A" bg="#F0FDF4" runnerChar="🗺️" sceneBg="linear-gradient(180deg,#F0FDF4,#DCFCE7 50%,#16A34A)" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
+}
+
+function SkiingGeo({child,mode,onComplete,onQuit,level=1}) {
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 physical geography questions for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options. Return ONLY JSON: {"questions":[{"q":"Rock worn by rivers?","options":["Deposition","Erosion","Flooding","Sinking"],"correct":"Erosion"}]}`,"Ski slope questions."),[child]);
+  return <RunnerEngine child={child} name="Ski Slope Race" emoji="⛷️" subject="Geography" color="#3B82F6" fetchFn={fetchFn} runnerChar="⛷️" sceneBg="linear-gradient(180deg,#EFF6FF,#DBEAFE 50%,#fff 50%)" initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
+}
+
+function SkateboardGeo({child,mode,onComplete,onQuit,level=1}) {
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 human geography questions for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options. Return ONLY JSON: {"questions":[{"q":"People move city to country?","options":["Urbanisation","Ruralisation","Migration","Emigration"],"correct":"Ruralisation"}]}`,"Skatepark questions."),[child]);
+  return <RunnerEngine child={child} name="Skatepark City" emoji="🛹" subject="Geography" color="#6366F1" fetchFn={fetchFn} runnerChar="🛹" sceneBg="linear-gradient(180deg,#1F2937,#374151 50%,#4B5563 50%)" initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
+}
+
+function PirateGeo({child,mode,onComplete,onQuit,level=1}) {
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 map skills, compass, navigation for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Pirate Voyage questions."),[child]);
+  return <RunnerEngine child={child} name="Pirate Voyage" emoji="🏴‍☠️" subject="Geography" color="#1E40AF" bg="#EFF6FF" runnerChar="⛵" sceneBg="linear-gradient(180deg,#BAE6FD,#0EA5E9 50%,#0369A1)" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
+}
+
+function BusGame({child,mode,onComplete,onQuit,level=1}) {
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 environmental geography questions for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options. Return ONLY JSON: {"questions":[{"q":"Energy from the sun?","options":["Wind","Solar","Tidal","Nuclear"],"correct":"Solar"}]}`,"Eco bus questions."),[child]);
+  return <RunnerEngine child={child} name="Eco Bus Driver" emoji="🚌" subject="Geography" color="#16A34A" fetchFn={fetchFn} runnerChar="🚌" sceneBg="linear-gradient(180deg,#F0FDF4,#DCFCE7 50%,#86EFAC 50%)" initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
+}
+
 function CodeGame({child,mode,onComplete,onQuit,level=1}) {
-  const TOTAL=8;const [qs,setQs]=useState(null);const [idx,setIdx]=useState(0);const [cracked,setCracked]=useState(0);const [sel,setSel]=useState(null);const [ans,setAns]=useState(false);const [done,setDone]=useState(false);const [loadErr,setLoadErr]=useState(false);
-  useEffect(()=>{const t=setTimeout(()=>setLoadErr(true),12000);claude(`Generate ${TOTAL} data and computing questions for age ${child.age}, ${child.country||"UK"} curriculum, Level ${level}. Binary, data storage, file types, databases, encryption. Code breaker theme! Return ONLY valid JSON: {"questions":[{"q":"In binary, what does 1010 equal in decimal?","options":["A) 8","B) 10","C) 12","D) 14"],"correct":"B","code":"01001000"}]}`,"Code breaker computing questions.").then(d=>{clearTimeout(t);if(!d?.questions)setLoadErr(true);else setQs(d.questions);});}, []);
-  const answer=(opt)=>{if(ans)return;setSel(opt);setAns(true);if(opt.charAt(0)===qs[idx]?.correct)setCracked(c=>c+1);setTimeout(()=>{setSel(null);setAns(false);if(idx+1>=TOTAL)setDone(true);else setIdx(i=>i+1);},900);};
-  if(loadErr)return <GameError name="Code Breaker" onRetry={()=>{setLoadErr(false);setQs(null);}}/>;
-  if(!qs)return <GameLoad name="Code Breaker" emoji="🔐" tutor={child.tutor}/>;
-  if(done)return <GameEnd name="Code Breaker" emoji="🔐" score={cracked} max={TOTAL} child={child} xp={cracked*10} onDone={()=>onComplete({score:cracked,max:TOTAL,xp:cracked*10})}/>;
-  const q=qs[idx];
-  return (<GameShell name="Code Breaker" emoji="🔐" subject="Computing" score={cracked} maxScore={TOTAL} round={idx+1} total={TOTAL} streak={0} onQuit={onQuit}>
-    <div style={{background:"linear-gradient(135deg,#0F0F1A,#1E1B4B)",borderRadius:16,padding:14,marginBottom:12,textAlign:"center"}}>
-      <p style={{fontFamily:"monospace",fontSize:16,color:"#22C55E",letterSpacing:4,marginBottom:4}}>{q?.code||"01010011"}</p>
-      <p style={{fontSize:11,fontWeight:800,color:"#4ADE80"}}>🔐 Codes cracked: {cracked}</p>
-    </div>
-    <p style={{fontSize:16,fontWeight:800,color:C.text,marginBottom:14}}>{q?.q}</p>
-    <Options options={q?.options} correct={q?.correct} selected={sel} answered={ans} onAnswer={answer}/>
-  </GameShell>);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 binary, data, computing concepts for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Code Breaker questions."),[child]);
+  return <SpaceExplorer child={child} name="Code Breaker" emoji="🔐" subject="Computing" color="#16A34A" bg="#F0FDF4" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
 }
 
-// ── 🍳 RECIPE ROBOT ──────────────────────────────────────────────────────
 function FlippingFood({child,mode,onComplete,onQuit,level=1}) {
-  const TOTAL=7;const [qs,setQs]=useState(null);const [idx,setIdx]=useState(0);const [dishes,setDishes]=useState(0);const [sel,setSel]=useState(null);const [ans,setAns]=useState(false);const [done,setDone]=useState(false);const [loadErr,setLoadErr]=useState(false);
-  useEffect(()=>{const t=setTimeout(()=>setLoadErr(true),12000);claude(`Generate ${TOTAL} computational thinking / algorithm questions for age ${child.age}, ${child.country||"UK"} curriculum, Level ${level}. Sequence, loop, condition, debug — using cooking recipes as the context. Return ONLY valid JSON: {"questions":[{"q":"A robot is making toast. The steps are out of order. What comes FIRST?","options":["A) Eat the toast","B) Put bread in toaster","C) Add butter","D) Wait for toast to pop"],"correct":"B","food":"🍞"}]}`,"Recipe robot questions.").then(d=>{clearTimeout(t);if(!d?.questions)setLoadErr(true);else setQs(d.questions);});}, []);
-  const answer=(opt)=>{if(ans)return;setSel(opt);setAns(true);if(opt.charAt(0)===qs[idx]?.correct)setDishes(d=>d+1);setTimeout(()=>{setSel(null);setAns(false);if(idx+1>=TOTAL)setDone(true);else setIdx(i=>i+1);},900);};
-  if(loadErr)return <GameError name="Recipe Robot" onRetry={()=>{setLoadErr(false);setQs(null);}}/>;
-  if(!qs)return <GameLoad name="Recipe Robot" emoji="🍳" tutor={child.tutor}/>;
-  if(done)return <GameEnd name="Recipe Robot" emoji="🍳" score={dishes} max={TOTAL} child={child} xp={dishes*10} onDone={()=>onComplete({score:dishes,max:TOTAL,xp:dishes*10})}/>;
-  const q=qs[idx];const foodEmojis=["🍳","🥞","🍕","🥗","🍜","🥘","🫕"];
-  return (<GameShell name="Recipe Robot" emoji="🍳" subject="Computing" score={dishes} maxScore={TOTAL} round={idx+1} total={TOTAL} streak={0} onQuit={onQuit}>
-    <div style={{background:"linear-gradient(135deg,#FEF3C7,#FDE68A)",borderRadius:16,padding:14,marginBottom:12,textAlign:"center"}}>
-      <div style={{fontSize:42}}>{q?.food||foodEmojis[idx%7]}</div>
-      <p style={{fontSize:11,fontWeight:800,color:"#92400E"}}>🤖 Dishes cooked: {dishes}</p>
-    </div>
-    <p style={{fontSize:16,fontWeight:800,color:C.text,marginBottom:14}}>{q?.q}</p>
-    <Options options={q?.options} correct={q?.correct} selected={sel} answered={ans} onAnswer={answer}/>
-  </GameShell>);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 algorithms, sequences, computational thinking for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Recipe Robot questions."),[child]);
+  return <SpaceExplorer child={child} name="Recipe Robot" emoji="🍳" subject="Computing" color="#F59E0B" bg="#FFFBEB" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
 }
 
-// ── 💾 COMPUTER MEMORY ───────────────────────────────────────────────────
 function MemoryComputer({child,mode,onComplete,onQuit,level=1}) {
-  const PAIRS=6;const [pairs,setPairs]=useState(null);const [flipped,setFlipped]=useState([]);const [matched,setMatched]=useState([]);const [attempts,setAttempts]=useState(0);const [done,setDone]=useState(false);const [loadErr,setLoadErr]=useState(false);const [locked,setLocked]=useState(false);
-  useEffect(()=>{const t=setTimeout(()=>setLoadErr(true),12000);claude(`Generate ${PAIRS} computing term-definition pairs for age ${child.age}, ${child.country||"UK"} curriculum, Level ${level}. Hardware, networks, internet, data terms. Return ONLY valid JSON: {"pairs":[{"term":"CPU","definition":"the brain of the computer"}]}`,"Computer memory game pairs.").then(d=>{clearTimeout(t);if(!d?.pairs)setLoadErr(true);else{const cards=[...d.pairs.map((p,i)=>({id:i,type:"term",text:p.term,pairId:i})),...d.pairs.map((p,i)=>({id:i+PAIRS,type:"definition",text:p.definition,pairId:i}))].sort(()=>Math.random()-0.5);setPairs(cards);}});}, []);
-  const flip=(card)=>{if(locked||flipped.some(f=>f.id===card.id)||matched.includes(card.pairId))return;const nf=[...flipped,card];setFlipped(nf);if(nf.length===2){setAttempts(a=>a+1);setLocked(true);if(nf[0].pairId===nf[1].pairId){setMatched(m=>[...m,nf[0].pairId]);setFlipped([]);setLocked(false);if(matched.length+1>=PAIRS)setDone(true);}else setTimeout(()=>{setFlipped([]);setLocked(false);},1000);}};
-  if(loadErr)return <GameError name="Computer Memory" onRetry={()=>{setLoadErr(false);setPairs(null);}}/>;
-  if(!pairs)return <GameLoad name="Computer Memory" emoji="💾" tutor={child.tutor}/>;
-  if(done)return <GameEnd name="Computer Memory" emoji="💾" score={PAIRS} max={PAIRS} child={child} xp={Math.max(20,60-attempts*3)} onDone={()=>onComplete({score:PAIRS,max:PAIRS,xp:Math.max(20,60-attempts*3)})}/>;
-  return (<GameShell name="Computer Memory" emoji="💾" subject="Computing" score={matched.length} maxScore={PAIRS} round={matched.length+1} total={PAIRS} streak={0} onQuit={onQuit}>
-    <p style={{textAlign:"center",fontSize:13,fontWeight:700,color:C.muted,marginBottom:12}}>Match each term to its definition! Attempts: {attempts}</p>
-    <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8}}>
-      {pairs.map(card=>{const isFlipped=flipped.some(f=>f.id===card.id);const isMatched=matched.includes(card.pairId);return(<button key={card.id} onClick={()=>flip(card)} style={{height:64,borderRadius:12,fontSize:11,fontWeight:800,cursor:"pointer",fontFamily:F,padding:"4px",border:`2px solid ${isMatched?"#22C55E":isFlipped?"#6366F1":C.border}`,background:isMatched?"#F0FDF4":isFlipped?"#EEF2FF":C.surface,color:isMatched?C.green:isFlipped?"#4F46E5":C.text,transition:"all 0.2s",textAlign:"center",lineHeight:1.3}}>
-        {isFlipped||isMatched?card.text:"💾"}
-      </button>);})}
-    </div>
-  </GameShell>);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 computing terms, networks, hardware for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Computer Memory questions."),[child]);
+  return <SpaceExplorer child={child} name="Computer Memory" emoji="💾" subject="Computing" color="#4F46E5" bg="#EEF2FF" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
 }
 
-// ── 📐 SHAPE SHOOTER ─────────────────────────────────────────────────────
 function ShapeShooter({child,mode,onComplete,onQuit,level=1}) {
-  const TOTAL=8;const [qs,setQs]=useState(null);const [idx,setIdx]=useState(0);const [score,setScore]=useState(0);const [sel,setSel]=useState(null);const [ans,setAns]=useState(false);const [done,setDone]=useState(false);const [loadErr,setLoadErr]=useState(false);
-  useEffect(()=>{const t=setTimeout(()=>setLoadErr(true),12000);claude(`Generate ${TOTAL} geometry questions for age ${child.age}, ${child.country||"UK"} curriculum, Level ${level}. 2D shapes, 3D shapes, angles, symmetry, area, perimeter. Return ONLY valid JSON: {"questions":[{"q":"How many sides does a hexagon have?","options":["A) 5","B) 6","C) 7","D) 8"],"correct":"B","shape":"⬡"}]}`,"Shape shooter geometry questions.").then(d=>{clearTimeout(t);if(!d?.questions)setLoadErr(true);else setQs(d.questions);});}, []);
-  const answer=(opt)=>{if(ans)return;setSel(opt);setAns(true);if(opt.charAt(0)===qs[idx]?.correct)setScore(s=>s+1);setTimeout(()=>{setSel(null);setAns(false);if(idx+1>=TOTAL)setDone(true);else setIdx(i=>i+1);},900);};
-  if(loadErr)return <GameError name="Shape Shooter" onRetry={()=>{setLoadErr(false);setQs(null);}}/>;
-  if(!qs)return <GameLoad name="Shape Shooter" emoji="📐" tutor={child.tutor}/>;
-  if(done)return <GameEnd name="Shape Shooter" emoji="📐" score={score} max={TOTAL} child={child} xp={score*10} onDone={()=>onComplete({score,max:TOTAL,xp:score*10})}/>;
-  const q=qs[idx];const shapes=["⬛","🔺","⬡","🔷","⭕","🔶","▪️","🔸"];
-  return (<GameShell name="Shape Shooter" emoji="📐" subject="Maths" score={score} maxScore={TOTAL} round={idx+1} total={TOTAL} streak={0} onQuit={onQuit}>
-    <div style={{background:"linear-gradient(135deg,#EEF2FF,#C7D2FE)",borderRadius:16,padding:14,marginBottom:12,textAlign:"center"}}>
-      <div style={{fontSize:48,marginBottom:4}}>{q?.shape||shapes[idx%8]}</div>
-      <p style={{fontSize:11,fontWeight:800,color:"#4338CA"}}>🎯 Shapes hit: {score}</p>
-    </div>
-    <p style={{fontSize:16,fontWeight:800,color:C.text,marginBottom:14}}>{q?.q}</p>
-    <Options options={q?.options} correct={q?.correct} selected={sel} answered={ans} onAnswer={answer}/>
-  </GameShell>);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 geometry questions for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Shapes, angles, symmetry. Options as short labels. Return ONLY JSON: {"questions":[{"q":"Sides of a hexagon?","options":["4","5","6","7"],"correct":"6"}]}`,"Shape shooter questions."),[child]);
+  return <ShooterEngine child={child} name="Shape Shooter" emoji="📐" subject="Maths" color="#7C3AED" bg="#F5F3FF" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
 }
 
-// ── 🧭 COORDINATE QUEST ──────────────────────────────────────────────────
 function CoordinateQuest({child,mode,onComplete,onQuit,level=1}) {
-  const TOTAL=7;const [qs,setQs]=useState(null);const [idx,setIdx]=useState(0);const [score,setScore]=useState(0);const [sel,setSel]=useState(null);const [ans,setAns]=useState(false);const [done,setDone]=useState(false);const [loadErr,setLoadErr]=useState(false);
-  useEffect(()=>{const t=setTimeout(()=>setLoadErr(true),12000);claude(`Generate ${TOTAL} coordinates and position questions for age ${child.age}, ${child.country||"UK"} curriculum, Level ${level}. Coordinates, translation, reflection, directions. Return ONLY valid JSON: {"questions":[{"q":"A point is at (3, 4). It moves 2 right and 1 up. Where is it now?","options":["A) (5, 5)","B) (5, 4)","C) (4, 5)","D) (1, 3)"],"correct":"A"}]}`,"Coordinate quest questions.").then(d=>{clearTimeout(t);if(!d?.questions)setLoadErr(true);else setQs(d.questions);});}, []);
-  const answer=(opt)=>{if(ans)return;setSel(opt);setAns(true);if(opt.charAt(0)===qs[idx]?.correct)setScore(s=>s+1);setTimeout(()=>{setSel(null);setAns(false);if(idx+1>=TOTAL)setDone(true);else setIdx(i=>i+1);},900);};
-  if(loadErr)return <GameError name="Coordinate Quest" onRetry={()=>{setLoadErr(false);setQs(null);}}/>;
-  if(!qs)return <GameLoad name="Coordinate Quest" emoji="🧭" tutor={child.tutor}/>;
-  if(done)return <GameEnd name="Coordinate Quest" emoji="🧭" score={score} max={TOTAL} child={child} xp={score*10} onDone={()=>onComplete({score,max:TOTAL,xp:score*10})}/>;
-  const q=qs[idx];
-  const gridSize=5;
-  return (<GameShell name="Coordinate Quest" emoji="🧭" subject="Maths" score={score} maxScore={TOTAL} round={idx+1} total={TOTAL} streak={0} onQuit={onQuit}>
-    <div style={{background:"#F8FAFC",borderRadius:16,padding:10,marginBottom:12,position:"relative"}}>
-      <svg viewBox="0 0 200 160" style={{width:"100%",height:120}}>
-        {[0,1,2,3,4,5].map(i=><>
-          <line key={"h"+i} x1="20" y1={20+i*24} x2="180" y2={20+i*24} stroke="#E2E8F0" strokeWidth="1"/>
-          <line key={"v"+i} x1={20+i*32} y1="20" x2={20+i*32} y2="140" stroke="#E2E8F0" strokeWidth="1"/>
-          <text key={"xl"+i} x={18+i*32} y="155" fontSize="8" fill="#94A3B8" textAnchor="middle">{i}</text>
-          <text key={"yl"+i} x="12" y={24+i*24} fontSize="8" fill="#94A3B8" textAnchor="middle">{5-i}</text>
-        </>)}
-        <line x1="20" y1="20" x2="20" y2="140" stroke="#475569" strokeWidth="2"/>
-        <line x1="20" y1="140" x2="180" y2="140" stroke="#475569" strokeWidth="2"/>
-        <circle cx="100" cy="80" r="5" fill="#6366F1"/>
-      </svg>
-    </div>
-    <p style={{fontSize:15,fontWeight:800,color:C.text,marginBottom:14}}>{q?.q}</p>
-    <Options options={q?.options} correct={q?.correct} selected={sel} answered={ans} onAnswer={answer}/>
-  </GameShell>);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 coordinates, position, translation for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Coordinate Quest questions."),[child]);
+  return <SpaceExplorer child={child} name="Coordinate Quest" emoji="🧭" subject="Maths" color="#4F46E5" bg="#EEF2FF" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
 }
 
-// ── ⚖️ RATIO KITCHEN ─────────────────────────────────────────────────────
 function RatioRecipe({child,mode,onComplete,onQuit,level=1}) {
-  const TOTAL=7;const [qs,setQs]=useState(null);const [idx,setIdx]=useState(0);const [dishes,setDishes]=useState(0);const [sel,setSel]=useState(null);const [ans,setAns]=useState(false);const [done,setDone]=useState(false);const [loadErr,setLoadErr]=useState(false);
-  useEffect(()=>{const t=setTimeout(()=>setLoadErr(true),12000);claude(`Generate ${TOTAL} ratio and proportion questions for age ${child.age}, ${child.country||"UK"} curriculum, Level ${level}. Use cooking/recipe context. Return ONLY valid JSON: {"questions":[{"q":"A recipe for 4 people needs 200g of flour. How much for 8 people?","options":["A) 300g","B) 350g","C) 400g","D) 450g"],"correct":"C","recipe":"🎂"}]}`,"Ratio kitchen questions.").then(d=>{clearTimeout(t);if(!d?.questions)setLoadErr(true);else setQs(d.questions);});}, []);
-  const answer=(opt)=>{if(ans)return;setSel(opt);setAns(true);if(opt.charAt(0)===qs[idx]?.correct)setDishes(d=>d+1);setTimeout(()=>{setSel(null);setAns(false);if(idx+1>=TOTAL)setDone(true);else setIdx(i=>i+1);},900);};
-  if(loadErr)return <GameError name="Ratio Kitchen" onRetry={()=>{setLoadErr(false);setQs(null);}}/>;
-  if(!qs)return <GameLoad name="Ratio Kitchen" emoji="⚖️" tutor={child.tutor}/>;
-  if(done)return <GameEnd name="Ratio Kitchen" emoji="⚖️" score={dishes} max={TOTAL} child={child} xp={dishes*10} onDone={()=>onComplete({score:dishes,max:TOTAL,xp:dishes*10})}/>;
-  const q=qs[idx];
-  return (<GameShell name="Ratio Kitchen" emoji="⚖️" subject="Maths" score={dishes} maxScore={TOTAL} round={idx+1} total={TOTAL} streak={0} onQuit={onQuit}>
-    <div style={{background:"linear-gradient(135deg,#FEF3C7,#FDE68A)",borderRadius:16,padding:14,marginBottom:12,textAlign:"center",border:"2px solid #F59E0B"}}>
-      <div style={{fontSize:36}}>{q?.recipe||"🍳"}</div>
-      <p style={{fontSize:11,fontWeight:800,color:"#92400E"}}>🍽️ Dishes mastered: {dishes}</p>
-    </div>
-    <p style={{fontSize:16,fontWeight:800,color:C.text,marginBottom:14}}>{q?.q}</p>
-    <Options options={q?.options} correct={q?.correct} selected={sel} answered={ans} onAnswer={answer}/>
-  </GameShell>);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 ratio, proportion, scaling for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Ratio Kitchen questions."),[child]);
+  return <SpaceExplorer child={child} name="Ratio Kitchen" emoji="⚖️" subject="Maths" color="#F59E0B" bg="#FFFBEB" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
 }
 
-// ── 🎤 POETRY SLAM ───────────────────────────────────────────────────────
 function PoetrySlam({child,mode,onComplete,onQuit,level=1}) {
-  const TOTAL=7;const [qs,setQs]=useState(null);const [idx,setIdx]=useState(0);const [score,setScore]=useState(0);const [sel,setSel]=useState(null);const [ans,setAns]=useState(false);const [done,setDone]=useState(false);const [loadErr,setLoadErr]=useState(false);
-  useEffect(()=>{const t=setTimeout(()=>setLoadErr(true),12000);claude(`Generate ${TOTAL} poetry questions for age ${child.age}, ${child.country||"UK"} curriculum, Level ${level}. Rhyme, rhythm, alliteration, simile, metaphor, personification. Show short poem extracts. Return ONLY valid JSON: {"questions":[{"poem":"The wind whispers through the trees,\nA gentle, whispering, rustling breeze.","q":"Which technique is used in this poem?","options":["A) Simile","B) Metaphor","C) Alliteration","D) Rhyme"],"correct":"C"}]}`,"Poetry slam questions.").then(d=>{clearTimeout(t);if(!d?.questions)setLoadErr(true);else setQs(d.questions);});}, []);
-  const answer=(opt)=>{if(ans)return;setSel(opt);setAns(true);if(opt.charAt(0)===qs[idx]?.correct)setScore(s=>s+1);setTimeout(()=>{setSel(null);setAns(false);if(idx+1>=TOTAL)setDone(true);else setIdx(i=>i+1);},1000);};
-  if(loadErr)return <GameError name="Poetry Slam" onRetry={()=>{setLoadErr(false);setQs(null);}}/>;
-  if(!qs)return <GameLoad name="Poetry Slam" emoji="🎤" tutor={child.tutor}/>;
-  if(done)return <GameEnd name="Poetry Slam" emoji="🎤" score={score} max={TOTAL} child={child} xp={score*10} onDone={()=>onComplete({score,max:TOTAL,xp:score*10})}/>;
-  const q=qs[idx];const mics=["🎤","🎶","🎼","🎸","🥁","🎷","🎺"];
-  return (<GameShell name="Poetry Slam" emoji="🎤" subject="English" score={score} maxScore={TOTAL} round={idx+1} total={TOTAL} streak={0} onQuit={onQuit}>
-    {q?.poem&&<div style={{background:"linear-gradient(135deg,#4F46E5,#7C3AED)",borderRadius:16,padding:14,marginBottom:12,textAlign:"center"}}>
-      <p style={{fontSize:14,fontWeight:600,color:"#fff",lineHeight:1.9,fontStyle:"italic",whiteSpace:"pre-line"}}>{q.poem}</p>
-    </div>}
-    <p style={{fontSize:15,fontWeight:800,color:C.text,marginBottom:14}}>{q?.q}</p>
-    <Options options={q?.options} correct={q?.correct} selected={sel} answered={ans} onAnswer={answer}/>
-  </GameShell>);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 poetry, rhyme, poetic devices for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Poetry Slam questions."),[child]);
+  return <SpaceExplorer child={child} name="Poetry Slam" emoji="🎤" subject="English" color="#7C3AED" bg="#F5F3FF" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
 }
 
-// ── 📱 MEDIA DETECTIVE ───────────────────────────────────────────────────
 function MediaDetective({child,mode,onComplete,onQuit,level=1}) {
-  const TOTAL=7;const [qs,setQs]=useState(null);const [idx,setIdx]=useState(0);const [score,setScore]=useState(0);const [sel,setSel]=useState(null);const [ans,setAns]=useState(false);const [done,setDone]=useState(false);const [loadErr,setLoadErr]=useState(false);
-  useEffect(()=>{const t=setTimeout(()=>setLoadErr(true),12000);claude(`Generate ${TOTAL} media literacy questions for age ${child.age}, ${child.country||"UK"} curriculum, Level ${level}. Fact vs opinion, purpose of media, adverts, bias, reliability. Return ONLY valid JSON: {"questions":[{"headline":"Scientists say chocolate is good for you!","q":"Is this fact or opinion?","options":["A) Definitely fact","B) Definitely opinion","C) Could be either — need more evidence","D) Both at the same time"],"correct":"C","source":"📰"}]}`,"Media detective questions.").then(d=>{clearTimeout(t);if(!d?.questions)setLoadErr(true);else setQs(d.questions);});}, []);
-  const answer=(opt)=>{if(ans)return;setSel(opt);setAns(true);if(opt.charAt(0)===qs[idx]?.correct)setScore(s=>s+1);setTimeout(()=>{setSel(null);setAns(false);if(idx+1>=TOTAL)setDone(true);else setIdx(i=>i+1);},900);};
-  if(loadErr)return <GameError name="Media Detective" onRetry={()=>{setLoadErr(false);setQs(null);}}/>;
-  if(!qs)return <GameLoad name="Media Detective" emoji="📱" tutor={child.tutor}/>;
-  if(done)return <GameEnd name="Media Detective" emoji="📱" score={score} max={TOTAL} child={child} xp={score*10} onDone={()=>onComplete({score,max:TOTAL,xp:score*10})}/>;
-  const q=qs[idx];
-  return (<GameShell name="Media Detective" emoji="📱" subject="English" score={score} maxScore={TOTAL} round={idx+1} total={TOTAL} streak={0} onQuit={onQuit}>
-    {q?.headline&&<div style={{background:"#F8FAFC",borderRadius:12,padding:"12px 14px",marginBottom:12,border:`2px solid ${C.border}`}}>
-      <p style={{fontSize:11,fontWeight:800,color:C.muted,marginBottom:4}}>{q?.source||"📰"} BREAKING NEWS</p>
-      <p style={{fontSize:15,fontWeight:900,color:C.text,lineHeight:1.5}}>"{q.headline}"</p>
-    </div>}
-    <p style={{fontSize:15,fontWeight:800,color:C.text,marginBottom:14}}>{q?.q}</p>
-    <Options options={q?.options} correct={q?.correct} selected={sel} answered={ans} onAnswer={answer}/>
-  </GameShell>);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 media literacy, fact vs opinion for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Media Detective questions."),[child]);
+  return <SpaceExplorer child={child} name="Media Detective" emoji="📱" subject="English" color="#0EA5E9" bg="#F0F9FF" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
 }
 
-// ── 🌤️ SEASONS EXPLORER ─────────────────────────────────────────────────
 function SeasonsGame({child,mode,onComplete,onQuit,level=1}) {
-  const TOTAL=8;const [qs,setQs]=useState(null);const [idx,setIdx]=useState(0);const [score,setScore]=useState(0);const [sel,setSel]=useState(null);const [ans,setAns]=useState(false);const [done,setDone]=useState(false);const [loadErr,setLoadErr]=useState(false);
-  useEffect(()=>{const t=setTimeout(()=>setLoadErr(true),12000);claude(`Generate ${TOTAL} seasons and weather science questions for age ${child.age}, ${child.country||"UK"} curriculum, Level ${level}. Four seasons, weather, day length, Earth's tilt, climate. Return ONLY valid JSON: {"questions":[{"q":"In which season do leaves fall from trees?","options":["A) Spring","B) Summer","C) Autumn","D) Winter"],"correct":"C","season":"🍂"}]}`,"Seasons explorer questions.").then(d=>{clearTimeout(t);if(!d?.questions)setLoadErr(true);else setQs(d.questions);});}, []);
-  const answer=(opt)=>{if(ans)return;setSel(opt);setAns(true);if(opt.charAt(0)===qs[idx]?.correct)setScore(s=>s+1);setTimeout(()=>{setSel(null);setAns(false);if(idx+1>=TOTAL)setDone(true);else setIdx(i=>i+1);},900);};
-  if(loadErr)return <GameError name="Seasons Explorer" onRetry={()=>{setLoadErr(false);setQs(null);}}/>;
-  if(!qs)return <GameLoad name="Seasons Explorer" emoji="🌤️" tutor={child.tutor}/>;
-  if(done)return <GameEnd name="Seasons Explorer" emoji="🌤️" score={score} max={TOTAL} child={child} xp={score*8} onDone={()=>onComplete({score,max:TOTAL,xp:score*8})}/>;
-  const q=qs[idx];const seasons=["🌸","☀️","🍂","❄️"];const bgColors=["#FEF3C7","#FEF9C3","#FEF3C7","#EFF6FF"];
-  return (<GameShell name="Seasons Explorer" emoji="🌤️" subject="Science" score={score} maxScore={TOTAL} round={idx+1} total={TOTAL} streak={0} onQuit={onQuit}>
-    <div style={{background:"linear-gradient(135deg,"+bgColors[idx%4]+",#fff)",borderRadius:16,padding:14,marginBottom:12,textAlign:"center",border:`2px solid ${C.border}`}}>
-      <div style={{fontSize:42,marginBottom:4}}>{q?.season||seasons[idx%4]}</div>
-      <div style={{display:"flex",justifyContent:"center",gap:8}}>{seasons.map((s,i)=><span key={i} style={{fontSize:20,opacity:i===idx%4?1:0.3}}>{s}</span>)}</div>
-    </div>
-    <p style={{fontSize:16,fontWeight:800,color:C.text,marginBottom:14}}>{q?.q}</p>
-    <Options options={q?.options} correct={q?.correct} selected={sel} answered={ans} onAnswer={answer}/>
-  </GameShell>);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 seasons and weather science questions for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short option answers. Return ONLY JSON: {"questions":[{"q":"Leaves fall in?","options":["Spring","Summer","Autumn","Winter"],"correct":"Autumn"}]}`,"Seasons game questions."),[child]);
+  return <CatcherEngine child={child} name="Seasons Explorer" emoji="🌤️" subject="Science" color="#F59E0B" bg="#FFFBEB" fetchFn={fetchFn} catcherChar="☂️" sceneBg="linear-gradient(180deg,#FEF9C3,#FEF3C7)" initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
 }
 
-// ── 🎵 SOUND WAVES ───────────────────────────────────────────────────────
 function SoundWaves({child,mode,onComplete,onQuit,level=1}) {
-  const TOTAL=8;const [qs,setQs]=useState(null);const [idx,setIdx]=useState(0);const [score,setScore]=useState(0);const [waveAnim,setWaveAnim]=useState(false);const [sel,setSel]=useState(null);const [ans,setAns]=useState(false);const [done,setDone]=useState(false);const [loadErr,setLoadErr]=useState(false);
-  useEffect(()=>{const t=setTimeout(()=>setLoadErr(true),12000);claude(`Generate ${TOTAL} sound science questions for age ${child.age}, ${child.country||"UK"} curriculum, Level ${level}. Vibrations, pitch, volume, how sound travels, echoes. Return ONLY valid JSON: {"questions":[{"q":"What do all sounds have in common?","options":["A) They are all loud","B) They all travel in water","C) They are all caused by vibrations","D) They all travel at the same speed"],"correct":"C"}]}`,"Sound waves questions.").then(d=>{clearTimeout(t);if(!d?.questions)setLoadErr(true);else setQs(d.questions);});}, []);
-  const answer=(opt)=>{if(ans)return;setSel(opt);setAns(true);setWaveAnim(true);setTimeout(()=>setWaveAnim(false),600);if(opt.charAt(0)===qs[idx]?.correct)setScore(s=>s+1);setTimeout(()=>{setSel(null);setAns(false);if(idx+1>=TOTAL)setDone(true);else setIdx(i=>i+1);},900);};
-  if(loadErr)return <GameError name="Sound Waves" onRetry={()=>{setLoadErr(false);setQs(null);}}/>;
-  if(!qs)return <GameLoad name="Sound Waves" emoji="🎵" tutor={child.tutor}/>;
-  if(done)return <GameEnd name="Sound Waves" emoji="🎵" score={score} max={TOTAL} child={child} xp={score*10} onDone={()=>onComplete({score,max:TOTAL,xp:score*10})}/>;
-  const q=qs[idx];
-  const waveY=28;
-  return (<GameShell name="Sound Waves" emoji="🎵" subject="Science" score={score} maxScore={TOTAL} round={idx+1} total={TOTAL} streak={0} onQuit={onQuit}>
-    <div style={{background:"linear-gradient(135deg,#1E1B4B,#312E81)",borderRadius:16,padding:12,marginBottom:12,overflow:"hidden"}}>
-      <svg viewBox="0 0 300 60" style={{width:"100%",height:50}}>
-        {[0,1,2,3].map(w=>(
-          <path key={w} d={`M ${w*80} ${waveY} Q ${w*80+20} ${waveY-18} ${w*80+40} ${waveY} Q ${w*80+60} ${waveY+18} ${w*80+80} ${waveY}`} fill="none" stroke={["#818CF8","#60A5FA","#34D399","#FBBF24"][w]} strokeWidth="2.5" opacity={waveAnim?1:0.6}/>
-        ))}
-      </svg>
-      <p style={{textAlign:"center",fontSize:11,fontWeight:800,color:"#C7D2FE"}}>🎵 Sound score: {score}</p>
-    </div>
-    <p style={{fontSize:16,fontWeight:800,color:C.text,marginBottom:14}}>{q?.q}</p>
-    <Options options={q?.options} correct={q?.correct} selected={sel} answered={ans} onAnswer={answer}/>
-  </GameShell>);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 sound, vibrations, pitch, volume for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Sound Waves questions."),[child]);
+  return <SpaceExplorer child={child} name="Sound Waves" emoji="🎵" subject="Science" color="#1E40AF" bg="#EFF6FF" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
 }
 
-// ── ⚡ CIRCUIT BUILDER ───────────────────────────────────────────────────
 function CircuitBuilder({child,mode,onComplete,onQuit,level=1}) {
-  const TOTAL=8;const [qs,setQs]=useState(null);const [idx,setIdx]=useState(0);const [built,setBuilt]=useState(0);const [sel,setSel]=useState(null);const [ans,setAns]=useState(false);const [lit,setLit]=useState(false);const [done,setDone]=useState(false);const [loadErr,setLoadErr]=useState(false);
-  useEffect(()=>{const t=setTimeout(()=>setLoadErr(true),12000);claude(`Generate ${TOTAL} electricity and circuits science questions for age ${child.age}, ${child.country||"UK"} curriculum, Level ${level}. Safety, circuits, components, conductors, insulators. Return ONLY valid JSON: {"questions":[{"q":"Which material would complete a circuit?","options":["A) Plastic ruler","B) Wooden pencil","C) Metal spoon","D) Rubber eraser"],"correct":"C"}]}`,"Circuit builder questions.").then(d=>{clearTimeout(t);if(!d?.questions)setLoadErr(true);else setQs(d.questions);});}, []);
-  const answer=(opt)=>{if(ans)return;setSel(opt);setAns(true);const ok=opt.charAt(0)===qs[idx]?.correct;if(ok){setBuilt(b=>b+1);setLit(true);setTimeout(()=>setLit(false),800);}setTimeout(()=>{setSel(null);setAns(false);if(idx+1>=TOTAL)setDone(true);else setIdx(i=>i+1);},900);};
+  const TOTAL=8;
+  const [qs,setQs]=useState(null);const [idx,setIdx]=useState(0);const [built,setBuilt]=useState(0);
+  const [sel,setSel]=useState(null);const [ans,setAns]=useState(false);
+  const [lit,setLit]=useState(false);const [sparks,setSparks]=useState([]);
+  const [done,setDone]=useState(false);const [loadErr,setLoadErr]=useState(false);
+
+  useEffect(()=>{
+    const t=setTimeout(()=>setLoadErr(true),12000);
+    claude(`Generate ${TOTAL} electricity and circuits questions for age ${child.age}, ${child.country||"UK"} curriculum, Level ${level}.
+Safety, circuits, components, conductors, insulators, series circuits.
+Return ONLY valid JSON: {"questions":[{"q":"Which material conducts electricity?","options":["A) Plastic","B) Wood","C) Copper","D) Rubber"],"correct":"C"}]}`,"Circuit builder questions.").then(d=>{
+      clearTimeout(t);
+      if(!d?.questions){setLoadErr(true);return;}
+      setQs(d.questions);
+    });
+  },[]);
+
+  const answer=(opt)=>{
+    if(ans) return;
+    setSel(opt);setAns(true);
+    const ok=opt.charAt(0)===qs[idx]?.correct;
+    if(ok){
+      setBuilt(b=>b+1);setLit(true);
+      // Spark particles
+      const newSparks=Array.from({length:8},(_,i)=>({id:i,angle:(i/8)*360,dist:0}));
+      setSparks(newSparks);
+      setTimeout(()=>setSparks([]),600);
+      setTimeout(()=>setLit(false),800);
+    }
+    setTimeout(()=>{
+      setSel(null);setAns(false);
+      if(idx+1>=TOTAL)setDone(true);
+      else setIdx(i=>i+1);
+    },1000);
+  };
+
   if(loadErr)return <GameError name="Circuit Builder" onRetry={()=>{setLoadErr(false);setQs(null);}}/>;
   if(!qs)return <GameLoad name="Circuit Builder" emoji="⚡" tutor={child.tutor}/>;
   if(done)return <GameEnd name="Circuit Builder" emoji="⚡" score={built} max={TOTAL} child={child} xp={built*10} onDone={()=>onComplete({score:built,max:TOTAL,xp:built*10})}/>;
+
   const q=qs[idx];
-  return (<GameShell name="Circuit Builder" emoji="⚡" subject="Science" score={built} maxScore={TOTAL} round={idx+1} total={TOTAL} streak={0} onQuit={onQuit}>
-    <div style={{background:"#1C1917",borderRadius:16,padding:14,marginBottom:12,textAlign:"center"}}>
-      <svg viewBox="0 0 200 80" style={{width:"100%",height:70}}>
-        <rect x="20" y="30" width="30" height="20" rx="4" fill="#374151" stroke="#6B7280" strokeWidth="1.5"/>
-        <text x="35" y="44" fontSize="8" fill="#FCD34D" textAnchor="middle">🔋</text>
-        <line x1="50" y1="40" x2="80" y2="40" stroke={lit?"#FCD34D":"#4B5563"} strokeWidth="2"/>
-        <circle cx="100" cy="40" r="10" fill={lit?"#FEF9C3":"#374151"} stroke={lit?"#FCD34D":"#6B7280"} strokeWidth="2"/>
-        <text x="100" y="44" fontSize="10" textAnchor="middle">{lit?"💡":"○"}</text>
-        <line x1="110" y1="40" x2="160" y2="40" stroke={lit?"#FCD34D":"#4B5563"} strokeWidth="2"/>
-        <line x1="160" y1="40" x2="160" y2="20" stroke={lit?"#FCD34D":"#4B5563"} strokeWidth="2"/>
-        <line x1="20" y1="40" x2="20" y2="20" stroke={lit?"#FCD34D":"#4B5563"} strokeWidth="2"/>
-        <line x1="20" y1="20" x2="160" y2="20" stroke={lit?"#FCD34D":"#4B5563"} strokeWidth="2"/>
-      </svg>
-      <p style={{fontSize:11,fontWeight:800,color:"#9CA3AF"}}>⚡ Circuits built: {built}</p>
-    </div>
-    <p style={{fontSize:16,fontWeight:800,color:C.text,marginBottom:14}}>{q?.q}</p>
-    <Options options={q?.options} correct={q?.correct} selected={sel} answered={ans} onAnswer={answer}/>
-  </GameShell>);
+  const pct=Math.round((built/TOTAL)*100);
+
+  return (
+    <GameShell name="Circuit Builder" emoji="⚡" subject="Science" score={built} maxScore={TOTAL} round={idx+1} total={TOTAL} streak={0} onQuit={onQuit}>
+      {/* Interactive circuit diagram */}
+      <div style={{background:"#111827",borderRadius:20,padding:"16px 12px",marginBottom:12,position:"relative"}}>
+        <svg viewBox="0 0 300 120" style={{width:"100%",height:100}}>
+          {/* Wire paths */}
+          <polyline points="40,60 40,20 260,20 260,60" fill="none" stroke={lit?"#FCD34D":"#374151"} strokeWidth="3" strokeLinejoin="round"/>
+          <polyline points="40,60 40,100 260,100 260,60" fill="none" stroke={lit?"#FCD34D":"#374151"} strokeWidth="3" strokeLinejoin="round"/>
+          {/* Battery */}
+          <rect x="20" y="45" width="40" height="30" rx="6" fill="#1F2937" stroke="#4B5563" strokeWidth="1.5"/>
+          <text x="40" y="65" fontSize="14" textAnchor="middle" fill="#FCD34D">🔋</text>
+          {/* Bulb - lights up when correct! */}
+          <ellipse cx="150" cy="60" rx="18" ry="18" fill={lit?"#FEF9C3":"#1F2937"} stroke={lit?"#FCD34D":"#4B5563"} strokeWidth="2"/>
+          <text x="150" y="67" fontSize="16" textAnchor="middle">{lit?"💡":"⚫"}</text>
+          {lit&&<ellipse cx="150" cy="60" rx="28" ry="28" fill="rgba(252,211,77,0.2)" stroke="none"/>}
+          {/* Switch */}
+          <rect x="230" y="45" width="50" height="30" rx="6" fill="#1F2937" stroke="#4B5563" strokeWidth="1.5"/>
+          <text x="255" y="65" fontSize="12" textAnchor="middle" fill={lit?"#22C55E":"#9CA3AF"}>{lit?"ON":"OFF"}</text>
+          {/* Sparks */}
+          {sparks.map(s=>(
+            <circle key={s.id} cx={150+Math.cos(s.angle*Math.PI/180)*30} cy={60+Math.sin(s.angle*Math.PI/180)*30} r="3" fill="#FCD34D" opacity="0.8"/>
+          ))}
+        </svg>
+        <div style={{textAlign:"center",marginTop:4}}>
+          <div style={{display:"flex",gap:4,justifyContent:"center"}}>{Array.from({length:TOTAL}).map((_,i)=><div key={i} style={{width:20,height:6,borderRadius:3,background:i<built?"#FCD34D":"#374151"}}/>)}</div>
+          <p style={{fontSize:10,fontWeight:800,color:"#9CA3AF",marginTop:4}}>CIRCUIT COMPLETION: {pct}%</p>
+        </div>
+      </div>
+      <p style={{fontSize:16,fontWeight:800,color:C.text,marginBottom:14}}>{q?.q}</p>
+      <Options options={q?.options} correct={q?.correct} selected={sel} answered={ans} onAnswer={answer}/>
+    </GameShell>
+  );
 }
 
-// ── 🧫 CHEMISTRY LAB ─────────────────────────────────────────────────────
+
 function ChemistryLab({child,mode,onComplete,onQuit,level=1}) {
-  const TOTAL=7;const [qs,setQs]=useState(null);const [idx,setIdx]=useState(0);const [exp,setExp]=useState(0);const [sel,setSel]=useState(null);const [ans,setAns]=useState(false);const [done,setDone]=useState(false);const [loadErr,setLoadErr]=useState(false);
-  useEffect(()=>{const t=setTimeout(()=>setLoadErr(true),12000);claude(`Generate ${TOTAL} materials properties and changes science questions for age ${child.age}, ${child.country||"UK"} curriculum, Level ${level}. Reversible/irreversible changes, dissolving, filtering, burning, reactions. Return ONLY valid JSON: {"questions":[{"q":"When you burn wood, can you get the wood back?","options":["A) Yes, by cooling it","B) Yes, by adding water","C) No — burning is irreversible","D) Yes, by freezing it"],"correct":"C","reaction":"🔥"}]}`,"Chemistry lab questions.").then(d=>{clearTimeout(t);if(!d?.questions)setLoadErr(true);else setQs(d.questions);});}, []);
-  const answer=(opt)=>{if(ans)return;setSel(opt);setAns(true);if(opt.charAt(0)===qs[idx]?.correct)setExp(e=>e+1);setTimeout(()=>{setSel(null);setAns(false);if(idx+1>=TOTAL)setDone(true);else setIdx(i=>i+1);},900);};
-  if(loadErr)return <GameError name="Chemistry Lab" onRetry={()=>{setLoadErr(false);setQs(null);}}/>;
-  if(!qs)return <GameLoad name="Chemistry Lab" emoji="🧫" tutor={child.tutor}/>;
-  if(done)return <GameEnd name="Chemistry Lab" emoji="🧫" score={exp} max={TOTAL} child={child} xp={exp*10} onDone={()=>onComplete({score:exp,max:TOTAL,xp:exp*10})}/>;
-  const q=qs[idx];const colours=["#A855F7","#06B6D4","#F59E0B","#EF4444","#22C55E","#EC4899","#6366F1"];
-  return (<GameShell name="Chemistry Lab" emoji="🧫" subject="Science" score={exp} maxScore={TOTAL} round={idx+1} total={TOTAL} streak={0} onQuit={onQuit}>
-    <div style={{background:"#F8FAFC",borderRadius:16,padding:12,marginBottom:12,display:"flex",gap:8,justifyContent:"center",alignItems:"flex-end"}}>
-      {colours.slice(0,idx+1).map((c,i)=><div key={i} style={{width:20,borderRadius:"10px 10px 4px 4px",background:c,height:20+i*6,opacity:0.8}}/>)}
-      <p style={{fontSize:24,marginLeft:8}}>{q?.reaction||"🧪"}</p>
-    </div>
-    <p style={{fontSize:16,fontWeight:800,color:C.text,marginBottom:14}}>{q?.q}</p>
-    <Options options={q?.options} correct={q?.correct} selected={sel} answered={ans} onAnswer={answer}/>
-  </GameShell>);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 materials, reversible and irreversible changes for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Chemistry Lab questions."),[child]);
+  return <SpaceExplorer child={child} name="Chemistry Lab" emoji="🧫" subject="Science" color="#7C3AED" bg="#F5F3FF" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
 }
 
-// ── ⏰ TIME MACHINE ───────────────────────────────────────────────────────
 function TimeMachine({child,mode,onComplete,onQuit,level=1}) {
-  const TOTAL=7;const [qs,setQs]=useState(null);const [idx,setIdx]=useState(0);const [jumps,setJumps]=useState(0);const [sel,setSel]=useState(null);const [ans,setAns]=useState(false);const [done,setDone]=useState(false);const [loadErr,setLoadErr]=useState(false);
-  useEffect(()=>{const t=setTimeout(()=>setLoadErr(true),12000);const country=child.country||"UK";claude(`Generate ${TOTAL} history questions about significant events beyond living memory for age ${child.age}, ${country} curriculum, Level ${level}. Events from ${country==="US"?"American":country==="CA"?"Canadian":"British"} history and world history. Time machine theme! Return ONLY valid JSON: {"questions":[{"q":"In what year did the Great Fire of London happen?","options":["A) 1566","B) 1666","C) 1766","D) 1866"],"correct":"B","year":"1666","event":"🔥"}]}`,"Time machine history questions.").then(d=>{clearTimeout(t);if(!d?.questions)setLoadErr(true);else setQs(d.questions);});}, []);
-  const answer=(opt)=>{if(ans)return;setSel(opt);setAns(true);if(opt.charAt(0)===qs[idx]?.correct)setJumps(j=>j+1);setTimeout(()=>{setSel(null);setAns(false);if(idx+1>=TOTAL)setDone(true);else setIdx(i=>i+1);},900);};
-  if(loadErr)return <GameError name="Time Machine" onRetry={()=>{setLoadErr(false);setQs(null);}}/>;
-  if(!qs)return <GameLoad name="Time Machine" emoji="⏰" tutor={child.tutor}/>;
-  if(done)return <GameEnd name="Time Machine" emoji="⏰" score={jumps} max={TOTAL} child={child} xp={jumps*10} onDone={()=>onComplete({score:jumps,max:TOTAL,xp:jumps*10})}/>;
-  const q=qs[idx];
-  return (<GameShell name="Time Machine" emoji="⏰" subject="History" score={jumps} maxScore={TOTAL} round={idx+1} total={TOTAL} streak={0} onQuit={onQuit}>
-    <div style={{background:"linear-gradient(135deg,#1E1B4B,#4F46E5)",borderRadius:16,padding:14,marginBottom:12,textAlign:"center"}}>
-      <div style={{fontSize:36,marginBottom:4}}>{q?.event||"⏰"}</div>
-      <div style={{fontSize:24,fontWeight:900,color:"#FCD34D",marginBottom:4}}>{q?.year||"????"}</div>
-      <p style={{fontSize:11,fontWeight:800,color:"rgba(255,255,255,0.7)"}}>⚡ Time jumps: {jumps}</p>
-    </div>
-    <p style={{fontSize:16,fontWeight:800,color:C.text,marginBottom:14}}>{q?.q}</p>
-    <Options options={q?.options} correct={q?.correct} selected={sel} answered={ans} onAnswer={answer}/>
-  </GameShell>);
+  const country=child.country||"UK";
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 history questions about significant past events for age ${child.age}, ${country} curriculum, Level ${lvl}. Short options. Return ONLY JSON: {"questions":[{"q":"Great Fire of London?","options":["1466","1566","1666","1766"],"correct":"1666"}]}`,"Time machine questions."),[child]);
+  return <SpaceExplorer child={child} name="Time Machine" emoji="⏰" subject="History" color="#4F46E5" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
 }
 
-// ── 🏘️ LOCAL HERO QUEST ──────────────────────────────────────────────────
 function LocalHero({child,mode,onComplete,onQuit,level=1}) {
-  const TOTAL=7;const [qs,setQs]=useState(null);const [idx,setIdx]=useState(0);const [heroes,setHeroes]=useState(0);const [sel,setSel]=useState(null);const [ans,setAns]=useState(false);const [done,setDone]=useState(false);const [loadErr,setLoadErr]=useState(false);
-  useEffect(()=>{const t=setTimeout(()=>setLoadErr(true),12000);const country=child.country||"UK";claude(`Generate ${TOTAL} local and community history questions for age ${child.age}, ${country} curriculum, Level ${level}. How places change over time, old photos, buildings, local records. Return ONLY valid JSON: {"questions":[{"q":"Which type of source would best show how a town looked 100 years ago?","options":["A) A modern map","B) An old photograph","C) A new newspaper","D) A website"],"correct":"B","source":"📸"}]}`,"Local hero history questions.").then(d=>{clearTimeout(t);if(!d?.questions)setLoadErr(true);else setQs(d.questions);});}, []);
-  const answer=(opt)=>{if(ans)return;setSel(opt);setAns(true);if(opt.charAt(0)===qs[idx]?.correct)setHeroes(h=>h+1);setTimeout(()=>{setSel(null);setAns(false);if(idx+1>=TOTAL)setDone(true);else setIdx(i=>i+1);},900);};
-  if(loadErr)return <GameError name="Local Hero Quest" onRetry={()=>{setLoadErr(false);setQs(null);}}/>;
-  if(!qs)return <GameLoad name="Local Hero Quest" emoji="🏘️" tutor={child.tutor}/>;
-  if(done)return <GameEnd name="Local Hero Quest" emoji="🏘️" score={heroes} max={TOTAL} child={child} xp={heroes*10} onDone={()=>onComplete({score:heroes,max:TOTAL,xp:heroes*10})}/>;
-  const q=qs[idx];const eras=["🏚️","🏘️","🏠","🏗️","🏙️","🌆","🌇"];
-  return (<GameShell name="Local Hero Quest" emoji="🏘️" subject="History" score={heroes} maxScore={TOTAL} round={idx+1} total={TOTAL} streak={0} onQuit={onQuit}>
-    <div style={{background:"linear-gradient(135deg,#F0FDF4,#DCFCE7)",borderRadius:16,padding:14,marginBottom:12,textAlign:"center",border:"2px solid #86EFAC"}}>
-      <div style={{display:"flex",gap:4,justifyContent:"center",marginBottom:6}}>{eras.map((e,i)=><span key={i} style={{fontSize:18,opacity:i<=idx?1:0.3}}>{e}</span>)}</div>
-      <p style={{fontSize:11,fontWeight:800,color:C.green}}>{q?.source||"🏘️"} Exploring local history</p>
-    </div>
-    <p style={{fontSize:15,fontWeight:800,color:C.text,marginBottom:14}}>{q?.q}</p>
-    <Options options={q?.options} correct={q?.correct} selected={sel} answered={ans} onAnswer={answer}/>
-  </GameShell>);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 local and community history for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Local Hero Quest questions."),[child]);
+  return <SpaceExplorer child={child} name="Local Hero Quest" emoji="🏘️" subject="History" color="#16A34A" bg="#F0FDF4" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
 }
 
-// ── 🛡️ SAFETY SHIELD ─────────────────────────────────────────────────────
 function SafetyShield({child,mode,onComplete,onQuit,level=1}) {
-  const TOTAL=8;const [qs,setQs]=useState(null);const [idx,setIdx]=useState(0);const [shields,setShields]=useState(0);const [sel,setSel]=useState(null);const [ans,setAns]=useState(false);const [done,setDone]=useState(false);const [loadErr,setLoadErr]=useState(false);
-  useEffect(()=>{const t=setTimeout(()=>setLoadErr(true),12000);claude(`Generate ${TOTAL} e-safety and digital citizenship questions for age ${child.age}, ${child.country||"UK"} curriculum, Level ${level}. Personal info, cyberbullying, passwords, privacy, screen time. Age appropriate! Return ONLY valid JSON: {"questions":[{"q":"Someone online asks for your home address. What should you do?","options":["A) Share it — they seem friendly","B) Never share it — tell a trusted adult","C) Share just the street name","D) Block them then share it"],"correct":"B","shield":"🛡️"}]}`,"Safety shield e-safety questions.").then(d=>{clearTimeout(t);if(!d?.questions)setLoadErr(true);else setQs(d.questions);});}, []);
-  const answer=(opt)=>{if(ans)return;setSel(opt);setAns(true);if(opt.charAt(0)===qs[idx]?.correct)setShields(s=>s+1);setTimeout(()=>{setSel(null);setAns(false);if(idx+1>=TOTAL)setDone(true);else setIdx(i=>i+1);},900);};
-  if(loadErr)return <GameError name="Safety Shield" onRetry={()=>{setLoadErr(false);setQs(null);}}/>;
-  if(!qs)return <GameLoad name="Safety Shield" emoji="🛡️" tutor={child.tutor}/>;
-  if(done)return <GameEnd name="Safety Shield" emoji="🛡️" score={shields} max={TOTAL} child={child} xp={shields*10} onDone={()=>onComplete({score:shields,max:TOTAL,xp:shields*10})}/>;
-  const q=qs[idx];
-  return (<GameShell name="Safety Shield" emoji="🛡️" subject="Computing" score={shields} maxScore={TOTAL} round={idx+1} total={TOTAL} streak={0} onQuit={onQuit}>
-    <div style={{background:"linear-gradient(135deg,#1E3A5F,#1E40AF)",borderRadius:16,padding:14,marginBottom:12,textAlign:"center"}}>
-      <div style={{fontSize:36}}>{q?.shield||"🛡️"}</div>
-      <p style={{fontSize:11,fontWeight:800,color:"#BFDBFE"}}>🔒 Shields earned: {shields}/{TOTAL}</p>
-      <div style={{display:"flex",justifyContent:"center",gap:4,marginTop:6}}>{Array.from({length:TOTAL}).map((_,i)=><span key={i} style={{fontSize:14,opacity:i<shields?1:0.2}}>🛡️</span>)}</div>
-    </div>
-    <p style={{fontSize:15,fontWeight:800,color:C.text,marginBottom:14}}>{q?.q}</p>
-    <Options options={q?.options} correct={q?.correct} selected={sel} answered={ans} onAnswer={answer}/>
-  </GameShell>);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 e-safety questions for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Online safety, privacy, cyberbullying. Short options. Return ONLY JSON: {"questions":[{"q":"Keep private online?","options":["Address","Name","Opinion","Hobby"],"correct":"Address"}]}`,"Safety shield questions."),[child]);
+  return <ShooterEngine child={child} name="Safety Shield" emoji="🛡️" subject="Computing" color="#1E40AF" bg="#EFF6FF" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
 }
 
-// ── 🎨 CREATIVE STUDIO ───────────────────────────────────────────────────
 function CreativeStudio({child,mode,onComplete,onQuit,level=1}) {
-  const TOTAL=7;const [qs,setQs]=useState(null);const [idx,setIdx]=useState(0);const [projects,setProjects]=useState(0);const [sel,setSel]=useState(null);const [ans,setAns]=useState(false);const [done,setDone]=useState(false);const [loadErr,setLoadErr]=useState(false);
-  useEffect(()=>{const t=setTimeout(()=>setLoadErr(true),12000);claude(`Generate ${TOTAL} creative computing and digital literacy questions for age ${child.age}, ${child.country||"UK"} curriculum, Level ${level}. Creating digital content, animation, audio, multimedia, impact of technology. Return ONLY valid JSON: {"questions":[{"q":"What is a pixel?","options":["A) A type of computer","B) The smallest dot of colour on a screen","C) A kind of camera","D) A computer program"],"correct":"B","tool":"🖥️"}]}`,"Creative studio questions.").then(d=>{clearTimeout(t);if(!d?.questions)setLoadErr(true);else setQs(d.questions);});}, []);
-  const answer=(opt)=>{if(ans)return;setSel(opt);setAns(true);if(opt.charAt(0)===qs[idx]?.correct)setProjects(p=>p+1);setTimeout(()=>{setSel(null);setAns(false);if(idx+1>=TOTAL)setDone(true);else setIdx(i=>i+1);},900);};
-  if(loadErr)return <GameError name="Creative Studio" onRetry={()=>{setLoadErr(false);setQs(null);}}/>;
-  if(!qs)return <GameLoad name="Creative Studio" emoji="🎨" tutor={child.tutor}/>;
-  if(done)return <GameEnd name="Creative Studio" emoji="🎨" score={projects} max={TOTAL} child={child} xp={projects*10} onDone={()=>onComplete({score:projects,max:TOTAL,xp:projects*10})}/>;
-  const q=qs[idx];const tools=["🖌️","🎬","🎵","📸","🖥️","✏️","🎮"];
-  return (<GameShell name="Creative Studio" emoji="🎨" subject="Computing" score={projects} maxScore={TOTAL} round={idx+1} total={TOTAL} streak={0} onQuit={onQuit}>
-    <div style={{background:"linear-gradient(135deg,#FDF4FF,#FAE8FF)",borderRadius:16,padding:14,marginBottom:12,textAlign:"center",border:"2px solid #E879F9"}}>
-      <div style={{display:"flex",gap:8,justifyContent:"center",marginBottom:6}}>{tools.map((t,i)=><span key={i} style={{fontSize:20,opacity:i<=idx?1:0.2}}>{t}</span>)}</div>
-      <p style={{fontSize:11,fontWeight:800,color:"#A21CAF"}}>{q?.tool||"🎨"} Projects completed: {projects}</p>
-    </div>
-    <p style={{fontSize:16,fontWeight:800,color:C.text,marginBottom:14}}>{q?.q}</p>
-    <Options options={q?.options} correct={q?.correct} selected={sel} answered={ans} onAnswer={answer}/>
-  </GameShell>);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 creative computing, digital content for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Creative Studio questions."),[child]);
+  return <SpaceExplorer child={child} name="Creative Studio" emoji="🎨" subject="Computing" color="#EC4899" bg="#FDF2F8" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
 }
 
-function GameHub({child,onPlay,onBack,onHome}) {
-  const played = child.gamesPlayed||0;
-  const availableGames = getGamesForChild(child);
-  const country = child.country||"UK";
-  const subjectList = getSubjects(country);
+function GameHub({child,onPlay,onBack,onHome,onLevelUp}) {
+  const [selectedCat,setSelectedCat]=useState(null);
+  const [hoveredGame,setHoveredGame]=useState(null);
+  const country=child.country||"UK";
+  const availableGames=getGamesForChild(child);
 
-  // Group games by subject category
-  const categories = [
-    {label:"Maths", subjects:["Maths","Math","Mathematics"], emoji:"🔢", color:C.primary},
-    {label:"English", subjects:["English","English Language Arts","Language"], emoji:"📖", color:C.sky},
-    {label:"Science", subjects:["Science","Science & Technology"], emoji:"🔬", color:C.green},
-    {label:"History & Geography", subjects:["History","Geography","Social Studies"], emoji:"🌍", color:C.amber},
-    {label:"Computing", subjects:["Computing","Computer Studies"], emoji:"💻", color:C.violet},
+  const categories=[
+    {id:"maths",   label:"Maths",            emoji:"🔢", color:"#4F46E5", bg:"#EEF2FF", subjects:["Maths","Math","Mathematics"]},
+    {id:"english", label:"English",           emoji:"📖", color:"#0EA5E9", bg:"#F0F9FF", subjects:["English","English Language Arts","Language"]},
+    {id:"science", label:"Science",           emoji:"🔬", color:"#16A34A", bg:"#F0FDF4", subjects:["Science","Science & Technology"]},
+    {id:"history", label:"History & Geo",     emoji:"🌍", color:"#D97706", bg:"#FFFBEB", subjects:["History","Geography","Social Studies"]},
+    {id:"computing",label:"Computing",        emoji:"💻", color:"#7C3AED", bg:"#F5F3FF", subjects:["Computing","Computer Studies"]},
   ];
+
+  const catGames=selectedCat?availableGames.filter(g=>g.subjects.some(s=>selectedCat.subjects.includes(s))):[];
 
   return (
     <Screen>
       <div style={{paddingTop:16}}>
-        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20}}>
-          <BackBtn onClick={onHome||onBack}/>
-        </div>
         <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20}}>
-          <TutorChar name={child.tutor} size={48}/>
-          <div>
-            <h2 style={{fontSize:24,fontWeight:900,color:C.text}}>Mini Games 🎮</h2>
-            <p style={{fontSize:13,fontWeight:700,color:C.muted}}>{played} played · {availableGames.length} available for you</p>
-          </div>
-        </div>
-        {categories.map(cat=>{
-          const catGames=availableGames.filter(g=>g.subjects.some(s=>cat.subjects.includes(s)));
-          if(!catGames.length) return null;
-          return (
-            <div key={cat.label} style={{marginBottom:24}}>
-              <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}>
-                <span style={{fontSize:18}}>{cat.emoji}</span>
-                <p style={{fontSize:13,fontWeight:800,color:cat.color,textTransform:"uppercase",letterSpacing:"0.08em"}}>{cat.label}</p>
-              </div>
-              <div style={{display:"flex",flexDirection:"column",gap:10}}>
-                {catGames.map(g=>{
-                  const gameLevel=getGameLevel(child,g);
-                  const diff=getDifficultyLabel(gameLevel);
-                  const levelHint=g.levelDesc?.[Math.min(Math.floor((gameLevel-1)/4),4)]||g.desc;
-                  return (
-                    <Card key={g.id} onClick={()=>onPlay(g.id)} style={{padding:"14px 16px",border:`2px solid ${C.border}`,cursor:"pointer"}}>
-                      <div style={{display:"flex",alignItems:"center",gap:14}}>
-                        <div style={{width:52,height:52,borderRadius:14,background:cat.color+"20",display:"flex",alignItems:"center",justifyContent:"center",fontSize:26,flexShrink:0}}>{g.emoji}</div>
-                        <div style={{flex:1}}>
-                          <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:2}}>
-                            <p style={{fontSize:16,fontWeight:800,color:C.text}}>{g.name}</p>
-                            <span style={{fontSize:10,fontWeight:800,color:diff.color,background:diff.color+"15",padding:"2px 6px",borderRadius:6}}>{diff.emoji} Lv.{gameLevel}</span>
-                          </div>
-                          <p style={{fontSize:12,fontWeight:600,color:C.muted}}>{levelHint}</p>
-                        </div>
-                        <span style={{fontSize:20,color:C.border}}>›</span>
-                      </div>
-                    </Card>
-                  );
-                })}
+          <BackBtn onClick={selectedCat?()=>setSelectedCat(null):(onHome||onBack)}/>
+          {selectedCat?(
+            <div style={{display:"flex",alignItems:"center",gap:8}}>
+              <span style={{fontSize:22}}>{selectedCat.emoji}</span>
+              <div>
+                <h2 style={{fontSize:22,fontWeight:900,color:C.text}}>{selectedCat.label}</h2>
+                <p style={{fontSize:12,fontWeight:700,color:C.muted}}>{catGames.length} games available</p>
               </div>
             </div>
-          );
-        })}
+          ):(
+            <div>
+              <h2 style={{fontSize:22,fontWeight:900,color:C.text}}>🎮 Mini Games</h2>
+              <p style={{fontSize:12,fontWeight:700,color:C.muted}}>{availableGames.length} games · choose a subject</p>
+            </div>
+          )}
+        </div>
+
+        {!selectedCat?(
+          /* ── Category grid ── */
+          <div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:12}}>
+              {categories.slice(0,4).map(cat=>{
+                const count=availableGames.filter(g=>g.subjects.some(s=>cat.subjects.includes(s))).length;
+                if(!count) return null;
+                return (
+                  <button key={cat.id} onClick={()=>setSelectedCat(cat)}
+                    style={{padding:"20px 16px",borderRadius:20,background:cat.bg,border:`2px solid ${cat.color}20`,cursor:"pointer",fontFamily:F,textAlign:"center",transition:"all 0.2s",boxShadow:`0 4px 16px ${cat.color}15`}}>
+                    <div style={{fontSize:36,marginBottom:8}}>{cat.emoji}</div>
+                    <p style={{fontSize:14,fontWeight:900,color:cat.color,marginBottom:2}}>{cat.label}</p>
+                    <p style={{fontSize:11,fontWeight:700,color:C.muted}}>{count} games</p>
+                  </button>
+                );
+              })}
+            </div>
+            {/* Computing full width */}
+            {availableGames.filter(g=>g.subjects.some(s=>categories[4].subjects.includes(s))).length>0&&(
+              <button onClick={()=>setSelectedCat(categories[4])}
+                style={{width:"100%",padding:"16px",borderRadius:20,background:categories[4].bg,border:`2px solid ${categories[4].color}20`,cursor:"pointer",fontFamily:F,display:"flex",alignItems:"center",gap:12,boxShadow:`0 4px 16px ${categories[4].color}15`}}>
+                <span style={{fontSize:32}}>{categories[4].emoji}</span>
+                <div style={{textAlign:"left"}}>
+                  <p style={{fontSize:14,fontWeight:900,color:categories[4].color}}>{categories[4].label}</p>
+                  <p style={{fontSize:11,fontWeight:700,color:C.muted}}>{availableGames.filter(g=>g.subjects.some(s=>categories[4].subjects.includes(s))).length} games</p>
+                </div>
+                <span style={{marginLeft:"auto",fontSize:18,color:C.muted}}>›</span>
+              </button>
+            )}
+          </div>
+        ):(
+          /* ── 3-column game grid ── */
+          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10}}>
+            {catGames.map(g=>{
+              const gameLevel=getGameLevel(child,g);
+              const diff=getDifficultyLabel(gameLevel);
+              const isHovered=hoveredGame===g.id;
+              return (
+                <div key={g.id} style={{position:"relative",borderRadius:16,overflow:"hidden"}}
+                  onMouseEnter={()=>setHoveredGame(g.id)}
+                  onMouseLeave={()=>setHoveredGame(null)}
+                  onClick={()=>onPlay(g.id)}>
+                  {/* Game card */}
+                  <div style={{
+                    padding:"14px 8px",borderRadius:16,
+                    background:isHovered?selectedCat.bg:"#fff",
+                    border:`2px solid ${isHovered?selectedCat.color:C.border}`,
+                    cursor:"pointer",textAlign:"center",
+                    transition:"all 0.2s",
+                    boxShadow:isHovered?`0 6px 20px ${selectedCat.color}30`:"0 2px 8px rgba(0,0,0,0.06)",
+                    transform:isHovered?"translateY(-3px)":"none",
+                    minHeight:110
+                  }}>
+                    <div style={{fontSize:28,marginBottom:4}}>{g.emoji}</div>
+                    <p style={{fontSize:11,fontWeight:800,color:C.text,lineHeight:1.3,marginBottom:4}}>{g.name}</p>
+                    <span style={{fontSize:9,fontWeight:800,color:diff.color,background:diff.color+"20",padding:"2px 5px",borderRadius:4}}>{diff.emoji} Lv.{gameLevel}</span>
+                  </div>
+                  {/* Hover overlay */}
+                  {isHovered&&(
+                    <div style={{position:"absolute",inset:0,borderRadius:16,background:selectedCat.color,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"8px",cursor:"pointer"}}>
+                      <div style={{fontSize:22,marginBottom:4}}>{g.emoji}</div>
+                      <p style={{fontSize:10,fontWeight:900,color:"#fff",textAlign:"center",lineHeight:1.3,marginBottom:6}}>{g.name}</p>
+                      <p style={{fontSize:9,fontWeight:600,color:"rgba(255,255,255,0.85)",textAlign:"center",lineHeight:1.4,marginBottom:8}}>{g.desc}</p>
+                      <div style={{background:"rgba(255,255,255,0.2)",borderRadius:8,padding:"4px 10px"}}>
+                        <p style={{fontSize:9,fontWeight:800,color:"#fff"}}>▶ PLAY</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </Screen>
   );
 }
 
+
 function GamePlayer({child,gameId,mode,onComplete,onQuit}) {
   const game = GAMES.find(g=>g.id===gameId);
   const gameLevel = game ? getGameLevel(child,game) : 1;
-  const props={child,mode,onComplete,onQuit,level:gameLevel};
+
+  // When game ends with good score, sync level to subject
+  const handleComplete=(result)=>{
+    const acc=result.max>0?result.score/result.max:0;
+    // If scored 70%+ and game has a primary subject, consider level up
+    if(acc>=0.7&&game?.subjects?.[0]&&result.levelReached){
+      onComplete({...result,levelUpSubject:game.subjects[0],levelUpTo:result.levelReached});
+    } else {
+      onComplete(result);
+    }
+  };
+
+  const props={child,mode,onComplete:handleComplete,onQuit,level:gameLevel};
   const map={numberBlaster:<NumberBlaster {...props}/>,timesTableRace:<TimesTableRace {...props}/>,fractionChef:<FractionChef {...props}/>,wordScramble:<WordScramble {...props}/>,spellingBee:<SpellingBee {...props}/>,sentenceBuilder:<SentenceBuilder {...props}/>,scienceSort:<ScienceSort {...props}/>,statesOfMatter:<StatesOfMatter {...props}/>,planetPatrol:<PlanetPatrol {...props}/>,algorithmSort:<AlgorithmSort {...props}/>,debugDetective:<DebugDetective {...props}/>,wordMatch:<WordMatch {...props}/>,mathFishing:<MathFishing {...props}/>,spaceBlaster:<SpaceBlaster {...props}/>,gemHunter:<GemHunter {...props}/>,wordRunner:<WordRunner {...props}/>,volcanoEscape:<VolcanoEscape {...props}/>,treasureMap:<TreasureMap {...props}/>,grandPrix:<GrandPrix {...props}/>,candyShop:<CandyShop {...props}/>,basketballMaths:<BasketballMaths {...props}/>,trainGame:<TrainGame {...props}/>,supermarketMath:<SupermarketMath {...props}/>,rocketMaths:<RocketMaths {...props}/>,spellBingo:<SpellBingo {...props}/>,wordShake:<WordShake {...props}/>,spotDifference:<SpotDifference {...props}/>,puzzleWords:<PuzzleWords {...props}/>,schoolRun:<SchoolRun {...props}/>,memoryWords:<MemoryWords {...props}/>,dinosaurGame:<DinosaurGame {...props}/>,jungleExplorer:<JungleExplorer {...props}/>,oceanGame:<OceanGame {...props}/>,bubbleBuster:<BubbleBuster {...props}/>,colourScience:<ColourScience {...props}/>,astronautGame:<AstronautGame {...props}/>,pyramidsGame:<PyramidsGame {...props}/>,inspectorGame:<InspectorGame {...props}/>,hideSeekHistory:<HideSeekHistory {...props}/>,tenableGame:<TenableGame {...props}/>,footballHistory:<FootballHistory {...props}/>,worldMapGame:<WorldMapGame {...props}/>,geographyGuesser:<GeographyGuesser {...props}/>,skiingGeo:<SkiingGeo {...props}/>,skateboardGeo:<SkateboardGeo {...props}/>,pirateGeo:<PirateGeo {...props}/>,busGame:<BusGame {...props}/>,codeGame:<CodeGame {...props}/>,flippingFood:<FlippingFood {...props}/>,memoryComputer:<MemoryComputer {...props}/>,shapeShooter:<ShapeShooter {...props}/>,coordinateQuest:<CoordinateQuest {...props}/>,ratioRecipe:<RatioRecipe {...props}/>,poetrySlam:<PoetrySlam {...props}/>,mediaDetective:<MediaDetective {...props}/>,seasonsGame:<SeasonsGame {...props}/>,soundWaves:<SoundWaves {...props}/>,circuitBuilder:<CircuitBuilder {...props}/>,chemistryLab:<ChemistryLab {...props}/>,timeMachine:<TimeMachine {...props}/>,localHero:<LocalHero {...props}/>,safetyShield:<SafetyShield {...props}/>,creativeStudio:<CreativeStudio {...props}/>,timelineSort:<AlgorithmSort {...props}/>,historyMatch:<ScienceSort {...props}/>,mapQuiz:<ScienceSort {...props}/>};
   return map[gameId]||<div style={{padding:40,textAlign:"center"}}><p>Game not found</p></div>;
 }
@@ -5723,7 +5659,7 @@ export default function App() {
   };
 
   // Trial expiry check
-  const trialExpired = account?.subscription==="trial" && account?.trialStart &&
+  const trialExpired = account?.subscription==="trial" && account?.trialStart && account.trialStart!==null &&
     (Date.now() - account.trialStart) > 7 * 24 * 60 * 60 * 1000;
   const daysLeftInTrial = account?.trialStart ?
     Math.max(0, 7 - Math.floor((Date.now() - account.trialStart) / (24*60*60*1000))) : 7;
@@ -5826,7 +5762,10 @@ export default function App() {
             if(authUser) {
               await saveData(authUser.id, {account, children: newKids});
             }
-            go("child_handoff");
+            // Skip accessibility setup for additional children (already set at account level)
+            const isAdditionalChild=(children||[]).length>0;
+            if(isAdditionalChild) go("child_handoff");
+            else go("child_handoff");
           } else {
             go("ready_to_start");
           }
@@ -5858,7 +5797,12 @@ export default function App() {
         // Child logs in for first time - do diagnostic on their account
         <Diagnostic child={activeChild} onDone={levels=>{
           const nl={...activeChild.level,...levels};
-          updChild(activeChild.id,{level:nl,_diagDone:true,_diagDate:new Date().toISOString()});
+          const diagUpdate={level:nl,_diagDone:true,_diagDate:new Date().toISOString()};
+          updChild(activeChild.id,diagUpdate);
+          // Save immediately so it persists even if main save fails
+          if(account?._parentId){
+            saveData(account._parentId,{account,children:children.map(c=>c.id===activeChild.id?{...c,...diagUpdate}:c)});
+          }
           go("child_dash");
         }}/>
       )}
@@ -5927,6 +5871,13 @@ export default function App() {
         child={activeChild}
         startSubject={sessSub}
         onComplete={stats=>{
+          // Sync game level to subject if earned
+          if(stats.levelUpSubject&&stats.levelUpTo){
+            const newLevel={...activeChild.level,[stats.levelUpSubject]:Math.max(activeChild.level?.[stats.levelUpSubject]||1,stats.levelUpTo)};
+            updChild(activeChild.id,{level:newLevel,xp:(activeChild.xp||0)+(stats.xp||0),gamesPlayed:(activeChild.gamesPlayed||0)+1});
+          } else {
+            updChild(activeChild.id,{xp:(activeChild.xp||0)+(stats.xp||0),gamesPlayed:(activeChild.gamesPlayed||0)+1});
+          }
           const session={acc:stats.total>0?Math.round(stats.correct/stats.total*100):0,date:new Date().toISOString(),xp:stats.xp};
           const lastSession=(activeChild.sessionHistory||[]).slice(-1)[0];
           const lastDate=lastSession?new Date(lastSession.date).toDateString():null;
@@ -6029,6 +5980,11 @@ export default function App() {
         onSave={(updates)=>{
           updChild(manage.id,updates);
           setMgr(c=>({...c,...updates}));
+          // Save immediately so next session uses new year group
+          if(authUser){
+            const updatedKids=children.map(c=>c.id===manage.id?{...c,...updates}:c);
+            saveData(authUser.id,{account,children:updatedKids});
+          }
           back();
         }}
       />}
