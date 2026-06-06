@@ -45,6 +45,8 @@ import { useState, useEffect, useRef, useCallback } from "react";
     button:hover{filter:brightness(1.08);transform:translateY(-1px)}
     button:active{transform:scale(0.96)!important;filter:brightness(0.95)}
     .game-btn:hover{transform:translateY(-2px) scale(1.02)!important}
+    @keyframes gradientShift{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+    body{background:linear-gradient(-45deg,#EEF2FF,#F0F9FF,#F5F3FF,#FDF2F8);background-size:400% 400%;animation:gradientShift 15s ease infinite;}
     .tap-scale:active{transform:scale(0.94)!important;transition:transform 0.08s!important}
   `;
   document.head.appendChild(s);
@@ -248,7 +250,24 @@ const UK_CURRICULUM = {
      desc:"Observing, recording and analysing the local area",
      levels:["Observe and describe features of local area","Simple surveys and data collection outside","Map own school grounds, use compasses","Land use survey, traffic count, questionnaires","Analyse results, draw conclusions, geographical argument"]},
   ],
-  Computing: [
+
+  // ── 11+ Preparation (Age 10-11) ──────────────────────────────────────
+  "11+ Verbal Reasoning": [
+    {id:"vr_words",      name:"Word Relationships",    emoji:"🔤", minAge:10, desc:"Synonyms, antonyms, odd-one-out", levels:["Synonyms and antonyms","Word categories and odd one out","Analogies: word pairs","Hidden words and word connections","Complex verbal deductions"]},
+    {id:"vr_codes",      name:"Codes & Sequences",     emoji:"🔣", minAge:10, desc:"Letter codes, number sequences", levels:["Simple A=1 number codes","Letter shift codes","Complex coding patterns","Mixed code types","Multi-step code breaking"]},
+    {id:"vr_logic",      name:"Logic & Deductions",    emoji:"🧩", minAge:10, desc:"If/then reasoning, true/false", levels:["Simple true/false from statements","Two-step deductions","Multi-clue logic puzzles","Contradictions and validity","Complex argument evaluation"]},
+    {id:"vr_comprehension",name:"Comprehension",       emoji:"📖", minAge:10, desc:"Advanced reading comprehension", levels:["Main idea identification","Inference from text","Author's purpose and tone","Evaluating evidence","Critical analysis of argument"]},
+  ],
+  "11+ Non-Verbal Reasoning": [
+    {id:"nvr_patterns",  name:"Pattern Recognition",   emoji:"🔷", minAge:10, desc:"Sequences and matrices", levels:["Simple shape sequences","2x2 pattern matrices","3x3 pattern matrices","Complex rotation patterns","Multi-rule pattern completion"]},
+    {id:"nvr_shapes",    name:"Shape Transformations", emoji:"📐", minAge:10, desc:"Rotation, reflection, nets", levels:["Reflection and rotation basics","Nets of 3D shapes","Paper folding and unfolding","3D cube rotations","Complex spatial reasoning"]},
+    {id:"nvr_codes",     name:"Symbol Codes",          emoji:"⬛", minAge:10, desc:"Shape-based codes and rules", levels:["One-feature rules","Two-feature codes","Three-feature codes","Complex shape codes","Multi-rule deductions"]},
+  ],
+  "11+ Maths": [
+    {id:"11m_number",    name:"Number Operations",     emoji:"🔢", minAge:10, desc:"Advanced arithmetic and number theory", levels:["Multi-step calculations","Factors, multiples, primes","Fractions decimals percentages","Ratio and proportion","Algebra and problem solving"]},
+    {id:"11m_shape",     name:"Shape & Space",         emoji:"📐", minAge:10, desc:"Geometry, area, volume, angles", levels:["Area and perimeter of polygons","Volume of cuboids","Circle calculations (pi)","Angles in parallel lines","Coordinate geometry"]},
+    {id:"11m_data",      name:"Data & Statistics",     emoji:"📊", minAge:10, desc:"Charts, averages, probability", levels:["Mean, median, mode, range","Pie charts and bar charts","Probability fractions","Frequency tables","Complex data interpretation"]},
+  ],  Computing: [
     {id:"algorithms",     name:"Algorithms & Sequencing",     emoji:"🔢", minAge:5,
      desc:"Step-by-step instructions, sequences and logic",
      levels:["Step-by-step instructions for everyday tasks","Sequences: what order, what happens next","Loops: repeating actions to save steps","Conditions: if this, then that — decisions","Nested loops, complex conditions, algorithm design"]},
@@ -471,7 +490,7 @@ function getCurriculum(country) {
 
 // Subject names per country
 const SUBJECT_NAMES = {
-  UK: ["Maths","English","Science","History","Geography","Computing"],
+  UK: ["Maths","English","Science","History","Geography","Computing","11+ Verbal Reasoning","11+ Non-Verbal Reasoning","11+ Maths"],
   US: ["Math","English Language Arts","Science","Social Studies","Computing"],
   CA: ["Mathematics","Language","Science & Technology","Social Studies","Computer Studies"],
 };
@@ -1050,7 +1069,7 @@ function Diagnostic({child,onDone}) {
 }
 
 // ── 7. Child Dashboard ────────────────────────────────────────────────────
-function ChildDash({child,isParentView,onSession,onGames,onBadges,onParentView,onMyStats,onSignOut}) {
+function ChildDash({child,isParentView,onSession,onGames,onBadges,onParentView,onMyStats,onSignOut,onChangeAvatar}) {
   const tutor=TUTORS[child.tutor]||TUTORS.sparky;
   const tColor=tutor?.color||C.primary;
   const hour=new Date().getHours();
@@ -1162,7 +1181,7 @@ function ChildDash({child,isParentView,onSession,onGames,onBadges,onParentView,o
           <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10}}>
             {[
               {e:"🏅",v:(child.badges||[]).length,l:"Badges",fn:onBadges},
-              {e:"🎯",v:child.total>0?Math.round(child.correct/child.total*100)+"%":"—",l:"Accuracy"},
+              {e:"🎯",v:"Keep going!",l:"Progress"},
               {e:"⭐",v:child.xp,l:"XP"},
             ].map(s=>(
               <button key={s.l} onClick={s.fn||null}
@@ -1178,6 +1197,7 @@ function ChildDash({child,isParentView,onSession,onGames,onBadges,onParentView,o
         {/* ── Bottom buttons ── */}
         <div style={{padding:"0 16px 32px"}}>
           {!isParentView&&<Btn onClick={onMyStats} v="ghost" style={{width:"100%",marginBottom:10}}>📊 My Progress</Btn>}
+          {!isParentView&&<Btn onClick={onChangeAvatar} v="ghost" style={{width:"100%",marginBottom:10}}>🎨 Change Avatar</Btn>}
           {!isParentView&&<Btn onClick={onSignOut} v="ghost" style={{width:"100%",marginBottom:10}}>🚪 Sign Out</Btn>}
           {!isParentView&&<button onClick={()=>{if(window.confirm("Report an issue with a question or content?"))alert("Thank you! Our team will review this.");}} style={{fontSize:12,fontWeight:700,color:C.muted,background:"none",border:"none",cursor:"pointer",fontFamily:F,width:"100%"}}>🚩 Report a content issue</button>}
         </div>
@@ -1188,39 +1208,49 @@ function ChildDash({child,isParentView,onSession,onGames,onBadges,onParentView,o
 
 
 function Session({child,startSubject,startTopic,onComplete,onUpdate,onExit,a11y={}}) {
-  const MAX=10;
+  const QUESTIONS_PER_LEVEL = 50; // 50 questions before mastery test
+  const MAX_LEVELS = 10;          // 10 levels per topic = 500 questions total
+
   const [subject,setSub]=useState(startSubject||"Maths");
   const [topic,setTopic]=useState(startTopic||null);
-  const [qNum,setQNum]=useState(0);
+  const [qNum,setQNum]=useState(0);   // total questions this session (no limit)
   const [mode,setMode]=useState(child.controls?.modeLock||(a11y.alwaysAudio?'audio':null)||child.mode);
   const [q,setQ]=useState(null);
   const [loading,setLoading]=useState(true);
   const [sel,setSel]=useState(null);
   const [ans,setAns]=useState(false);
-  const [sC,setSC]=useState(0);
-  const [sT,setST]=useState(0);
+  const [sC,setSC]=useState(0);  // session correct
+  const [sT,setST]=useState(0);  // session total
   const [sXP,setSXP]=useState(0);
-  const [qS,setQS]=useState(0);
+  const [qS,setQS]=useState(0);  // current streak
   const [done,setDone]=useState(false);
   const [paused,setPaused]=useState(false);
-  const [showTest,setShowTest]=useState(false);
-  const [topicQCount,setTopicQCount]=useState(0);
+  const [showTest,setShowTest]=useState(false);  // mastery test overlay
   const [askedQs,setAskedQs]=useState([]);
-  const topicLevel=topic?(child.topicLevels?.[subject]?.[topic?.id]||1):child.level[subject]||1;
   const mRef=useRef(mode);
   useEffect(()=>{mRef.current=mode;},[mode]);
 
-  const rot=(cur)=>startSubject?startSubject:SUBJECTS[(SUBJECTS.indexOf(cur)+1)%SUBJECTS.length];
+  // Current topic level (per topic, not global subject level)
+  const topicLevel=topic
+    ?(child.topicLevels?.[subject]?.[topic?.id]||1)
+    :(child.level?.[subject]||1);
+
+  // Questions done at this level for this topic
+  const topicKey=topic?`${subject}_${topic.id}_lv${topicLevel}`:null;
+  const topicQCount=(child.topicQCounts||{})[topicKey]||0;
+  const questionsLeft=QUESTIONS_PER_LEVEL-topicQCount;
 
   const load=async(sub,m)=>{
     setLoading(true);setSel(null);setAns(false);
     const cm=m??mRef.current;
-    const r=await claude(sessionSys({...child,level:child.level},sub,topic,cm,sC,sT,askedQs),"Generate the next question. Make sure it is completely different from previous questions.");
-    // If question already asked this session, request a new one
-    if(r?.question && askedQs.includes(r.question)) {
-      const r2=await claude(sessionSys({...child,level:child.level},sub,topic,cm,sC,sT,askedQs),"Generate a DIFFERENT question. The previous one was repeated. Make it completely new.");
+    const r=await claude(
+      sessionSys({...child,level:child.level},sub,topic,cm,sC,sT,askedQs),
+      "Generate the next question. Make it different from: "+askedQs.slice(-5).join(", ")
+    );
+    if(r?.question&&askedQs.includes(r.question)){
+      const r2=await claude(sessionSys({...child,level:child.level},sub,topic,cm,sC,sT,askedQs),"Generate a completely NEW different question.");
       setQ(r2||r);
-    } else {
+    }else{
       setQ(r);
     }
     setLoading(false);
@@ -1229,48 +1259,47 @@ function Session({child,startSubject,startTopic,onComplete,onUpdate,onExit,a11y=
   useEffect(()=>{load(subject,mode);},[]);
 
   const answer=(opt)=>{
-    if(ans) return;
+    if(ans)return;
     setSel(opt);setAns(true);
     const ok=opt.charAt(0)===q?.correct;
     const xp=ok?(q?.difficulty==="hard"?15:q?.difficulty==="medium"?10:7):2;
     const nc=sC+(ok?1:0),nt=sT+1;
     setSC(nc);setST(nt);setSXP(x=>x+xp);setQS(s=>ok?s+1:0);
-    // Track per-topic-per-level question count
-    if(topic) {
-      const key = `${subject}_${topic.id}_lv${topicLevel}`;
-      const currentCount = (child.topicQCounts||{})[key]||0;
-      const newCount = currentCount + 1;
-      const updatedCounts = {...(child.topicQCounts||{}), [key]: newCount};
-      onUpdate({topicQCounts: updatedCounts});
-      // Trigger test after 50 questions at this level
-      if(newCount >= 50 && !showTest) setShowTest(true);
-    }
-    setTopicQCount(c=>c+1);
-    const nl={...child.level};
-    const ntl={...child.topicLevels,...Object.fromEntries(Object.entries(child.topicLevels||{}).map(([s,v])=>[s,{...v}]))};
-    const acc=nc/nt;
-    if(nt>0&&nt%5===0){
-      if(acc>0.80&&nl[subject]<5)nl[subject]++;
-      if(acc<0.40&&nl[subject]>1)nl[subject]--;
-      if(topic&&ntl[subject]){
-        const tl=ntl[subject][topic.id]||1;
-        if(acc>0.80&&tl<5) ntl[subject][topic.id]=tl+1;
-        if(acc<0.40&&tl>1) ntl[subject][topic.id]=tl-1;
+
+    // Track per-topic-per-level progress
+    if(topic&&topicKey){
+      const newCount=topicQCount+1;
+      const updatedCounts={...(child.topicQCounts||{}),[topicKey]:newCount};
+      // Trigger mastery test after 50 questions
+      if(newCount>=QUESTIONS_PER_LEVEL&&!showTest){
+        onUpdate({topicQCounts:updatedCounts});
+        setTimeout(()=>setShowTest(true),900); // show after answer reveal
+      }else{
+        onUpdate({topicQCounts:updatedCounts});
       }
     }
+
+    // Save cumulative stats (XP, total, correct, badges) — no automatic level change
     const subsTried=[...(child.subsTried||[]),subject].filter((v,i,a)=>a.indexOf(v)===i);
     const bestStreak=Math.max(child.bestStreak||0,ok?qS+1:0);
-    const updated={total:child.total+1,correct:child.correct+(ok?1:0),xp:child.xp+xp,level:nl,topicLevels:ntl,subsTried,bestStreak};
+    const updated={
+      total:child.total+1,
+      correct:child.correct+(ok?1:0),
+      xp:child.xp+xp,
+      subsTried,
+      bestStreak
+    };
     const {badges,newBadge}=checkBadges({...child,...updated});
     onUpdate({...updated,badges,_newBadge:newBadge});
     if(mode==="audio") speak(ok?(q?.encouragement||"Correct!"):"Not quite. "+(q?.explanation||""),child.tutor);
-    // Track question to prevent repeats
-    if(q?.question) setAskedQs(prev=>[...prev, q.question].slice(-20));
+    if(q?.question) setAskedQs(prev=>[...prev,q.question].slice(-20));
   };
 
+  // Always stay on same topic — no subject rotation
   const goNext=()=>{
-    if(qNum+1>=MAX){setDone(true);return;}
-    const ns=rot(subject);setSub(ns);setQNum(n=>n+1);load(ns,mode);
+    if(!topic&&qNum+1>=20){setDone(true);return;} // Free sessions end at 20
+    setQNum(n=>n+1);
+    load(subject,mode);
   };
 
   if(done) return <SessionDone child={child} stats={{correct:sC,total:sT,xp:sXP}} a11y={a11y} onDone={()=>onComplete({correct:sC,total:sT,xp:sXP})}/>;
@@ -1286,10 +1315,18 @@ function Session({child,startSubject,startTopic,onComplete,onUpdate,onExit,a11y=
           <div style={{display:"flex",alignItems:"center",gap:10}}>
             <TutorChar name={child.tutor} size={40}/>
             <div>
-              <p style={{fontSize:11,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:"0.08em"}}>{topic?topic.name:subject} · Q{qNum+1}/{MAX}</p>
-              <div style={{display:"flex",gap:3,marginTop:4}}>
-                {Array.from({length:MAX}).map((_,i)=><div key={i} style={{width:i<=qNum?14:6,height:5,borderRadius:3,transition:"all 0.3s",background:i<qNum?C.green:i===qNum?C.primary:C.border}}/>)}
-              </div>
+              <p style={{fontSize:11,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:"0.08em"}}>{topic?topic.name:subject} · Q{qNum+1}</p>
+              {topic&&(
+                <div style={{marginTop:4}}>
+                  <div style={{display:"flex",alignItems:"center",gap:6}}>
+                    <div style={{flex:1,height:5,borderRadius:3,background:C.border,overflow:"hidden"}}>
+                      <div style={{height:"100%",width:`${Math.min(100,(topicQCount/QUESTIONS_PER_LEVEL)*100)}%`,background:`linear-gradient(90deg,${C.primary},#6366F1)`,borderRadius:3,transition:"width 0.3s"}}/>
+                    </div>
+                    <span style={{fontSize:9,fontWeight:800,color:C.muted,whiteSpace:"nowrap"}}>{topicQCount}/{QUESTIONS_PER_LEVEL}</span>
+                  </div>
+                  <p style={{fontSize:9,color:C.muted,fontWeight:600,marginTop:2}}>Lv.{topicLevel} · {Math.max(0,QUESTIONS_PER_LEVEL-topicQCount)} to test</p>
+                </div>
+              )}
             </div>
           </div>
           <div style={{display:"flex",gap:10,alignItems:"center"}}>
@@ -1317,36 +1354,33 @@ function Session({child,startSubject,startTopic,onComplete,onUpdate,onExit,a11y=
             ))}
           </div>
         )}
-        {showTest&&topic&&(
-          <TopicTest
-            child={child} subject={subject} topic={topic} level={topicLevel||1}
-            onPass={()=>{
-              const ntl={...(child.topicLevels||{})};
-              if(!ntl[subject]) ntl[subject]={};
-              ntl[subject][topic.id]=(ntl[subject][topic.id]||1)+1;
-              const key=`${subject}_${topic.id}_lv${topicLevel}`;
-              const updatedCounts={...(child.topicQCounts||{}),[key]:0};
-              const testKey=`${subject}_${topic.id}_lv${topicLevel}`;
-              const testResults={...(child.topicTestResults||{}),[testKey]:"pass"};
-              const updated={topicLevels:ntl,topicQCounts:updatedCounts,topicTestResults:testResults};
-              // Check for new badges after topic pass
-              const {badges,newBadge}=checkBadges({...child,...updated});
-              onUpdate({...updated,badges,_newBadge:newBadge});
+                {showTest&&topic&&(
+          <MasteryTest
+            child={child}
+            subject={subject}
+            topic={topic}
+            level={topicLevel}
+            onPass={(score,total)=>{
+              // PASS: advance topic level, reset question count, force save
+              const ntl={...child.topicLevels,
+                [subject]:{...(child.topicLevels?.[subject]||{}),
+                  [topic.id]:Math.min(MAX_LEVELS,(topicLevel||1)+1)}};
+              const updatedCounts={...(child.topicQCounts||{}),[topicKey]:0};
+              const testResults={...(child.topicTestResults||{}),[topicKey]:{passed:true,score,total,date:new Date().toISOString()}};
+              const newLevel=Math.min(MAX_LEVELS,(topicLevel||1)+1);
+              const levelLabel=getDifficultyLabel(newLevel).label;
+              onUpdate({topicLevels:ntl,topicQCounts:updatedCounts,topicTestResults:testResults,_levelUp:true,_newLevel:levelLabel,perfectTests:(score===total?(child.perfectTests||0)+1:child.perfectTests||0)},true);
               setShowTest(false);
             }}
-            onFail={()=>{
-              // Record fail but reset count so they do another 50
-              const key=`${subject}_${topic.id}_lv${topicLevel}`;
-              const updatedCounts={...(child.topicQCounts||{}),[key]:0};
-              const testKey=`${subject}_${topic.id}_lv${topicLevel}`;
-              const testResults={...(child.topicTestResults||{}),[testKey]:"fail"};
-              onUpdate({topicQCounts:updatedCounts,topicTestResults:testResults});
+            onFail={(score,total)=>{
+              // FAIL: reset question count so they practise more, stay at same level
+              const updatedCounts={...(child.topicQCounts||{}),[topicKey]:0};
+              const testResults={...(child.topicTestResults||{}),[topicKey]:{passed:false,score,total,date:new Date().toISOString()}};
+              onUpdate({topicQCounts:updatedCounts,topicTestResults:testResults,retriedTests:(child.retriedTests||0)+1},true);
               setShowTest(false);
             }}
-            onDismiss={()=>setShowTest(false)}
           />
-        )}
-        {paused&&(
+        )}        {paused&&(
           <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
             <div style={{background:C.surface,borderRadius:24,padding:"32px 24px",width:"100%",maxWidth:360,textAlign:"center",boxShadow:"0 20px 60px rgba(0,0,0,0.3)"}}>
               <div style={{fontSize:48,marginBottom:12}}>⏸</div>
@@ -1389,7 +1423,11 @@ function Session({child,startSubject,startTopic,onComplete,onUpdate,onExit,a11y=
                     </div>
                   </div>
                   {isRight&&<p style={{textAlign:"center",fontSize:12,fontWeight:800,color:C.primary,marginBottom:10}}>⭐ +{q.difficulty==="hard"?15:q.difficulty==="medium"?10:7} XP earned!</p>}
-                  <Btn onClick={goNext} style={{width:"100%"}}>{qNum+1>=MAX?"Finish session 🎉":"Next question →"}</Btn>
+                  <Btn onClick={goNext} style={{width:"100%"}}>
+  {!topic&&qNum+1>=20?"Finish session 🎉":
+   topic&&topicQCount>=QUESTIONS_PER_LEVEL?"Take Mastery Test 🎯":
+   "Next question →"}
+</Btn>
                 </div>
               )}
             </div>
@@ -1403,6 +1441,31 @@ function Session({child,startSubject,startTopic,onComplete,onUpdate,onExit,a11y=
 }
 
 // ── 9. Session Complete ───────────────────────────────────────────────────
+
+function Confetti({count=40}) {
+  const pieces=Array.from({length:count},(_,i)=>({
+    id:i,
+    x:Math.random()*100,
+    delay:Math.random()*2,
+    color:["#4338CA","#7C3AED","#EC4899","#F59E0B","#16A34A","#0284C7","#EF4444"][i%7],
+    size:6+Math.random()*8,
+    shape:Math.random()>0.5?"circle":"square"
+  }));
+  return(
+    <div style={{position:"fixed",top:0,left:0,right:0,height:"100vh",pointerEvents:"none",overflow:"hidden",zIndex:999}}>
+      {pieces.map(p=>(
+        <div key={p.id} style={{
+          position:"absolute",left:`${p.x}%`,top:-20,
+          width:p.size,height:p.size,
+          borderRadius:p.shape==="circle"?"50%":3,
+          background:p.color,
+          animation:`confettiFall ${2+Math.random()*2}s ${p.delay}s ease-in forwards`,
+        }}/>
+      ))}
+    </div>
+  );
+}
+
 function SessionDone({child,stats,onDone,a11y={}}) {
   const acc=stats.total>0?Math.round(stats.correct/stats.total*100):0;
   const medal=acc>=80?"🏆":acc>=60?"⭐":"💪";
@@ -1435,6 +1498,13 @@ function SessionDone({child,stats,onDone,a11y={}}) {
           <TutorChar name={child.tutor} size={56}/>
           <p style={{flex:1,textAlign:"left",fontSize:15,fontWeight:700,color:"#fff",lineHeight:1.6}}>{msgs[child.tutor]?.[tier]}</p>
         </div>
+        {stats._levelUp&&(
+          <div style={{background:"linear-gradient(135deg,#F59E0B,#EF4444)",borderRadius:20,padding:"16px",marginBottom:16,textAlign:"center",boxShadow:"0 6px 20px rgba(245,158,11,0.5)"}}>
+            <div style={{fontSize:40,marginBottom:6}}>🎓🎉</div>
+            <p style={{fontSize:20,fontWeight:900,color:"#fff",marginBottom:4}}>LEVEL UP!</p>
+            <p style={{fontSize:14,fontWeight:700,color:"rgba(255,255,255,0.9)"}}>You passed the test and moved to {stats._newLevel}!</p>
+          </div>
+        )}
         <button onClick={onDone} style={{width:"100%",padding:"18px",borderRadius:50,background:"#fff",border:"none",cursor:"pointer",fontFamily:F,fontSize:17,fontWeight:900,color:C.primary,boxShadow:"0 8px 28px rgba(0,0,0,0.2)",transition:"all 0.2s"}}
           onMouseOver={e=>e.currentTarget.style.transform="translateY(-3px)"}
           onMouseOut={e=>e.currentTarget.style.transform=""}>
@@ -3159,7 +3229,7 @@ function TimesTableRace({child,mode,onComplete,onQuit,level=1}) {
     setInput("");
   };
 
-  if(game.loadErr)return <GameError name="Times Table Race" onRetry={()=>window.location.reload()}/>;
+  if(game.loadErr)return <GameError name="Times Table Race" onRetry={()=>onQuit()}/>;
   if(game.loading&&!game.q)return <GameLoad name="Times Table Race" emoji="⏱️" tutor={child.tutor}/>;
   if(game.done)return <GameEnd name="Times Table Race" emoji="⏱️" score={game.score} max={game.score+3-game.lives} child={child} xp={game.score*12} level={game.lvl} onRetry={()=>window.location.reload()} onDone={()=>onComplete({score:game.score,max:game.score+3-game.lives,xp:game.score*12,total:game.qIdx,correct:game.score,levelReached:game.lvl})}/>;
 
@@ -3214,7 +3284,7 @@ function SpellingBee({child,mode,onComplete,onQuit,level=1}) {
 
   const speak=()=>{if(window.speechSynthesis&&game.q?.word){const u=new SpeechSynthesisUtterance(game.q.word);u.rate=0.8;window.speechSynthesis.speak(u);}};
 
-  if(game.loadErr)return <GameError name="Spelling Bee" onRetry={()=>window.location.reload()}/>;
+  if(game.loadErr)return <GameError name="Spelling Bee" onRetry={()=>onQuit()}/>;
   if(game.loading&&!game.q)return <GameLoad name="Spelling Bee" emoji="🐝" tutor={child.tutor}/>;
   if(game.done)return <GameEnd name="Spelling Bee" emoji="🐝" score={game.score} max={game.score+3-game.lives} child={child} xp={game.score*12} level={game.lvl} onRetry={()=>window.location.reload()} onDone={()=>onComplete({score:game.score,max:game.score+3-game.lives,xp:game.score*12,total:game.qIdx,correct:game.score,levelReached:game.lvl})}/>;
 
@@ -3348,7 +3418,7 @@ function MathFishing({child,mode,onComplete,onQuit,level=1}) {
 
   if(loadErr)return <GameError name="Maths Fishing" onRetry={()=>{setLoadErr(false);setQs([]);fetchBatch(level);}}/>;
   if(loading&&!q)return <GameLoad name="Maths Fishing" emoji="🎣" tutor={child.tutor}/>;
-  if(done)return <GameEnd name="Maths Fishing" emoji="🎣" score={score} max={score+3-lives} child={child} xp={score*12} level={lvl} onDone={()=>onComplete({score,max:score+3-lives,xp:score*12,total:qIdx,correct:score,levelReached:lvl})}/>;
+  if(done)return <GameEnd name="Maths Fishing" emoji="🎣" score={score} max={score+3-lives} child={child} xp={score*12} level={lvl} onRetry={()=>onQuit()} onDone={()=>onComplete({score,max:score+3-lives,xp:score*12,total:qIdx,correct:score,levelReached:lvl})}/>;
 
   return(
     <GameShell name="Maths Fishing" emoji="🎣" subject="Maths" score={score} maxScore={null} round={qIdx+1} total={null} streak={streak} onQuit={()=>onComplete({score,max:score+3-lives,xp:score*12,total:qIdx,correct:score})} lives={lives} level={lvl}>
@@ -3418,7 +3488,7 @@ function SpaceBlaster({child,mode,onComplete,onQuit,level=1}) {
   const moveShip=dir=>{sr.current.shipX=Math.max(5,Math.min(92,sr.current.shipX+dir*10));setShipX(sr.current.shipX);};
   const fire=()=>{const b={id:++idr.current,x:sr.current.shipX,y:80};sr.current.bullets=[...sr.current.bullets,b];setBullets(p=>[...p,b]);};
 
-  if(game.loadErr)return <GameError name="Space Blaster" onRetry={()=>window.location.reload()}/>;
+  if(game.loadErr)return <GameError name="Space Blaster" onRetry={()=>onQuit()}/>;
   if(game.loading&&!game.q)return <GameLoad name="Space Blaster" emoji="🚀" tutor={child.tutor}/>;
   if(game.done)return <GameEnd name="Space Blaster" emoji="🚀" score={game.score} max={game.score+3-game.lives} child={child} xp={game.score*12} level={game.lvl} onRetry={()=>window.location.reload()} onDone={()=>onComplete({score:game.score,max:game.score+3-game.lives,xp:game.score*12,total:game.qIdx,correct:game.score,levelReached:game.lvl})}/>;
 
@@ -3504,7 +3574,7 @@ function WordRunner({child,mode,onComplete,onQuit,level=1}) {
     setTimeout(()=>setCaught(null),700);
   };
 
-  if(game.loadErr)return <GameError name="Word Runner" onRetry={()=>window.location.reload()}/>;
+  if(game.loadErr)return <GameError name="Word Runner" onRetry={()=>onQuit()}/>;
   if(game.loading&&!game.q)return <GameLoad name="Word Runner" emoji="🏃" tutor={child.tutor}/>;
   if(game.done)return <GameEnd name="Word Runner" emoji="🏃" score={game.score} max={game.score+3-game.lives} child={child} xp={game.score*12} level={game.lvl} onRetry={()=>window.location.reload()} onDone={()=>onComplete({score:game.score,max:game.score+3-game.lives,xp:game.score*12,total:game.qIdx,correct:game.score,levelReached:game.lvl})}/>;
 
@@ -3561,7 +3631,7 @@ function GrandPrix({child,mode,onComplete,onQuit,level=1}) {
     setTimeout(()=>{setSel(null);setAns(false);},900);
   };
 
-  if(game.loadErr)return <GameError name="Grand Prix Racing" onRetry={()=>window.location.reload()}/>;
+  if(game.loadErr)return <GameError name="Grand Prix Racing" onRetry={()=>onQuit()}/>;
   if(game.loading&&!game.q)return <GameLoad name="Grand Prix Racing" emoji="🏎️" tutor={child.tutor}/>;
   if(game.done)return <GameEnd name="Grand Prix Racing" emoji="🏎️" score={game.score} max={game.score+3-game.lives} child={child} xp={game.score*12} level={game.lvl} onRetry={()=>window.location.reload()} onDone={()=>onComplete({score:game.score,max:game.score+3-game.lives,xp:game.score*12,total:game.qIdx,correct:game.score,levelReached:game.lvl})}/>;
 
@@ -3715,7 +3785,7 @@ function FootballHistory({child,mode,onComplete,onQuit,level=1}) {
     setTimeout(()=>{setBallPos({x:50,y:80});setShotResult(null);setSel(null);setAns(false);},1300);
   };
 
-  if(game.loadErr)return <GameError name="Penalty Shootout" onRetry={()=>window.location.reload()}/>;
+  if(game.loadErr)return <GameError name="Penalty Shootout" onRetry={()=>onQuit()}/>;
   if(game.loading&&!game.q)return <GameLoad name="Penalty Shootout" emoji="⚽" tutor={child.tutor}/>;
   if(game.done)return <GameEnd name="Penalty Shootout" emoji="⚽" score={game.score} max={game.score+3-game.lives} child={child} xp={game.score*12} level={game.lvl} onRetry={()=>window.location.reload()} onDone={()=>onComplete({score:game.score,max:game.score+3-game.lives,xp:game.score*12,total:game.qIdx,correct:game.score,levelReached:game.lvl})}/>;
 
@@ -3836,7 +3906,7 @@ function CircuitBuilder({child,mode,onComplete,onQuit,level=1}) {
     setTimeout(()=>{setSel(null);setAns(false);},1000);
   };
 
-  if(game.loadErr)return <GameError name="Circuit Builder" onRetry={()=>window.location.reload()}/>;
+  if(game.loadErr)return <GameError name="Circuit Builder" onRetry={()=>onQuit()}/>;
   if(game.loading&&!game.q)return <GameLoad name="Circuit Builder" emoji="⚡" tutor={child.tutor}/>;
   if(game.done)return <GameEnd name="Circuit Builder" emoji="⚡" score={game.score} max={game.score+3-game.lives} child={child} xp={game.score*12} level={game.lvl} onRetry={()=>window.location.reload()} onDone={()=>onComplete({score:game.score,max:game.score+3-game.lives,xp:game.score*12,total:game.qIdx,correct:game.score,levelReached:game.lvl})}/>;
 
@@ -3985,6 +4055,7 @@ function GameHub({child,onPlay,onBack,onHome,onLevelUp}) {
                     <div style={{fontSize:28,marginBottom:4}}>{g.emoji}</div>
                     <p style={{fontSize:11,fontWeight:800,color:C.text,lineHeight:1.3,marginBottom:4}}>{g.name}</p>
                     <span style={{fontSize:9,fontWeight:800,color:diff.color,background:diff.color+"20",padding:"2px 5px",borderRadius:4}}>{diff.emoji} Lv.{gameLevel}</span>
+                    {child.gameHighScores?.[g.id]&&<p style={{fontSize:8,fontWeight:700,color:C.amber,marginTop:3}}>🏆 Best: {child.gameHighScores[g.id]}</p>}
                   </div>
                   {/* Hover overlay */}
                   {isHovered&&(
@@ -4118,7 +4189,9 @@ function TopicPicker({child,subject,onStart,onBack}) {
                 </div>
                 {(()=>{
                   const key=`${subject}_${topic.id}_lv${lvl}`;
-                  const qCount=(child.topicQCounts||{})[key]||0;
+                  const topicLvl=(child.topicLevels?.[subject]?.[t.id]||1);
+                  const qKey=`${subject}_${t.id}_lv${topicLvl}`;
+                  const qCount=(child.topicQCounts||{})[qKey]||0;
                   const testResult=(child.topicTestResults||{})[key];
                   const qPct=Math.min(100,Math.round((qCount/50)*100));
                   return (
@@ -5281,6 +5354,44 @@ function ChangeParentPassword({onBack}) {
   );
 }
 
+
+// ── Child Avatar Picker ───────────────────────────────────────────────────
+function ChildAvatarPicker({child, onSave, onBack}) {
+  const AVATARS=[
+    {id:"fox",e:"🦊"},{id:"bear",e:"🐻"},{id:"cat",e:"🐱"},{id:"dog",e:"🐶"},
+    {id:"rabbit",e:"🐰"},{id:"penguin",e:"🐧"},{id:"owl",e:"🦉"},{id:"lion",e:"🦁"},
+    {id:"tiger",e:"🐯"},{id:"panda",e:"🐼"},{id:"frog",e:"🐸"},{id:"duck",e:"🐥"},
+    {id:"unicorn",e:"🦄"},{id:"dragon",e:"🐲"},{id:"monkey",e:"🐵"},{id:"koala",e:"🐨"},
+    {id:"wolf",e:"🐺"},{id:"horse",e:"🐴"},{id:"elephant",e:"🐘"},{id:"dinosaur",e:"🦕"},
+  ];
+  const [selected,setSelected]=useState(child.avatar||"fox");
+  return(
+    <Screen>
+      <div style={{paddingTop:28}}>
+        <BackBtn onClick={onBack}/>
+        <div style={{textAlign:"center",marginBottom:20}}>
+          <div style={{fontSize:72,marginBottom:8}}>{AVATARS.find(a=>a.id===selected)?.e||"🦊"}</div>
+          <h2 style={{fontSize:24,fontWeight:900,color:C.text,marginBottom:4}}>Choose Your Avatar</h2>
+          <p style={{fontSize:13,color:C.muted,fontWeight:600}}>Pick the one that looks most like you!</p>
+        </div>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12,marginBottom:24}}>
+          {AVATARS.map(a=>(
+            <button key={a.id} onClick={()=>setSelected(a.id)}
+              style={{height:70,borderRadius:16,fontSize:36,border:`3px solid ${selected===a.id?C.primary:C.border}`,
+                background:selected===a.id?C.pLight:"#fff",cursor:"pointer",transition:"all 0.15s",
+                boxShadow:selected===a.id?`0 4px 16px ${C.primary}40`:"0 2px 8px rgba(0,0,0,0.05)"}}>
+              {a.e}
+            </button>
+          ))}
+        </div>
+        <Btn onClick={()=>onSave({avatar:selected})} style={{width:"100%",fontSize:16}}>
+          Save Avatar ✓
+        </Btn>
+      </div>
+    </Screen>
+  );
+}
+
 // ── Reset Child Password ──────────────────────────────────────────────────
 function ResetChildPassword({child, onSave, onBack}) {
   const [pass, setPass]   = useState("");
@@ -5568,8 +5679,30 @@ export default function App() {
     if(hist.current.length>1){const h=[...hist.current];h.pop();hist.current=h;setScr(h[h.length-1]);}
   };
 
-  const updChild=(id,u)=>{
-    setKids(cs=>cs.map(c=>c.id===id?{...c,...u}:c));
+  const saveTimer=useRef(null);
+  const updChild=(id,u,forceSave=false)=>{
+    setKids(cs=>{
+      const updated=cs.map(c=>c.id===id?{...c,...u}:c);
+      // Debounced save — persist to Supabase after 2s of no updates
+      // Force save immediately for critical updates (level changes, test results)
+      const doSave=()=>{
+        const uid=authUser?.id||account?._parentId;
+        if(uid){
+          setKids(cur=>{
+            saveData(uid,{account,children:cur});
+            return cur;
+          });
+        }
+      };
+      if(forceSave){
+        clearTimeout(saveTimer.current);
+        doSave();
+      } else {
+        clearTimeout(saveTimer.current);
+        saveTimer.current=setTimeout(doSave,2000);
+      }
+      return updated;
+    });
     if(active?.id===id) setAct(c=>({...c,...u}));
     if(manage?.id===id) setMgr(c=>({...c,...u}));
     if(u._newBadge){setNB(u._newBadge);setTimeout(()=>setNB(null),3500);}
@@ -5757,6 +5890,11 @@ export default function App() {
         }}
       />}
 
+      {screen==="child_avatar"&&activeChild&&<ChildAvatarPicker
+        child={activeChild}
+        onBack={()=>go("child_dash")}
+        onSave={(updates)=>{updChild(activeChild.id,updates);setAct(c=>({...c,...updates}));go("child_dash");}}
+      />}
       {screen==="child_dash"&&activeChild&&<ChildDash
         child={activeChild}
         isParentView={account?.type==="parent"&&!!authUser}
@@ -5787,7 +5925,11 @@ export default function App() {
           const gp=(activeChild.gamesPlayed||0)+1;
           const gb=(s.score||0)>0?(activeChild.gamesBeat||0)+1:(activeChild.gamesBeat||0);
           const xpEarned=s.xp||s.xpEarned||0;
-          const updated={xp:(activeChild.xp||0)+xpEarned,gamesPlayed:gp,gamesBeat:gb};
+          // Save high score for this game
+          const prevHighScores=activeChild.gameHighScores||{};
+          const prevBest=prevHighScores[gameId]||0;
+          const newHighScores=s.score>prevBest?{...prevHighScores,[gameId]:s.score}:prevHighScores;
+          const updated={xp:(activeChild.xp||0)+xpEarned,gamesPlayed:gp,gamesBeat:gb,gameHighScores:newHighScores};
           // Sync subject level if game says child levelled up
           if(s.levelReached&&s.levelUpSubject){
             const newLevel={...(activeChild.level||{}),[s.levelUpSubject]:Math.max((activeChild.level?.[s.levelUpSubject]||1),s.levelReached)};
@@ -5804,10 +5946,18 @@ export default function App() {
         child={activeChild}
         subject={sessSub}
         onBack={()=>go("child_dash")}
+        onLearn={topic=>{setTopic(topic);go("learn_mode");}}
         onStart={topic=>{setTopic(topic);go("session");}}
         onSignOut={async()=>{await supabase.auth.signOut();setAcct(null);setKids([]);setAct(null);hist.current=["auth_login"];setScr("auth_login");}}
       />}
 
+      {screen==="learn_mode"&&activeChild&&sessTopic&&<LearnMode
+        child={activeChild}
+        subject={sessSub}
+        topic={sessTopic}
+        onBack={()=>go("topic_pick")}
+        onDone={()=>go("session")}
+      />}
       {screen==="session"&&activeChild&&<Session
         child={activeChild}
         startSubject={sessSub}
@@ -5821,10 +5971,19 @@ export default function App() {
           }
           const session={acc:stats.total>0?Math.round(stats.correct/stats.total*100):0,date:new Date().toISOString(),xp:stats.xp};
           const lastSession=(activeChild.sessionHistory||[]).slice(-1)[0];
-          const lastDate=lastSession?new Date(lastSession.date).toDateString():null;
-          const today=new Date().toDateString();
-          const isNewDay=lastDate!==today;
-          const newStreak=isNewDay?activeChild.streak+1:activeChild.streak;
+          const lastDate=lastSession?new Date(lastSession.date):null;
+          const today=new Date();
+          const todayStr=today.toDateString();
+          const yesterdayStr=new Date(today.getTime()-86400000).toDateString();
+          const lastDateStr=lastDate?lastDate.toDateString():null;
+          // Increment if first session today, reset if missed yesterday, keep if already done today
+          const newStreak=!lastDate
+            ? 1
+            : lastDateStr===todayStr
+              ? activeChild.streak  // already played today
+              : lastDateStr===yesterdayStr
+                ? (activeChild.streak||0)+1  // played yesterday, increment
+                : 1;  // missed days, reset to 1
           const newXP = activeChild.xp + stats.xp;
           const milestones = [100,250,500,1000,2500,5000];
           const hitMilestone = milestones.find(m => activeChild.xp < m && newXP >= m);
@@ -5835,7 +5994,7 @@ export default function App() {
           });
           go("child_dash");
         }}
-        onUpdate={u=>updChild(activeChild.id,u)}
+        onUpdate={(u,forceSave)=>updChild(activeChild.id,u,forceSave)}
         onExit={()=>go("child_dash")}
       />}
 
