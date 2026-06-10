@@ -614,12 +614,52 @@ function getLevelContext(level) {
 const calcXP   = (score, max) => Math.round(20 + (score / max) * 30);
 
 // ── CLAUDE API ────────────────────────────────────────────────────────────
+
+// Higher token limit for lesson generation
+async function claudeLesson(system, msg) {
+  for(let attempt=0; attempt<=2; attempt++) {
+    try {
+      const r = await fetch("/api/chat",{
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({
+          model:"claude-haiku-4-5-20251001",
+          max_tokens:3500,
+          system,
+          messages:[{role:"user",content:msg||"Generate the lesson now. Return ONLY valid JSON."}]
+        }),
+      });
+      if(!r.ok){await new Promise(res=>setTimeout(res,1200));continue;}
+      const d = await r.json();
+      const t = d.content?.find(b=>b.type==="text")?.text||"";
+      const clean = t.replace(/```json\n?/g,"").replace(/```\n?/g,"").trim();
+      const s=clean.indexOf("{"), e=clean.lastIndexOf("}");
+      if(s===-1||e===-1){await new Promise(res=>setTimeout(res,1000));continue;}
+      try {
+        const parsed = JSON.parse(clean.slice(s,e+1));
+        // Validate it has the required fields
+        if(parsed?.slides?.length>=3) return parsed;
+        if(attempt<2) continue;
+        return parsed; // return what we have on last attempt
+      } catch(pe) {
+        try {
+          const fixed=clean.slice(s,e+1)
+            .replace(/,\s*}/g,"}").replace(/,\s*]/g,"]")
+            .replace(/\n/g," ").replace(/\t/g," ");
+          const parsed = JSON.parse(fixed);
+          if(parsed?.slides?.length>=3||attempt===2) return parsed;
+        } catch(e2){if(attempt<2)continue;}
+      }
+    } catch(e){await new Promise(res=>setTimeout(res,800));continue;}
+  }
+  return null;
+}
+
 async function claude(system, msg, retries=2) {
   for(let attempt=0; attempt<=retries; attempt++) {
     try {
       const r = await fetch("/api/chat",{
         method:"POST", headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({model:"claude-haiku-4-5-20251001",max_tokens:1400,system,
+        body:JSON.stringify({model:"claude-haiku-4-5-20251001",max_tokens:2000,system,
           messages:[{role:"user",content:msg||"Generate the content now."}]}),
       });
       if(!r.ok){if(attempt<retries){await new Promise(res=>setTimeout(res,1000));continue;}return null;}
@@ -6720,8 +6760,8 @@ function LearnMode({child,subject,topic,onDone,onBack}) {
   const yearContent=getYearGroupContent(child,subject)||levelObj;
 
   useEffect(()=>{
-    const t=setTimeout(()=>{setErr(true);setLoading(false);},20000);
-    claude(`You are an expert primary school teacher writing a lesson for ONE child. Write warmly, personally, as if sitting next to them.
+    const t=setTimeout(()=>{setErr(true);setLoading(false);},35000);
+    claudeLesson(`You are an expert primary school teacher writing a lesson for ONE child. Write warmly, personally, as if sitting next to them.
 CHILD: ${child.name}, age ${child.age}, ${yearGroup}, ${country}
 SUBJECT: ${subject} | TOPIC: ${topic?.name||subject} | CURRICULUM: ${curriculum} | LANGUAGE: ${lang}
 ${yearGroup} ${subject} EXPECTATION: "${yearContent}"
