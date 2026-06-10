@@ -43,10 +43,25 @@ import { useState, useEffect, useRef, useCallback } from "react";
     @keyframes wiggle{0%,100%{transform:rotate(0)}25%{transform:rotate(-8deg)}75%{transform:rotate(8deg)}}
     button,input,select{font-family:'Nunito',sans-serif}
     button:hover{filter:brightness(1.08);transform:translateY(-1px)}
+    @keyframes revealDown{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes revealUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes revealLeft{from{opacity:0;transform:translateX(-12px)}to{opacity:1;transform:translateX(0)}}
+    @keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+    @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+    .reveal-1{animation:revealDown 0.4s ease 0.1s both}
+    .reveal-2{animation:revealUp 0.4s ease 0.25s both}
+    .reveal-3{animation:revealLeft 0.4s ease 0.4s both}
+    .reveal-4{animation:revealUp 0.4s ease 0.55s both}
     button:active{transform:scale(0.96)!important;filter:brightness(0.95)}
     .game-btn:hover{transform:translateY(-2px) scale(1.02)!important}
     @keyframes gradientShift{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
-    body{background:linear-gradient(-45deg,#EEF2FF,#F0F9FF,#F5F3FF,#FDF2F8);background-size:400% 400%;animation:gradientShift 15s ease infinite;}
+    @keyframes correctPop{0%{transform:scale(1)}40%{transform:scale(1.12)}70%{transform:scale(0.96)}100%{transform:scale(1.04)}}
+    @keyframes wrongShake{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+    @keyframes badgePulse{0%,100%{box-shadow:0 0 0 0 rgba(245,158,11,0.4)}50%{box-shadow:0 0 0 12px rgba(245,158,11,0)}}
+    @keyframes countUp{from{transform:scale(0.5);opacity:0}to{transform:scale(1);opacity:1}}
+    @keyframes slideUp{from{transform:translateY(30px);opacity:0}to{transform:translateY(0);opacity:1}}
+    @keyframes glowPulse{0%,100%{box-shadow:0 0 8px rgba(245,158,11,0.3)}50%{box-shadow:0 0 20px rgba(245,158,11,0.7)}}
+    body{background:linear-gradient(-45deg,#EEF2FF,#DBEAFE,#F5F3FF,#FEE2E2,#DCFCE7,#FEF3C7);background-size:600% 600%;animation:gradientShift 20s ease infinite;}
     .tap-scale:active{transform:scale(0.94)!important;transition:transform 0.08s!important}
   `;
   document.head.appendChild(s);
@@ -80,20 +95,24 @@ const FDYS = "'OpenDyslexic','Comic Sans MS',sans-serif";
 // ── DATA ──────────────────────────────────────────────────────────────────
 const SUBJECTS = ["Maths","English","Science","History","Geography","Computing"];
 const SUB = {
-  Maths:    {emoji:"🔢",color:"#4338CA",light:"#EEF2FF",grad:"linear-gradient(135deg,#4338CA,#6366F1)"},
-  English:  {emoji:"📖",color:"#0284C7",light:"#E0F2FE",grad:"linear-gradient(135deg,#0284C7,#38BDF8)"},
-  Science:  {emoji:"🔬",color:"#16A34A",light:"#DCFCE7",grad:"linear-gradient(135deg,#16A34A,#4ADE80)"},
-  History:  {emoji:"📜",color:"#B45309",light:"#FEF3C7",grad:"linear-gradient(135deg,#B45309,#FBBF24)"},
-  Geography:{emoji:"🌍",color:"#0E7490",light:"#CFFAFE",grad:"linear-gradient(135deg,#0E7490,#22D3EE)"},
-  Computing:{emoji:"💻",color:"#7C3AED",light:"#F3F0FF",grad:"linear-gradient(135deg,#7C3AED,#A78BFA)"},
-  // US/CA subject aliases
-  Math:        {emoji:"🔢",color:"#4338CA",light:"#EEF2FF",grad:"linear-gradient(135deg,#4338CA,#6366F1)"},
-  Mathematics: {emoji:"🔢",color:"#4338CA",light:"#EEF2FF",grad:"linear-gradient(135deg,#4338CA,#6366F1)"},
-  "English Language Arts":{emoji:"📖",color:"#0284C7",light:"#E0F2FE",grad:"linear-gradient(135deg,#0284C7,#38BDF8)"},
-  Language:    {emoji:"📖",color:"#0284C7",light:"#E0F2FE",grad:"linear-gradient(135deg,#0284C7,#38BDF8)"},
-  "Science & Technology":{emoji:"🔬",color:"#16A34A",light:"#DCFCE7",grad:"linear-gradient(135deg,#16A34A,#4ADE80)"},
-  "Social Studies":{emoji:"🌍",color:"#B45309",light:"#FEF3C7",grad:"linear-gradient(135deg,#B45309,#FBBF24)"},
-  "Computer Studies":{emoji:"💻",color:"#7C3AED",light:"#F3F0FF",grad:"linear-gradient(135deg,#7C3AED,#A78BFA)"},
+  // Each subject is a distinct vivid world
+  Maths:    {emoji:"🔢",color:"#2563EB",light:"#DBEAFE",grad:"linear-gradient(135deg,#1D4ED8,#3B82F6,#60A5FA)",ring:"#93C5FD"},
+  English:  {emoji:"📖",color:"#EA580C",light:"#FED7AA",grad:"linear-gradient(135deg,#C2410C,#EA580C,#FB923C)",ring:"#FDBA74"},
+  Science:  {emoji:"🔬",color:"#16A34A",light:"#BBF7D0",grad:"linear-gradient(135deg,#15803D,#22C55E,#4ADE80)",ring:"#86EFAC"},
+  History:  {emoji:"📜",color:"#92400E",light:"#FDE68A",grad:"linear-gradient(135deg,#78350F,#B45309,#D97706)",ring:"#FCD34D"},
+  Geography:{emoji:"🌍",color:"#0E7490",light:"#A5F3FC",grad:"linear-gradient(135deg,#0E7490,#0891B2,#22D3EE)",ring:"#67E8F9"},
+  Computing:{emoji:"💻",color:"#7C3AED",light:"#DDD6FE",grad:"linear-gradient(135deg,#6D28D9,#7C3AED,#A78BFA)",ring:"#C4B5FD"},
+  "11+ Verbal Reasoning":  {emoji:"🔤",color:"#DB2777",light:"#FCE7F3",grad:"linear-gradient(135deg,#BE185D,#DB2777,#F472B6)",ring:"#F9A8D4"},
+  "11+ Non-Verbal Reasoning":{emoji:"🔷",color:"#0F766E",light:"#CCFBF1",grad:"linear-gradient(135deg,#0F766E,#14B8A6,#5EEAD4)",ring:"#99F6E4"},
+  "11+ Maths": {emoji:"🔢",color:"#1D4ED8",light:"#BFDBFE",grad:"linear-gradient(135deg,#1E40AF,#2563EB,#60A5FA)",ring:"#93C5FD"},
+  // US/CA aliases with same rich colours
+  Math:        {emoji:"🔢",color:"#2563EB",light:"#DBEAFE",grad:"linear-gradient(135deg,#1D4ED8,#3B82F6,#60A5FA)"},
+  Mathematics: {emoji:"🔢",color:"#2563EB",light:"#DBEAFE",grad:"linear-gradient(135deg,#1D4ED8,#3B82F6,#60A5FA)"},
+  "English Language Arts":{emoji:"📖",color:"#EA580C",light:"#FED7AA",grad:"linear-gradient(135deg,#C2410C,#EA580C,#FB923C)"},
+  Language:    {emoji:"📖",color:"#EA580C",light:"#FED7AA",grad:"linear-gradient(135deg,#C2410C,#EA580C,#FB923C)"},
+  "Science & Technology":{emoji:"🔬",color:"#16A34A",light:"#BBF7D0",grad:"linear-gradient(135deg,#15803D,#22C55E,#4ADE80)"},
+  "Social Studies":{emoji:"🌏",color:"#92400E",light:"#FDE68A",grad:"linear-gradient(135deg,#78350F,#B45309,#D97706)"},
+  "Computer Studies":{emoji:"💻",color:"#7C3AED",light:"#DDD6FE",grad:"linear-gradient(135deg,#6D28D9,#7C3AED,#A78BFA)"},
 };
 
 
@@ -846,14 +865,31 @@ function BadgeNotif({badgeId,onDone}) {
 
 // ── ANSWER OPTIONS (reused in Diagnostic + Session) ───────────────────────
 function Options({options,correct,selected,answered,onAnswer}) {
+  const cols = ["#E53E3E","#3182CE","#D69E2E","#38A169"];
+  const isGrid = (options?.length||0) === 4;
   return (
-    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-      {options?.map(opt=>{
+    <div style={{display:"grid",gridTemplateColumns:isGrid?"1fr 1fr":"1fr",gap:10}}>
+      {options?.map((opt,i)=>{
         const right=opt.charAt(0)===correct,isSel=opt===selected;
-        const bg=answered&&right?C.gLight:answered&&isSel&&!right?C.rLight:C.bg;
-        const bc=answered&&right?C.green:answered&&isSel&&!right?C.red:C.border;
-        const tc=answered&&right?C.green:answered&&isSel&&!right?C.red:C.text;
-        return <button key={opt} onClick={()=>onAnswer(opt)} disabled={answered} style={{padding:"13px 11px",borderRadius:12,border:`2px solid ${bc}`,background:bg,color:tc,fontSize:14,fontWeight:700,textAlign:"left",lineHeight:1.4,fontFamily:F,cursor:answered?"default":"pointer",transition:"all 0.15s"}}>{opt}</button>;
+        const isCorrect=answered&&right;
+        const isWrong=answered&&isSel&&!right;
+        const isDim=answered&&!right&&!isSel;
+        const col=cols[i%4];
+        return (
+          <button key={opt} onClick={()=>!answered&&onAnswer(opt)} disabled={answered}
+            style={{padding:"15px 12px",borderRadius:16,border:"none",
+              background:isCorrect?"#22C55E":isWrong?"#EF4444":isDim?"#F1F5F9":`linear-gradient(135deg,${col},${col}DD)`,
+              color:isDim?"#94A3B8":"#fff",
+              fontSize:14,fontWeight:900,textAlign:"center",lineHeight:1.4,fontFamily:F,
+              cursor:answered?"default":"pointer",
+              opacity:isDim?0.45:1,
+              boxShadow:answered?"none":`0 4px 14px ${col}50`,
+              transform:isCorrect?"scale(1.04)":isWrong?"scale(0.97)":"scale(1)",
+              transition:"all 0.2s cubic-bezier(0.34,1.56,0.64,1)",
+              animation:isCorrect?"correctPop 0.4s cubic-bezier(0.34,1.56,0.64,1)":isWrong?"wrongShake 0.4s ease":"none"}}>
+            {isCorrect?"✅ ":isWrong?"❌ ":""}{opt.replace(/^[A-D]\)\s*/,"")}
+          </button>
+        );
       })}
     </div>
   );
@@ -1144,44 +1180,86 @@ function ChildDash({child,isParentView,onSession,onGames,onBadges,onParentView,o
 
   return (
     <Screen>
-      <div style={{paddingTop:0}}>
-        {/* ── Clean Header ── */}
-        <div style={{background:`linear-gradient(135deg,${tColor},${tColor}CC)`,padding:"20px 20px 24px",marginBottom:16}}>
+      <div style={{paddingTop:0,paddingBottom:80}}>
+        {/* ── Hero Dashboard ── */}
+        <div style={{background:`linear-gradient(160deg,${tColor} 0%,${tColor}DD 60%,${tColor}99 100%)`,
+          padding:"20px 20px 28px",marginBottom:0,position:"relative",overflow:"hidden"}}>
+          {/* Decorative orbs */}
+          <div style={{position:"absolute",top:-40,right:-40,width:160,height:160,borderRadius:"50%",background:"rgba(255,255,255,0.08)"}}/>
+          <div style={{position:"absolute",bottom:-60,left:-30,width:200,height:200,borderRadius:"50%",background:"rgba(255,255,255,0.05)"}}/>
           {isParentView&&(
-            <div style={{marginBottom:10,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+            <div style={{marginBottom:10,display:"flex",alignItems:"center",justifyContent:"space-between",position:"relative",zIndex:1}}>
               <span style={{fontSize:12,fontWeight:800,color:"rgba(255,255,255,0.8)"}}>👁️ Viewing as {child.name}</span>
               <button onClick={onParentView} style={{fontSize:12,fontWeight:800,color:"rgba(255,255,255,0.8)",background:"rgba(255,255,255,0.2)",border:"none",cursor:"pointer",fontFamily:F,padding:"4px 10px",borderRadius:8}}>← Parent view</button>
             </div>
           )}
-          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16}}>
-            <div style={{display:"flex",alignItems:"center",gap:12}}>
-              <AvatarCircle avatar={child.avatar} size={48} color="rgba(255,255,255,0.3)"/>
+          {/* Top row: avatar + streak */}
+          <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:16,position:"relative",zIndex:1}}>
+            <div style={{display:"flex",alignItems:"center",gap:14}}>
+              {/* Big avatar */}
+              <div style={{width:68,height:68,borderRadius:"50%",background:"rgba(255,255,255,0.25)",
+                border:"3px solid rgba(255,255,255,0.5)",display:"flex",alignItems:"center",
+                justifyContent:"center",fontSize:36,boxShadow:"0 4px 20px rgba(0,0,0,0.15)",
+                flexShrink:0}}>
+                {(AVATARS||[]).find(a=>a.id===child.avatar)?.e||"🦊"}
+              </div>
               <div>
-                <p style={{fontSize:13,fontWeight:700,color:"rgba(255,255,255,0.75)"}}>{greeting} 👋</p>
-                <h2 style={{fontSize:24,fontWeight:900,color:"#fff"}}>{child.name}</h2>
+                <p style={{fontSize:13,fontWeight:700,color:"rgba(255,255,255,0.75)",marginBottom:2}}>{greeting} 👋</p>
+                <h2 style={{fontSize:28,fontWeight:900,color:"#fff",letterSpacing:"-0.5px"}}>{child.name}</h2>
+                <p style={{fontSize:12,fontWeight:700,color:"rgba(255,255,255,0.7)",marginTop:2}}>{child.yearGroup||"Year 3"} · {child.country||"UK"}</p>
               </div>
             </div>
-            <div style={{textAlign:"center",background:"rgba(255,255,255,0.2)",borderRadius:16,padding:"10px 14px"}}>
-              <p style={{fontSize:22}}>🔥</p>
-              <p style={{fontSize:16,fontWeight:900,color:"#fff"}}>{child.streak}</p>
-              <p style={{fontSize:10,color:"rgba(255,255,255,0.75)",fontWeight:700}}>day streak</p>
+            {/* Streak — animated based on length */}
+            <div style={{textAlign:"center",background:"rgba(0,0,0,0.2)",borderRadius:18,padding:"10px 16px",
+              border:`2px solid ${(child.streak||0)>=7?"#FCD34D":"rgba(255,255,255,0.25)"}`,
+              boxShadow:(child.streak||0)>=7?"0 0 20px rgba(252,211,77,0.4)":"none"}}>
+              <p style={{fontSize:(child.streak||0)>=7?26:22,animation:(child.streak||0)>=3?"pulse 2s ease-in-out infinite":"none"}}>
+                {(child.streak||0)>=30?"🌟":(child.streak||0)>=14?"💫":(child.streak||0)>=7?"⚡":"🔥"}
+              </p>
+              <p style={{fontSize:22,fontWeight:900,color:"#fff",lineHeight:1}}>{child.streak||0}</p>
+              <p style={{fontSize:9,color:"rgba(255,255,255,0.75)",fontWeight:800,textTransform:"uppercase"}}>day streak</p>
             </div>
           </div>
-          {/* XP bar */}
-          <div>
-            <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
-              <span style={{fontSize:12,fontWeight:800,color:"rgba(255,255,255,0.8)"}}>Level {Math.floor(child.xp/100)+1}</span>
-              <span style={{fontSize:12,fontWeight:800,color:"rgba(255,255,255,0.8)"}}>{child.xp%100}/100 XP</span>
+          {/* XP bar with level goal */}
+          <div style={{position:"relative",zIndex:1}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+              <span style={{fontSize:13,fontWeight:800,color:"rgba(255,255,255,0.9)"}}>⭐ Level {Math.floor((child.xp||0)/100)+1}</span>
+              <span style={{fontSize:12,fontWeight:700,color:"rgba(255,255,255,0.75)"}}>
+                {100-(child.xp||0)%100} XP to next level
+              </span>
             </div>
-            <div style={{height:8,borderRadius:4,background:"rgba(255,255,255,0.25)"}}>
-              <div style={{height:"100%",width:`${child.xp%100}%`,borderRadius:4,background:"#fff",transition:"width 0.5s"}}/>
+            <div style={{height:10,borderRadius:5,background:"rgba(255,255,255,0.2)",overflow:"hidden"}}>
+              <div style={{height:"100%",width:`${(child.xp||0)%100}%`,borderRadius:5,
+                background:"linear-gradient(90deg,rgba(255,255,255,0.9),rgba(255,255,255,0.6))",
+                transition:"width 0.8s cubic-bezier(0.34,1.56,0.64,1)",
+                boxShadow:"0 0 8px rgba(255,255,255,0.6)"}}/>
             </div>
+            <p style={{fontSize:11,fontWeight:700,color:"rgba(255,255,255,0.6)",marginTop:5,textAlign:"center"}}>
+              {(child.total||0)} questions answered · {(child.xp||0).toLocaleString()} total XP
+            </p>
           </div>
         </div>
 
+        {/* ── Streak milestone banner ── */}
+        {[7,14,30,100].includes(child.streak||0)&&(
+          <div style={{margin:"0 16px 12px",padding:"12px 16px",borderRadius:16,
+            background:"linear-gradient(135deg,#FEF3C7,#FDE68A)",
+            border:"2px solid #F59E0B",display:"flex",alignItems:"center",gap:12,
+            animation:"slideUp 0.5s ease",boxShadow:"0 4px 16px rgba(245,158,11,0.3)"}}>
+            <span style={{fontSize:28}}>🎉</span>
+            <div>
+              <p style={{fontSize:13,fontWeight:900,color:"#92400E"}}>{child.streak} Day Streak Milestone!</p>
+              <p style={{fontSize:11,fontWeight:700,color:"#B45309"}}>You're on fire {child.name}! Keep it going!</p>
+            </div>
+          </div>
+        )}
         {/* ── Tutor message ── */}
         <div style={{padding:"0 16px",marginBottom:16}}>
-          <Bubble tutor={child.tutor} text={child.total>0?`Welcome back ${child.name}! Ready to keep learning? 🚀`:`Welcome ${child.name}! Your first lesson is ready. Let's discover something amazing! 🎉`}/>
+          <Bubble tutor={child.tutor} text={
+            (child.streak||0)>=7?`${child.name}, ${child.streak} days in a row — you're absolutely smashing it! 🔥`
+            :child.total>0?`Welcome back ${child.name}! Ready to keep learning? 🚀`
+            :`Welcome ${child.name}! Your first lesson is ready. Let's discover something amazing! 🎉`
+          }/>
         </div>
 
         {/* ── Main CTA ── */}
@@ -1235,15 +1313,18 @@ function ChildDash({child,isParentView,onSession,onGames,onBadges,onParentView,o
         <div style={{padding:"0 16px",marginBottom:16}}>
           <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10}}>
             {[
-              {e:"🏅",v:(child.badges||[]).length,l:"Badges",fn:onBadges},
-              {e:"🎯",v:"Keep going!",l:"Progress"},
-              {e:"⭐",v:child.xp,l:"XP"},
+              {e:"🏅",v:(child.badges||[]).length,l:"Badges",fn:onBadges,color:"#D97706"},
+              {e:"🔥",v:child.streak||0,l:"Day Streak",color:"#EA580C"},
+              {e:"⭐",v:(child.xp||0).toLocaleString(),l:"Total XP",color:C.primary},
             ].map(s=>(
-              <button key={s.l} onClick={s.fn||null}
-                style={{padding:"14px 8px",borderRadius:14,background:C.surface,border:`1px solid ${C.border}`,cursor:s.fn?"pointer":"default",fontFamily:F,textAlign:"center",boxShadow:"0 2px 6px rgba(0,0,0,0.05)"}}>
-                <span style={{fontSize:22,display:"block",marginBottom:4}}>{s.e}</span>
-                <p style={{fontSize:18,fontWeight:900,color:C.text}}>{s.v}</p>
-                <p style={{fontSize:10,color:C.muted,fontWeight:700}}>{s.l}</p>
+              <button key={s.l} onClick={s.fn||undefined}
+                style={{padding:"16px 8px",borderRadius:16,background:"#fff",
+                  border:`1.5px solid ${s.color}20`,cursor:s.fn?"pointer":"default",
+                  fontFamily:F,textAlign:"center",
+                  boxShadow:`0 4px 16px ${s.color}15`,transition:"all 0.2s"}}>
+                <span style={{fontSize:26,display:"block",marginBottom:6}}>{s.e}</span>
+                <p style={{fontSize:22,fontWeight:900,color:s.color,lineHeight:1,animation:"countUp 0.5s ease"}}>{s.v}</p>
+                <p style={{fontSize:10,color:C.muted,fontWeight:700,marginTop:4}}>{s.l}</p>
               </button>
             ))}
           </div>
@@ -1259,6 +1340,7 @@ function ChildDash({child,isParentView,onSession,onGames,onBadges,onParentView,o
           {!isParentView&&<button onClick={()=>{if(window.confirm("Report an issue with a question or content?"))alert("Thank you! Our team will review this.");}} style={{fontSize:12,fontWeight:700,color:C.muted,background:"none",border:"none",cursor:"pointer",fontFamily:F,width:"100%"}}>🚩 Report a content issue</button>}
         </div>
       </div>
+      <BottomNav active="home" onHome={()=>{}} onLearn={onSession} onGames={onGames} onBadges={onBadges}/>
     </Screen>
   );
 }
@@ -3459,6 +3541,41 @@ function OnboardingModal({type, name, onDone}) {
   );
 }
 
+
+// ── Bottom Navigation Bar ─────────────────────────────────────────
+function BottomNav({active, onHome, onLearn, onGames, onBadges}) {
+  const items = [
+    {id:"home",  icon:"🏠", label:"Home",   fn:onHome},
+    {id:"learn", icon:"📚", label:"Learn",  fn:onLearn},
+    {id:"games", icon:"🎮", label:"Games",  fn:onGames},
+    {id:"badges",icon:"🏅", label:"Badges", fn:onBadges},
+  ];
+  return (
+    <div style={{position:"fixed",bottom:0,left:0,right:0,zIndex:100,display:"flex",justifyContent:"center"}}>
+      <div style={{maxWidth:480,width:"100%",background:"rgba(255,255,255,0.96)",backdropFilter:"blur(12px)",
+        borderTop:"1px solid rgba(226,232,240,0.8)",display:"flex",
+        boxShadow:"0 -4px 24px rgba(0,0,0,0.08)"}}>
+        {items.map(item=>{
+          const isActive = active===item.id;
+          return (
+            <button key={item.id} onClick={item.fn}
+              style={{flex:1,padding:"10px 4px 12px",border:"none",cursor:"pointer",
+                background:"transparent",fontFamily:F,display:"flex",flexDirection:"column",
+                alignItems:"center",gap:3,position:"relative",transition:"all 0.15s"}}>
+              {isActive&&<div style={{position:"absolute",top:0,left:"50%",transform:"translateX(-50%)",
+                width:32,height:3,borderRadius:"0 0 4px 4px",background:C.primary}}/>}
+              <span style={{fontSize:22,lineHeight:1,filter:isActive?"none":"grayscale(0.4)",
+                transform:isActive?"scale(1.15)":"scale(1)",transition:"all 0.2s"}}>{item.icon}</span>
+              <span style={{fontSize:10,fontWeight:isActive?800:600,
+                color:isActive?C.primary:C.muted,letterSpacing:"0.02em"}}>{item.label}</span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function GameError({name, onRetry}) {
   return (
     <Screen>
@@ -3522,49 +3639,85 @@ function GameLoad({name,emoji,tutor,onTimeout}) {
 }
 function GameEnd({name,emoji,score,max,child,xp,onDone,onRetry,level}) {
   const pct=max>0?Math.round((score/max)*100):0;
+  const isGreat=pct>=80;
   const medal=pct>=90?"🏆":pct>=70?"⭐":pct>=50?"🎯":"💪";
   const tutorMsgs={
-    Sparky:{hi:`AMAZING!! You're on fire! 🔥`,mid:`Great game! Keep going! ⚡`,lo:`Nice try! Play again to beat it! 💪`},
-    Pip:{hi:`Wonderful! Really proud of you! 🌟`,mid:`Good effort! Getting better every time! 🦉`,lo:`Don't worry — every try makes you better! 🌱`},
-    Blaze:{hi:`INCREDIBLE!! Total legend! 🏆`,mid:`Nice one! You've got this! 🔥`,lo:`Keep at it! You'll smash it next time! 💥`},
-    Nova:{hi:`OUT OF THIS WORLD!! Amazing! 🚀`,mid:`Great effort! Stars are the limit! ⭐`,lo:`Keep exploring! You'll get there! 🌌`},
+    Sparky:{hi:"AMAZING!! You're absolutely on fire! 🔥 What a star!",mid:"Great game! You're getting better every time! ⚡",lo:"Nice try! Every game makes you stronger! 💪"},
+    Pip:{hi:"Wonderful!! I am SO proud of you! 🌟 You nailed it!",mid:"Good effort! You're making real progress! 🦉",lo:"Don't worry — every try teaches you something! 🌱"},
+    Blaze:{hi:"UNREAL!! You're an absolute legend!! 🏆🔥",mid:"Nice one! You've totally got this! 🔥",lo:"Keep at it! You'll smash it next time! 💥"},
+    Nova:{hi:"OUT OF THIS WORLD!! Stellar performance!! 🚀🌟",mid:"Great effort Explorer! Stars are your limit! ⭐",lo:"Keep exploring! Every astronaut starts somewhere! 🌌"},
   };
   const tier=pct>=80?"hi":pct>=50?"mid":"lo";
   const msg=tutorMsgs[child.tutor]?.[tier]||tutorMsgs.Sparky[tier];
+
   return (
-    <Screen>
-      <div style={{paddingTop:40,textAlign:"center"}}>
-        <div style={{fontSize:72,marginBottom:8}}>{medal}</div>
-        <h2 style={{fontSize:28,fontWeight:900,color:C.text,marginBottom:16}}>{name}</h2>
-        {/* Stats row */}
-        <div style={{display:"flex",justifyContent:"center",gap:8,marginBottom:20}}>
+    <div style={{minHeight:"100vh",fontFamily:F,display:"flex",flexDirection:"column",
+      background:isGreat
+        ?"linear-gradient(160deg,#14532D 0%,#166534 40%,#15803D 100%)"
+        :"linear-gradient(160deg,#1E1B4B 0%,#312E81 50%,#4338CA 100%)",
+      position:"relative",overflow:"hidden"}}>
+      {/* Decorative orbs */}
+      <div style={{position:"absolute",top:-80,right:-80,width:240,height:240,borderRadius:"50%",background:"rgba(255,255,255,0.06)"}}/>
+      <div style={{position:"absolute",bottom:-60,left:-60,width:200,height:200,borderRadius:"50%",background:"rgba(255,255,255,0.04)"}}/>
+      {/* Confetti only on great scores */}
+      {isGreat&&<Confetti count={50}/>}
+      <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"40px 20px",position:"relative",zIndex:1}}>
+        {/* Big medal */}
+        <div style={{fontSize:90,marginBottom:8,animation:"correctPop 0.6s cubic-bezier(0.34,1.56,0.64,1)",
+          filter:"drop-shadow(0 8px 24px rgba(0,0,0,0.4))"}}>{medal}</div>
+        <h1 style={{fontSize:32,fontWeight:900,color:"#fff",marginBottom:4,textShadow:"0 2px 12px rgba(0,0,0,0.3)"}}>{name}</h1>
+        <p style={{fontSize:14,fontWeight:700,color:"rgba(255,255,255,0.7)",marginBottom:28}}>{isGreat?"Outstanding performance!":"Good effort — keep practising!"}</p>
+
+        {/* Big XP earned */}
+        <div style={{background:"rgba(255,255,255,0.15)",borderRadius:24,padding:"16px 32px",marginBottom:20,textAlign:"center",
+          backdropFilter:"blur(8px)",border:"1px solid rgba(255,255,255,0.2)"}}>
+          <p style={{fontSize:48,fontWeight:900,color:"#FCD34D",lineHeight:1,animation:"countUp 0.6s ease",
+            textShadow:"0 0 20px rgba(252,211,77,0.5)"}}>+{xp}</p>
+          <p style={{fontSize:14,fontWeight:800,color:"rgba(255,255,255,0.8)"}}>XP EARNED</p>
+        </div>
+
+        {/* Stats */}
+        <div style={{display:"flex",gap:12,marginBottom:24}}>
           {[
-            {v:`${score}/${max||score+3}`,l:"Score",c:C.primary},
-            {v:`${pct}%`,l:"Accuracy",c:pct>=80?C.green:pct>=60?C.amber:C.red},
-            {v:`+${xp} XP`,l:"Earned",c:C.green},
+            {v:`${score}/${max||score+3}`,l:"Score"},
+            {v:`${pct}%`,l:"Accuracy"},
           ].map(s=>(
-            <div key={s.l} style={{padding:"10px 14px",borderRadius:14,background:C.surface,border:`1px solid ${C.border}`,minWidth:76}}>
-              <p style={{fontSize:18,fontWeight:900,color:s.c}}>{s.v}</p>
-              <p style={{fontSize:10,color:C.muted,fontWeight:700}}>{s.l}</p>
+            <div key={s.l} style={{padding:"10px 20px",borderRadius:14,background:"rgba(255,255,255,0.1)",
+              border:"1px solid rgba(255,255,255,0.15)",textAlign:"center",minWidth:90}}>
+              <p style={{fontSize:22,fontWeight:900,color:"#fff"}}>{s.v}</p>
+              <p style={{fontSize:10,fontWeight:700,color:"rgba(255,255,255,0.6)"}}>{s.l}</p>
             </div>
           ))}
         </div>
-        {/* Tutor message */}
-        <div style={{display:"flex",gap:12,marginBottom:28,alignItems:"flex-start",textAlign:"left",padding:"0 8px"}}>
-          <TutorChar name={child.tutor} size={48}/>
-          <Bubble tutor={child.tutor} text={msg} style={{flex:1}}/>
+
+        {/* Tutor */}
+        <div style={{display:"flex",gap:12,alignItems:"flex-start",marginBottom:28,width:"100%",maxWidth:400}}>
+          <TutorChar name={child.tutor} size={52} noAnim={false}/>
+          <div style={{flex:1,background:"rgba(255,255,255,0.12)",borderRadius:16,padding:"12px 16px",
+            border:"1px solid rgba(255,255,255,0.2)"}}>
+            <p style={{fontSize:14,fontWeight:700,color:"#fff",lineHeight:1.6}}>{msg}</p>
+          </div>
         </div>
-        {/* Action buttons */}
-        {onRetry&&(
-          <Btn onClick={onRetry} style={{width:"100%",padding:16,fontSize:16,marginBottom:10,background:"linear-gradient(135deg,#F59E0B,#D97706)"}}>
-            🔄 Play Again
-          </Btn>
-        )}
-        <Btn onClick={onDone} style={{width:"100%",padding:16,fontSize:16}} v={onRetry?"ghost":"primary"}>
-          🎮 Back to Games
-        </Btn>
+
+        {/* Buttons */}
+        <div style={{width:"100%",maxWidth:400,display:"flex",flexDirection:"column",gap:10}}>
+          {onRetry&&(
+            <button onClick={onRetry}
+              style={{width:"100%",padding:"16px",borderRadius:18,fontSize:16,fontWeight:900,cursor:"pointer",
+                fontFamily:F,background:"rgba(255,255,255,0.95)",color:C.primary,border:"none",
+                boxShadow:"0 4px 20px rgba(0,0,0,0.2)",transition:"all 0.2s"}}>
+              🔄 Play Again
+            </button>
+          )}
+          <button onClick={onDone}
+            style={{width:"100%",padding:"16px",borderRadius:18,fontSize:16,fontWeight:900,cursor:"pointer",
+              fontFamily:F,background:"rgba(255,255,255,0.15)",color:"#fff",
+              border:"2px solid rgba(255,255,255,0.3)",transition:"all 0.2s"}}>
+            🎮 Back to Games
+          </button>
+        </div>
       </div>
-    </Screen>
+    </div>
   );
 }
 
@@ -4441,19 +4594,24 @@ function GameHub({child,onPlay,onBack,onHome,onLevelUp}) {
                   onClick={()=>onPlay(g.id)}>
                   {/* Game card */}
                   <div style={{
-                    padding:"14px 8px",borderRadius:16,
-                    background:isHovered?selectedCat.bg:"#fff",
+                    padding:"16px 10px",borderRadius:20,
+                    background:isHovered
+                      ?`linear-gradient(145deg,${selectedCat.color},${selectedCat.color}CC)`
+                      :"#fff",
                     border:`2px solid ${isHovered?selectedCat.color:C.border}`,
                     cursor:"pointer",textAlign:"center",
-                    transition:"all 0.2s",
-                    boxShadow:isHovered?`0 6px 20px ${selectedCat.color}30`:"0 2px 8px rgba(0,0,0,0.06)",
-                    transform:isHovered?"translateY(-3px)":"none",
-                    minHeight:110
+                    transition:"all 0.25s cubic-bezier(0.34,1.56,0.64,1)",
+                    boxShadow:isHovered?`0 8px 24px ${selectedCat.color}45`:"0 2px 10px rgba(0,0,0,0.06)",
+                    transform:isHovered?"translateY(-5px) scale(1.03)":"translateY(0) scale(1)",
+                    minHeight:120,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:6
                   }}>
-                    <div style={{fontSize:28,marginBottom:4}}>{g.emoji}</div>
-                    <p style={{fontSize:11,fontWeight:800,color:C.text,lineHeight:1.3,marginBottom:4}}>{g.name}</p>
-                    <span style={{fontSize:9,fontWeight:800,color:diff.color,background:diff.color+"20",padding:"2px 5px",borderRadius:4}}>{diff.emoji} Lv.{gameLevel}</span>
-                    {child.gameHighScores?.[g.id]&&<p style={{fontSize:8,fontWeight:700,color:C.amber,marginTop:3}}>🏆 Best: {child.gameHighScores[g.id]}</p>}
+                    <div style={{fontSize:34,lineHeight:1,filter:isHovered?"drop-shadow(0 4px 8px rgba(0,0,0,0.2))":"none",transition:"all 0.2s"}}>{g.emoji}</div>
+                    <p style={{fontSize:12,fontWeight:900,color:isHovered?"#fff":C.text,lineHeight:1.2}}>{g.name}</p>
+                    <span style={{fontSize:9,fontWeight:800,
+                      color:isHovered?"rgba(255,255,255,0.9)":"#fff",
+                      background:isHovered?"rgba(255,255,255,0.25)":diff.color,
+                      padding:"3px 7px",borderRadius:6}}>{diff.emoji} Lv.{gameLevel}</span>
+                    {child.gameHighScores?.[g.id]&&<p style={{fontSize:8,fontWeight:800,color:isHovered?"rgba(255,255,255,0.85)":C.amber}}>🏆 {child.gameHighScores[g.id]}</p>}
                   </div>
                   {/* Hover overlay */}
                   {isHovered&&(
@@ -6537,323 +6695,218 @@ export default function App() {
   );
 }
 // ── Learn Mode — Animated Curriculum Book ───────────────────────────────
-function LearnMode({child, subject, topic, onDone, onBack}) {
-  const sc=SUB[subject]||{color:C.primary,grad:`linear-gradient(135deg,${C.primary},#6366F1)`,light:C.pLight};
-  const [lesson,setLesson]=useState(null);
-  const [slideIdx,setSlideIdx]=useState(-1); // -1 = cover page
-  const [loading,setLoading]=useState(true);
-  const [err,setErr]=useState(false);
-  const [animIn,setAnimIn]=useState(true);
+function LearnMode({child,subject,topic,onDone,onBack}) {
+  const sc=SUB[subject]||{color:C.primary,grad:`linear-gradient(135deg,${C.primary},#6366F1)`,light:C.pLight,emoji:"📚"};
+  const [lesson,setLesson]           =useState(null);
+  const [slideIdx,setSlideIdx]       =useState(-1);
+  const [loading,setLoading]         =useState(true);
+  const [err,setErr]                 =useState(false);
+  const [animIn,setAnimIn]           =useState(true);
+  const [checkSel,setCheckSel]       =useState(null);
+  const [checkAns,setCheckAns]       =useState(false);
+  const [pIdx,setPIdx]               =useState(0);
+  const [pSel,setPSel]               =useState(null);
+  const [pAns,setPAns]               =useState(false);
+  const [pScore,setPScore]           =useState(0);
+
+  const topicLevel =child.topicLevels?.[subject]?.[topic?.id]||1;
+  const levelObj   =topic?.levels?.[topicLevel-1]||topic?.desc||"curriculum content";
+  const prevObj    =topicLevel>1?(topic?.levels?.[topicLevel-2]||"basics"):"no prior knowledge";
+  const nextObj    =topic?.levels?.[topicLevel]||"advanced extension";
+  const country    =child.country||"UK";
+  const curriculum =country==="US"?"Common Core":country==="CA"?"Ontario":"National Curriculum";
+  const lang       =country==="US"?"American English (math, color, grade)":country==="CA"?"Canadian English (math, colour, grade)":"British English (maths, colour, year group)";
+  const yearGroup  =child.yearGroup||YEAR[country]?.[child.age]||"Year 3";
+  const yearContent=getYearGroupContent(child,subject)||levelObj;
 
   useEffect(()=>{
-    const t=setTimeout(()=>{setErr(true);setLoading(false);},18000);
-    // Structured curriculum anchoring — same core content for all children at same level
-    const topicLevel = child.topicLevels?.[subject]?.[topic?.id] || 1;
-    const levelObjective = topic?.levels?.[topicLevel-1] || topic?.desc || "core curriculum content";
-    const prevObjective = topicLevel > 1 ? (topic?.levels?.[topicLevel-2] || "foundational basics") : "no prior knowledge";
-    const nextObjective = topic?.levels?.[topicLevel] || "advanced extension";
-    const country = child.country || "UK";
-    const curriculum = country === "US" ? "Common Core" : country === "CA" ? "Ontario" : "National Curriculum";
-    const terminology = country === "US" ? "American English (math, color, center, organize)" : country === "CA" ? "Canadian English (maths, colour, centre)" : "British English (maths, colour, centre)";
-
-    claude(
-      `You are writing a curriculum lesson. The TEACHING CONTENT must be IDENTICAL for all children at this exact level — only vary the presentation style and specific examples.
-
-LESSON SPECIFICATION (FIXED — do not deviate):
-- Country: ${country} (${curriculum})
-- Subject: ${subject}
-- Topic: ${topic?.name || subject}
-- Year group: ${child.yearGroup || "Year 3"}
-- Child age: ${child.age}
-- Level: ${topicLevel} of 10
-- Use: ${terminology}
-
-WHAT TO TEACH (MANDATORY — every lesson at this level must cover these exact points):
-"${levelObjective}"
-
-PREREQUISITE KNOWLEDGE (what they already know):
-"${prevObjective}"
-
-COMING NEXT (don't teach this yet):
-"${nextObjective}"
-
-LESSON STRUCTURE (follow exactly):
-1. Title: engaging, specific to "${levelObjective}"
-2. Hook question: makes child curious about this specific content
-3. Exactly 5 slides — each must cover a distinct aspect of "${levelObjective}":
-   - Slide 1: introduce the core concept clearly
-   - Slide 2: explain how it works with the key rule or method
-   - Slide 3: show a step-by-step worked example
-   - Slide 4: common misconceptions or tricky parts to watch out for
-   - Slide 5: real-world connection — where they'll use this
-4. Memory trick: a rhyme, acronym or visual trick specific to this content
-5. Check question: tests understanding of "${levelObjective}" specifically
-
-PRESENTATION RULES:
-- Simple vocabulary suitable for age ${child.age}
-- Every example must be relatable to a ${child.age}-year-old in ${country}
-- Use lots of emojis to make it visual and engaging
-- Keep each slide body to 2-3 sentences maximum
-- The fun fact must be genuinely surprising and relevant to the topic
-
-Return ONLY valid JSON — no text before or after:
-{
-  "title": "specific engaging title about ${levelObjective}",
-  "hookQuestion": "question that makes child curious about THIS specific content",
-  "slides": [
-    {
-      "emoji": "most relevant emoji",
-      "heading": "max 6 words",
-      "body": "2-3 clear sentences",
-      "example": "real-world example a ${child.age}-year-old in ${country} would know",
-      "funFact": "surprising fact directly about this content"
-    }
-  ],
-  "memoryTrick": "memorable rhyme, acronym or trick for THIS content",
-  "checkQ": {
-    "q": "tests understanding of the core concept",
-    "options": ["A) ...", "B) ...", "C) ...", "D) ..."],
-    "correct": "A",
-    "explanation": "links back to what was taught in the lesson"
-  }
-}`,
-      "Generate structured curriculum lesson."
-    ).then(d=>{
-      clearTimeout(t);
-      if(d?.slides?.length){setLesson(d);setLoading(false);}
-      else{setErr(true);setLoading(false);}
-    });
+    const t=setTimeout(()=>{setErr(true);setLoading(false);},20000);
+    claude(`You are an expert primary school teacher writing a lesson for ONE child. Write warmly, personally, as if sitting next to them.
+CHILD: ${child.name}, age ${child.age}, ${yearGroup}, ${country}
+SUBJECT: ${subject} | TOPIC: ${topic?.name||subject} | CURRICULUM: ${curriculum} | LANGUAGE: ${lang}
+${yearGroup} ${subject} EXPECTATION: "${yearContent}"
+THIS LESSON (Level ${topicLevel}/10): "${levelObj}"
+ALREADY KNOWS: "${prevObj}" | NOT YET: "${nextObj}"
+Write a RICH DETAILED lesson — each slide should feel like 2-3 minutes of real teaching.
+Return ONLY valid JSON: {"title":"...","hookQuestion":"...","tutorIntro":"2-3 warm sentences to ${child.name} building excitement","slides":[{"emoji":"📌","heading":"max 6 words","teach":"4-6 sentences of clear warm teaching, step by step, for age ${child.age} in ${country}, using you and we","workedExample":"Full worked example: Step 1: ... Step 2: ... Answer: ...","tryIt":"A thinking question for the child — no options yet","tip":"Teacher tip or common mistake to avoid"}],"practiceQuestions":[{"q":"...","options":["A) ...","B) ...","C) ...","D) ..."],"correct":"A","explanation":"full teacher explanation"},{"q":"...","options":["A) ...","B) ...","C) ...","D) ..."],"correct":"B","explanation":"full explanation"},{"q":"...","options":["A) ...","B) ...","C) ...","D) ..."],"correct":"C","explanation":"full explanation"}],"memoryTrick":"rhyme or acronym for this content","checkQ":{"q":"final check question","options":["A) ...","B) ...","C) ...","D) ..."],"correct":"A","explanation":"thorough teacher explanation"},"wellDone":"warm 2-3 sentence message to ${child.name}"}
+Write exactly 5 slides: 1) introduce concept 2) key rule/method 3) full worked example 4) common mistakes 5) real-world use.`,
+    "Generate teacher-quality lesson.").then(d=>{clearTimeout(t);if(d?.slides?.length){setLesson(d);setLoading(false);}else{setErr(true);setLoading(false);}});
   },[]);
 
-  const goTo=(idx)=>{
-    setAnimIn(false);
-    setTimeout(()=>{setSlideIdx(idx);setAnimIn(true);},200);
-  };
+  const goTo=(idx)=>{setAnimIn(false);if(idx===lesson?.slides?.length+1){setCheckSel(null);setCheckAns(false);}if(idx===lesson?.slides?.length){setPIdx(0);setPSel(null);setPAns(false);}setTimeout(()=>{setSlideIdx(idx);setAnimIn(true);},180);};
 
-  if(loading) return(
-    <Screen>
-      <div style={{paddingTop:80,textAlign:"center"}}>
-        <div style={{fontSize:60,marginBottom:20,animation:"floatY 2s ease-in-out infinite"}}>{sc.emoji||"📚"}</div>
-        <h2 style={{fontSize:22,fontWeight:900,color:C.text,marginBottom:8}}>Building your lesson...</h2>
-        <p style={{fontSize:14,color:C.muted,fontWeight:600,marginBottom:24}}>{topic?.name||subject}</p>
-        <div style={{width:200,height:6,borderRadius:3,background:C.border,margin:"0 auto",overflow:"hidden"}}>
-          <div style={{height:"100%",background:sc.grad,borderRadius:3,animation:"loading 2s ease-in-out infinite",width:"60%"}}/>
-        </div>
-        <p style={{fontSize:12,color:C.muted,marginTop:16}}>Getting your personalised lesson ready ✨</p>
+  if(loading)return(<Screen><div style={{paddingTop:80,textAlign:"center"}}><div style={{fontSize:60,marginBottom:16}}>{sc.emoji||"📚"}</div><h2 style={{fontSize:22,fontWeight:900,color:C.text,marginBottom:8}}>Preparing your lesson...</h2><p style={{fontSize:14,color:C.muted,marginBottom:20}}>{topic?.name||subject} · {yearGroup}</p><div style={{width:200,height:6,borderRadius:3,background:C.border,margin:"0 auto",overflow:"hidden"}}><div style={{height:"100%",background:sc.color||C.primary,borderRadius:3,width:"70%",animation:"loading 1.5s ease-in-out infinite"}}/></div><p style={{fontSize:12,color:C.muted,marginTop:12}}>Building a personalised lesson for {child.name} ✨</p></div></Screen>);
+  if(err)return(<Screen><div style={{paddingTop:60,textAlign:"center"}}><div style={{fontSize:56,marginBottom:16}}>😕</div><h2 style={{fontSize:20,fontWeight:900,color:C.text,marginBottom:8}}>Couldn't load lesson</h2><p style={{fontSize:14,color:C.muted,marginBottom:20}}>Check your connection and try again</p><Btn onClick={onBack} style={{width:"100%"}}>Go Back</Btn></div></Screen>);
+
+  const S=lesson.slides.length;
+  const isCover=slideIdx===-1,isPractice=slideIdx===S,isCheck=slideIdx===S+1,isDone=slideIdx===S+2;
+  const slide=(slideIdx>=0&&slideIdx<S)?lesson.slides[slideIdx]:null;
+  const step=isCover?0:isPractice?S:isCheck?S+1:isDone?S+2:slideIdx+1;
+  const cols=["#E53E3E","#3182CE","#D69E2E","#38A169"];
+
+  const PBar=()=>(<div style={{marginBottom:14}}><div style={{display:"flex",gap:3,marginBottom:3}}>{Array.from({length:S+2}).map((_,i)=><div key={i} style={{flex:1,height:4,borderRadius:2,background:i<step?sc.color:i===step-1?sc.color:C.border,opacity:i<step?0.5:i===step-1?1:0.2,transition:"all 0.3s"}}/>)}</div></div>);
+
+  if(isCover)return(<Screen><div style={{paddingTop:16}}><BackBtn onClick={onBack}/>
+    <div style={{background:sc.grad||`linear-gradient(135deg,${sc.color},${sc.color}CC)`,borderRadius:28,padding:"24px 18px",marginTop:8,marginBottom:14,textAlign:"center",position:"relative",overflow:"hidden",boxShadow:`0 10px 32px ${sc.color}50`}}>
+      <div style={{position:"absolute",top:-20,right:-20,width:80,height:80,borderRadius:"50%",background:"rgba(255,255,255,0.1)"}}/>
+      <div style={{fontSize:56,marginBottom:10}}>{sc.emoji||"📚"}</div>
+      <p style={{fontSize:10,fontWeight:800,color:"rgba(255,255,255,0.7)",letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:6}}>{subject} · {yearGroup} · Level {topicLevel}</p>
+      <h1 style={{fontSize:20,fontWeight:900,color:"#fff",lineHeight:1.3,marginBottom:12}}>{lesson.title}</h1>
+      <div style={{background:"rgba(255,255,255,0.18)",borderRadius:12,padding:"10px 14px"}}><p style={{fontSize:14,fontWeight:700,color:"#fff",fontStyle:"italic",lineHeight:1.6}}>🤔 {lesson.hookQuestion}</p></div>
+    </div>
+    {lesson.tutorIntro&&<div style={{display:"flex",gap:10,alignItems:"flex-start",marginBottom:14,padding:"12px 14px",background:"#fff",borderRadius:14,boxShadow:"0 2px 10px rgba(0,0,0,0.06)"}}><TutorChar name={child.tutor} size={38}/><Bubble tutor={child.tutor} text={lesson.tutorIntro} style={{flex:1}}/></div>}
+    <div style={{background:"#fff",borderRadius:18,padding:"14px 16px",marginBottom:16,boxShadow:"0 2px 12px rgba(67,56,202,0.08)"}}>
+      <p style={{fontSize:11,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:10}}>In this lesson</p>
+      {lesson.slides.map((s,i)=><div key={i} style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}><div style={{width:28,height:28,borderRadius:8,background:sc.light||C.pLight,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,flexShrink:0}}>{s.emoji}</div><p style={{fontSize:13,fontWeight:700,color:C.text}}>{s.heading}</p></div>)}
+      <div style={{marginTop:10,paddingTop:10,borderTop:`1px solid ${C.border}`}}>
+        <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:6}}><div style={{width:28,height:28,borderRadius:8,background:"#FEF3C7",display:"flex",alignItems:"center",justifyContent:"center",fontSize:13}}>✏️</div><p style={{fontSize:13,fontWeight:700,color:C.text}}>3 practice questions</p></div>
+        <div style={{display:"flex",alignItems:"center",gap:10}}><div style={{width:28,height:28,borderRadius:8,background:"#DCFCE7",display:"flex",alignItems:"center",justifyContent:"center",fontSize:13}}>🎯</div><p style={{fontSize:13,fontWeight:700,color:C.text}}>Final check question</p></div>
       </div>
-    </Screen>
-  );
+    </div>
+    <Btn onClick={()=>goTo(0)} style={{width:"100%",fontSize:17,padding:"16px"}}>Let's start! 🚀</Btn>
+  </div></Screen>);
 
-  if(err) return(
-    <Screen>
-      <div style={{paddingTop:60,textAlign:"center"}}>
-        <div style={{fontSize:56,marginBottom:16}}>😕</div>
-        <h2 style={{fontSize:20,fontWeight:900,color:C.text,marginBottom:8}}>Couldn't load lesson</h2>
-        <p style={{fontSize:14,color:C.muted,marginBottom:24}}>Check your connection and try again</p>
-        <Btn onClick={onBack} style={{width:"100%"}}>Go Back</Btn>
+  if(isPractice){
+    const pqs=lesson.practiceQuestions||[];const pq=pqs[pIdx];const pOk=pSel?.charAt(0)===pq?.correct;
+    return(<Screen><div style={{paddingTop:16}}><PBar/>
+      <div style={{background:"linear-gradient(135deg,#FEF3C7,#FDE68A)",borderRadius:18,padding:"14px 16px",marginBottom:14,border:"2px solid #F59E0B"}}>
+        <p style={{fontSize:11,fontWeight:800,color:"#92400E",textTransform:"uppercase",marginBottom:6}}>✏️ Practice Question {Math.min(pIdx+1,pqs.length)} of {pqs.length}</p>
+        <p style={{fontSize:16,fontWeight:800,color:"#78350F",lineHeight:1.6}}>{pq?.q}</p>
       </div>
-    </Screen>
-  );
-
-  const totalSlides=lesson.slides.length; // 5 slides + check
-  const isCover=slideIdx===-1;
-  const isCheck=slideIdx===totalSlides;
-  const isDone=slideIdx===totalSlides+1;
-  const slide=(!isCover&&!isCheck&&!isDone)?lesson.slides[slideIdx]:null;
-  const progress=isCover?0:isCheck||isDone?100:Math.round(((slideIdx+1)/totalSlides)*100);
-
-  // ── Cover page ────────────────────────────────────────────────────────
-  if(isCover) return(
-    <Screen>
-      <div style={{paddingTop:16}}>
-        <BackBtn onClick={onBack}/>
-        <div style={{
-          background:sc.grad||`linear-gradient(135deg,${sc.color},${sc.color}CC)`,
-          borderRadius:28,padding:"32px 24px",marginTop:8,marginBottom:20,
-          textAlign:"center",position:"relative",overflow:"hidden",
-          boxShadow:`0 12px 40px ${sc.color}50`
-        }}>
-          {/* Decorative circles */}
-          <div style={{position:"absolute",top:-20,right:-20,width:100,height:100,borderRadius:"50%",background:"rgba(255,255,255,0.1)"}}/>
-          <div style={{position:"absolute",bottom:-30,left:-20,width:140,height:140,borderRadius:"50%",background:"rgba(255,255,255,0.07)"}}/>
-          <div style={{fontSize:72,marginBottom:16,position:"relative"}}>{sc.emoji||"📚"}</div>
-          <p style={{fontSize:12,fontWeight:800,color:"rgba(255,255,255,0.7)",letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:8}}>
-            {subject} · {child.yearGroup||"Year 3"}
-          </p>
-          <h1 style={{fontSize:26,fontWeight:900,color:"#fff",lineHeight:1.3,marginBottom:16,position:"relative"}}>
-            {lesson.title}
-          </h1>
-          <div style={{background:"rgba(255,255,255,0.2)",borderRadius:16,padding:"14px 16px",position:"relative"}}>
-            <p style={{fontSize:15,fontWeight:700,color:"#fff",fontStyle:"italic",lineHeight:1.6}}>
-              🤔 {lesson.hookQuestion}
-            </p>
-          </div>
-        </div>
-        {/* What you'll learn */}
-        <div style={{background:"#fff",borderRadius:20,padding:"16px 18px",marginBottom:20,boxShadow:"0 2px 16px rgba(67,56,202,0.08)"}}>
-          <p style={{fontSize:13,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:12}}>In this lesson you'll learn</p>
-          {lesson.slides.slice(0,5).map((s,i)=>(
-            <div key={i} style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
-              <div style={{width:32,height:32,borderRadius:10,background:sc.light||C.pLight,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,flexShrink:0}}>{s.emoji}</div>
-              <p style={{fontSize:14,fontWeight:700,color:C.text}}>{s.heading}</p>
-            </div>
-          ))}
-        </div>
-        <Btn onClick={()=>goTo(0)} style={{width:"100%",fontSize:17,padding:"16px"}}>
-          Let's Start Learning! 🚀
-        </Btn>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
+        {pq?.options?.map((opt,i)=>{const isSel=pSel===opt,isOk=pAns&&opt===pq.correct,isBad=pAns&&isSel&&!isOk,dim=pAns&&!isOk&&!isSel;return(<button key={i} onClick={()=>{if(!pAns){setPSel(opt);setPAns(true);if(opt.charAt(0)===pq.correct)setPScore(s=>s+1);}}} style={{padding:"14px 10px",borderRadius:14,fontSize:13,fontWeight:900,cursor:pAns?"default":"pointer",fontFamily:F,border:"none",background:isOk?"#22C55E":isBad?"#EF4444":dim?"#F1F5F9":`linear-gradient(135deg,${cols[i]},${cols[i]}BB)`,color:dim?"#94A3B8":"#fff",opacity:dim?0.4:1,transition:"all 0.15s"}}>{isOk?"✅ ":isBad?"❌ ":""}{opt.replace(/^[A-D]\)\s*/,"")}</button>);})}
       </div>
-    </Screen>
-  );
-
-  // ── Quick check question ──────────────────────────────────────────────
-  if(isCheck){
-    const [checkSel,setCheckSel]=useState(null);
-    const [checkAns,setCheckAns]=useState(false);
-    const checkQ=lesson.checkQ;
-    const correct=checkSel?.charAt(0)===checkQ?.correct;
-    return(
-      <Screen>
-        <div style={{paddingTop:16}}>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
-            <button onClick={()=>goTo(totalSlides-1)} style={{background:"none",border:"none",cursor:"pointer",fontSize:14,fontWeight:700,color:C.muted,fontFamily:F}}>← Back</button>
-            <p style={{fontSize:13,fontWeight:800,color:sc.color}}>Quick Check! 🎯</p>
-            <div style={{width:40}}/>
-          </div>
-          <div style={{background:sc.grad,borderRadius:24,padding:"24px 20px",marginBottom:20,textAlign:"center",boxShadow:`0 8px 28px ${sc.color}40`}}>
-            <div style={{fontSize:48,marginBottom:12}}>🎯</div>
-            <p style={{fontSize:12,fontWeight:800,color:"rgba(255,255,255,0.75)",textTransform:"uppercase",marginBottom:8}}>Quick Check</p>
-            <p style={{fontSize:18,fontWeight:800,color:"#fff",lineHeight:1.5}}>{checkQ?.q}</p>
-          </div>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:16}}>
-            {checkQ?.options?.map((opt,i)=>{
-              const cols=["#E53E3E","#3182CE","#D69E2E","#38A169"];
-              const isSelected=checkSel===opt;
-              const isCorrect=checkAns&&opt===checkQ.correct;
-              const isWrong=checkAns&&isSelected&&opt!==checkQ.correct;
-              return(
-                <button key={i} onClick={()=>{if(!checkAns){setCheckSel(opt);setCheckAns(true);}}}
-                  style={{padding:"16px 12px",borderRadius:16,fontSize:14,fontWeight:900,
-                    cursor:checkAns?"default":"pointer",fontFamily:F,border:"none",
-                    background:isCorrect?"#22C55E":isWrong?"#EF4444":`linear-gradient(135deg,${cols[i]},${cols[i]}BB)`,
-                    color:"#fff",boxShadow:`0 4px 12px ${cols[i]}55`,
-                    opacity:checkAns&&!isCorrect&&!isSelected?0.4:1,
-                    transition:"all 0.2s"}}>
-                  {isCorrect?"✅ ":isWrong?"❌ ":""}{opt.replace(/^[A-D]\)\s*/,"")}
-                </button>
-              );
-            })}
-          </div>
-          {checkAns&&(
-            <div style={{background:correct?"#DCFCE7":"#FEF3C7",borderRadius:16,padding:"14px 16px",marginBottom:16,border:`2px solid ${correct?"#22C55E":"#F59E0B"}`}}>
-              <p style={{fontSize:16,fontWeight:900,color:correct?"#166534":"#92400E",marginBottom:4}}>
-                {correct?"🎉 Brilliant!":"💡 Good try!"}
-              </p>
-              <p style={{fontSize:13,fontWeight:600,color:correct?"#15803D":"#78350F",lineHeight:1.6}}>{checkQ?.explanation}</p>
-            </div>
-          )}
-          {checkAns&&(
-            <Btn onClick={()=>goTo(totalSlides+1)} style={{width:"100%",fontSize:16,padding:"16px"}}>
-              {correct?"I'm ready for questions! 🚀":"Keep learning and try again! 📚"}
-            </Btn>
-          )}
-        </div>
-      </Screen>
-    );
+      {pAns&&<><div style={{padding:"12px 14px",borderRadius:14,marginBottom:12,background:pOk?"#DCFCE7":"#FEF3C7",border:`2px solid ${pOk?"#22C55E":"#F59E0B"}`}}><p style={{fontSize:14,fontWeight:900,color:pOk?"#166534":"#92400E",marginBottom:4}}>{pOk?"🎉 Correct!":"💡 Not quite:"}</p><p style={{fontSize:13,fontWeight:600,color:pOk?"#15803D":"#78350F",lineHeight:1.6}}>{pq?.explanation}</p></div>
+      <Btn onClick={()=>{if(pIdx+1>=pqs.length)goTo(S+1);else{setPIdx(i=>i+1);setPSel(null);setPAns(false);}}} style={{width:"100%"}}>{pIdx+1>=pqs.length?"Final Check 🎯":"Next →"}</Btn></>}
+    </div></Screen>);
   }
 
-  // ── Done ─────────────────────────────────────────────────────────────
-  if(isDone) return(
-    <Screen>
-      <div style={{paddingTop:40,textAlign:"center"}}>
-        <div style={{fontSize:72,marginBottom:12,animation:"bounceY 1s ease-in-out infinite"}}>🎓</div>
-        <h2 style={{fontSize:28,fontWeight:900,color:C.text,marginBottom:8}}>Lesson Complete!</h2>
-        <p style={{fontSize:15,fontWeight:700,color:C.muted,marginBottom:24}}>You've learned about {topic?.name||subject}</p>
-        {/* Memory trick */}
-        <div style={{background:"linear-gradient(135deg,#FEF3C7,#FDE68A)",borderRadius:20,padding:"20px",marginBottom:24,textAlign:"left",border:"2px solid #F59E0B",boxShadow:"0 4px 16px rgba(245,158,11,0.3)"}}>
-          <p style={{fontSize:12,fontWeight:800,color:"#92400E",textTransform:"uppercase",marginBottom:8}}>🧠 Remember This!</p>
-          <p style={{fontSize:16,fontWeight:700,color:"#78350F",lineHeight:1.7,fontStyle:"italic"}}>"{lesson.memoryTrick}"</p>
-        </div>
-        <Btn onClick={onDone} style={{width:"100%",padding:"16px",fontSize:17,marginBottom:12}}>
-          Start Questions Now! 🚀
-        </Btn>
-        <Btn onClick={onBack} v="ghost" style={{width:"100%"}}>
-          Back to Topics
-        </Btn>
+  if(isCheck){
+    const cq=lesson.checkQ;const cOk=checkSel?.charAt(0)===cq?.correct;
+    return(<Screen><div style={{paddingTop:16}}><PBar/>
+      <div style={{background:sc.grad,borderRadius:20,padding:"20px 16px",marginBottom:14,textAlign:"center",boxShadow:`0 6px 20px ${sc.color}40`}}>
+        <div style={{fontSize:40,marginBottom:8}}>🎯</div>
+        <p style={{fontSize:11,fontWeight:800,color:"rgba(255,255,255,0.75)",textTransform:"uppercase",marginBottom:6}}>Final Check</p>
+        <p style={{fontSize:17,fontWeight:800,color:"#fff",lineHeight:1.6}}>{cq?.q}</p>
       </div>
-    </Screen>
-  );
-
-  // ── Lesson slide ──────────────────────────────────────────────────────
-  return(
-    <Screen>
-      <div style={{paddingTop:16}}>
-        {/* Header with progress */}
-        <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:16}}>
-          <button onClick={()=>goTo(slideIdx>0?slideIdx-1:-1)} style={{background:"none",border:"none",cursor:"pointer",fontSize:18,color:C.muted,fontFamily:F,padding:"4px 8px"}}>←</button>
-          <div style={{flex:1}}>
-            <div style={{display:"flex",gap:3}}>
-              {lesson.slides.map((_,i)=>(
-                <div key={i} onClick={()=>goTo(i)} style={{
-                  flex:1,height:5,borderRadius:3,cursor:"pointer",
-                  background:i<slideIdx?sc.color:i===slideIdx?sc.color:C.border,
-                  opacity:i===slideIdx?1:i<slideIdx?0.7:0.3,
-                  transition:"all 0.3s"
-                }}/>
-              ))}
-            </div>
-            <p style={{fontSize:10,color:C.muted,fontWeight:600,marginTop:4}}>{topic?.name||subject} · Slide {slideIdx+1} of {totalSlides}</p>
-          </div>
-          <button onClick={()=>goTo(totalSlides)} style={{background:sc.light,borderRadius:8,padding:"4px 10px",border:"none",cursor:"pointer",fontSize:11,fontWeight:800,color:sc.color,fontFamily:F}}>Skip to Check →</button>
-        </div>
-
-        {/* Slide card */}
-        <div style={{opacity:animIn?1:0,transform:animIn?"translateY(0)":"translateY(12px)",transition:"all 0.2s ease"}}>
-          {/* Big emoji visual */}
-          <div style={{
-            background:sc.grad||`linear-gradient(135deg,${sc.color},${sc.color}CC)`,
-            borderRadius:24,padding:"28px 20px",marginBottom:16,textAlign:"center",
-            boxShadow:`0 8px 28px ${sc.color}40`,position:"relative",overflow:"hidden"
-          }}>
-            <div style={{position:"absolute",top:-15,right:-15,width:80,height:80,borderRadius:"50%",background:"rgba(255,255,255,0.1)"}}/>
-            <div style={{fontSize:72,marginBottom:12,lineHeight:1}}>{slide?.emoji}</div>
-            <h2 style={{fontSize:22,fontWeight:900,color:"#fff",lineHeight:1.3}}>{slide?.heading}</h2>
-          </div>
-
-          {/* Explanation */}
-          <div style={{background:"#fff",borderRadius:20,padding:"18px 20px",marginBottom:12,boxShadow:"0 2px 16px rgba(67,56,202,0.07)"}}>
-            <p style={{fontSize:16,fontWeight:700,color:C.text,lineHeight:1.8,marginBottom:0}}>{slide?.body}</p>
-          </div>
-
-          {/* Real world example */}
-          {slide?.example&&(
-            <div style={{background:sc.light||C.pLight,borderRadius:16,padding:"14px 16px",marginBottom:12,border:`1.5px solid ${sc.color}25`}}>
-              <p style={{fontSize:11,fontWeight:800,color:sc.color,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:6}}>💡 Real World Example</p>
-              <p style={{fontSize:14,fontWeight:600,color:C.text,lineHeight:1.7}}>{slide.example}</p>
-            </div>
-          )}
-
-          {/* Fun fact */}
-          {slide?.funFact&&(
-            <div style={{background:"linear-gradient(135deg,#FEF3C7,#FFFBEB)",borderRadius:16,padding:"12px 16px",marginBottom:16,border:"1.5px solid #F59E0B30"}}>
-              <p style={{fontSize:11,fontWeight:800,color:"#D97706",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:4}}>⭐ Did You Know?</p>
-              <p style={{fontSize:13,fontWeight:600,color:"#92400E",lineHeight:1.6}}>{slide.funFact}</p>
-            </div>
-          )}
-        </div>
-
-        {/* Navigation */}
-        <div style={{display:"flex",gap:10}}>
-          {slideIdx>0&&(
-            <Btn onClick={()=>goTo(slideIdx-1)} v="ghost" style={{flex:1}}>← Previous</Btn>
-          )}
-          <Btn onClick={()=>goTo(slideIdx+1)} style={{flex:2,padding:"16px",fontSize:15}}>
-            {slideIdx+1>=totalSlides?"Quick Check 🎯":"Next →"}
-          </Btn>
-        </div>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
+        {cq?.options?.map((opt,i)=>{const isSel=checkSel===opt,isOk=checkAns&&opt===cq.correct,isBad=checkAns&&isSel&&!isOk,dim=checkAns&&!isOk&&!isSel;return(<button key={i} onClick={()=>{if(!checkAns){setCheckSel(opt);setCheckAns(true);}}} style={{padding:"14px 10px",borderRadius:14,fontSize:13,fontWeight:900,cursor:checkAns?"default":"pointer",fontFamily:F,border:"none",background:isOk?"#22C55E":isBad?"#EF4444":dim?"#F1F5F9":`linear-gradient(135deg,${cols[i]},${cols[i]}BB)`,color:dim?"#94A3B8":"#fff",opacity:dim?0.4:1,transition:"all 0.15s"}}>{isOk?"✅ ":isBad?"❌ ":""}{opt.replace(/^[A-D]\)\s*/,"")}</button>);})}
       </div>
-    </Screen>
-  );
+      {checkAns&&<><div style={{padding:"12px 14px",borderRadius:14,marginBottom:12,background:cOk?"#DCFCE7":"#FEF3C7",border:`2px solid ${cOk?"#22C55E":"#F59E0B"}`}}><p style={{fontSize:15,fontWeight:900,color:cOk?"#166534":"#92400E",marginBottom:4}}>{cOk?"🎉 Excellent!":"💡 Good effort!"}</p><p style={{fontSize:13,fontWeight:600,color:cOk?"#15803D":"#78350F",lineHeight:1.6}}>{cq?.explanation}</p></div>
+      <Btn onClick={()=>goTo(S+2)} style={{width:"100%",fontSize:16,padding:"16px"}}>{cOk?"Start practising! 🚀":"Review the lesson →"}</Btn></>}
+    </div></Screen>);
+  }
+
+  if(isDone)return(<Screen><div style={{paddingTop:40,textAlign:"center"}}>
+    <div style={{fontSize:72,marginBottom:12}}>🎓</div>
+    <h2 style={{fontSize:26,fontWeight:900,color:C.text,marginBottom:8}}>Lesson Complete!</h2>
+    {lesson.wellDone&&<div style={{display:"flex",gap:10,alignItems:"flex-start",marginBottom:16,padding:"14px 16px",background:"#fff",borderRadius:16,textAlign:"left",boxShadow:"0 2px 10px rgba(0,0,0,0.06)"}}><TutorChar name={child.tutor} size={38}/><Bubble tutor={child.tutor} text={lesson.wellDone} style={{flex:1}}/></div>}
+    <div style={{background:"linear-gradient(135deg,#FEF3C7,#FDE68A)",borderRadius:18,padding:"16px 18px",marginBottom:18,textAlign:"left",border:"2px solid #F59E0B"}}><p style={{fontSize:11,fontWeight:800,color:"#92400E",textTransform:"uppercase",marginBottom:6}}>🧠 Remember This</p><p style={{fontSize:15,fontWeight:700,color:"#78350F",lineHeight:1.7,fontStyle:"italic"}}>"{lesson.memoryTrick}"</p></div>
+    <Btn onClick={onDone} style={{width:"100%",padding:"16px",fontSize:17,marginBottom:10}}>Start Questions Now! 🚀</Btn>
+    <Btn onClick={onBack} v="ghost" style={{width:"100%"}}>Back to Topics</Btn>
+  </div></Screen>);
+
+  const slideColors = [
+    {grad:"linear-gradient(135deg,#4338CA,#6366F1)",light:"#EEF2FF",accent:"#4338CA"},
+    {grad:"linear-gradient(135deg,#0284C7,#38BDF8)",light:"#E0F2FE",accent:"#0284C7"},
+    {grad:"linear-gradient(135deg,#16A34A,#4ADE80)",light:"#DCFCE7",accent:"#16A34A"},
+    {grad:"linear-gradient(135deg,#D97706,#FBBF24)",light:"#FEF3C7",accent:"#D97706"},
+    {grad:"linear-gradient(135deg,#DB2777,#F472B6)",light:"#FCE7F3",accent:"#DB2777"},
+  ];
+  const sc2 = slideColors[slideIdx%5];
+
+  return(<Screen><div style={{paddingTop:16}}>
+    <PBar/>
+    {/* Slide number indicator */}
+    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
+      <div style={{display:"flex",gap:6,alignItems:"center"}}>
+        {Array.from({length:S}).map((_,i)=>(
+          <button key={i} onClick={()=>goTo(i)}
+            style={{width:i===slideIdx?28:8,height:8,borderRadius:4,border:"none",cursor:"pointer",
+              background:i===slideIdx?sc2.accent:i<slideIdx?"#CBD5E1":"#E2E8F0",
+              transition:"all 0.3s",padding:0}}/>
+        ))}
+      </div>
+      <span style={{fontSize:11,fontWeight:800,color:C.muted}}>Slide {slideIdx+1} of {S}</span>
+    </div>
+
+    <div style={{opacity:animIn?1:0,transform:animIn?"translateY(0)":"translateY(8px)",transition:"all 0.22s ease"}}>
+      {/* Hero header — unique colour each slide */}
+      <div style={{background:sc2.grad,borderRadius:24,padding:"22px 18px 18px",marginBottom:12,
+        textAlign:"center",boxShadow:`0 8px 28px ${sc2.accent}45`,position:"relative",overflow:"hidden"}}>
+        <div style={{position:"absolute",top:-24,right:-24,width:100,height:100,borderRadius:"50%",background:"rgba(255,255,255,0.12)"}}/>
+        <div style={{position:"absolute",bottom:-16,left:-16,width:80,height:80,borderRadius:"50%",background:"rgba(255,255,255,0.08)"}}/>
+        {/* Slide badge */}
+        <div style={{display:"inline-flex",alignItems:"center",gap:6,background:"rgba(255,255,255,0.25)",
+          borderRadius:20,padding:"4px 12px",marginBottom:10}}>
+          <span style={{fontSize:10,fontWeight:800,color:"#fff",letterSpacing:"0.08em"}}>SLIDE {slideIdx+1}/{S}</span>
+        </div>
+        <div style={{fontSize:58,marginBottom:8,lineHeight:1,filter:"drop-shadow(0 4px 8px rgba(0,0,0,0.15))"}}>{slide?.emoji}</div>
+        <h2 style={{fontSize:20,fontWeight:900,color:"#fff",lineHeight:1.3,textShadow:"0 1px 4px rgba(0,0,0,0.2)"}}>{slide?.heading}</h2>
+      </div>
+
+      {/* Teaching content — clean white card with left accent bar */}
+      <div style={{background:"#fff",borderRadius:18,padding:"16px 18px",marginBottom:10,
+        boxShadow:"0 2px 16px rgba(0,0,0,0.06)",borderLeft:`4px solid ${sc2.accent}`,position:"relative"}}>
+        <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:10}}>
+          <div style={{width:24,height:24,borderRadius:8,background:sc2.light,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13}}>📖</div>
+          <p style={{fontSize:11,fontWeight:800,color:sc2.accent,textTransform:"uppercase",letterSpacing:"0.07em"}}>What you need to know</p>
+        </div>
+        <p style={{fontSize:15,fontWeight:600,color:C.text,lineHeight:1.95,margin:0}}>{slide?.teach}</p>
+      </div>
+
+      {/* Worked example — distinct background */}
+      {slide?.workedExample&&(
+        <div style={{background:`linear-gradient(135deg,${sc2.light},rgba(255,255,255,0.5))`,
+          borderRadius:16,padding:"14px 16px",marginBottom:10,
+          border:`1.5px solid ${sc2.accent}30`}}>
+          <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:10}}>
+            <div style={{width:24,height:24,borderRadius:8,background:sc2.accent,display:"flex",alignItems:"center",justifyContent:"center",fontSize:12}}>✏️</div>
+            <p style={{fontSize:11,fontWeight:800,color:sc2.accent,textTransform:"uppercase",letterSpacing:"0.07em"}}>Worked Example</p>
+          </div>
+          <div style={{background:"rgba(255,255,255,0.8)",borderRadius:12,padding:"12px 14px"}}>
+            <p style={{fontSize:14,fontWeight:600,color:"#1E293B",lineHeight:2,whiteSpace:"pre-line",fontFamily:"'Courier New',monospace"}}>{slide.workedExample}</p>
+          </div>
+        </div>
+      )}
+
+      {/* Try it yourself — warm amber */}
+      {slide?.tryIt&&(
+        <div style={{background:"linear-gradient(135deg,#FFFBEB,#FEF9C3)",borderRadius:16,
+          padding:"12px 16px",marginBottom:10,border:"2px solid #FCD34D",
+          display:"flex",gap:12,alignItems:"flex-start"}}>
+          <div style={{fontSize:24,flexShrink:0}}>🤔</div>
+          <div>
+            <p style={{fontSize:11,fontWeight:800,color:"#B45309",textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:4}}>Your turn — think about it</p>
+            <p style={{fontSize:14,fontWeight:700,color:"#92400E",lineHeight:1.65,margin:0}}>{slide.tryIt}</p>
+          </div>
+        </div>
+      )}
+
+      {/* Teacher tip — green */}
+      {slide?.tip&&(
+        <div style={{background:"linear-gradient(135deg,#F0FDF4,#DCFCE7)",borderRadius:16,
+          padding:"12px 16px",marginBottom:14,border:"2px solid #86EFAC",
+          display:"flex",gap:12,alignItems:"flex-start"}}>
+          <div style={{fontSize:22,flexShrink:0}}>💡</div>
+          <div>
+            <p style={{fontSize:11,fontWeight:800,color:"#166534",textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:4}}>Teacher Tip</p>
+            <p style={{fontSize:13,fontWeight:600,color:"#166534",lineHeight:1.65,margin:0}}>{slide.tip}</p>
+          </div>
+        </div>
+      )}
+    </div>
+
+    {/* Navigation */}
+    <div style={{display:"flex",gap:10}}>
+      {slideIdx>0&&<Btn onClick={()=>goTo(slideIdx-1)} v="ghost" style={{flex:"0 0 auto",padding:"14px 18px"}}>← Back</Btn>}
+      <Btn onClick={()=>goTo(slideIdx+1)} style={{flex:1,padding:"15px",fontSize:15,
+        background:sc2.grad,boxShadow:`0 4px 16px ${sc2.accent}40`}}>
+        {slideIdx+1>=S?"Practice Questions ✏️":"Next →"}
+      </Btn>
+    </div>
+  </div></Screen>);
 }
+
 
 
