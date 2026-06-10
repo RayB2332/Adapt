@@ -108,184 +108,190 @@ const UK_CURRICULUM = {
   Maths: [
     {id:"number_place",   name:"Number & Place Value",        emoji:"🔢", minAge:5,
      desc:"Counting, reading, writing and ordering numbers",
-     levels:["Count to 100, tens and ones, more and less","Numbers to 1000, place value, rounding to 10/100","Numbers to 10,000, negative numbers, Roman numerals","Numbers to 1,000,000, ordering, rounding, counting in steps","Numbers to 10,000,000, powers of 10, negative numbers in context"]},
+     levels:["Count to 100, tens and ones, more and less","Numbers to 1000, place value, rounding to 10/100","Numbers to 10,000, negative numbers, Roman numerals","Numbers to 1,000,000, ordering, rounding, counting in steps","Numbers to 10,000,000, powers of 10, negative numbers in context","Integers to 10 million, negative numbers, prime factors and HCF/LCM","Indices, standard form intro, ordering fractions/decimals/percentages","Surds intro, irrational numbers, exact values, significant figures","Number theory: prime factorisation, Euclidean algorithm, modular arithmetic","Advanced number: complex concepts, proof by exhaustion, number patterns"]},
     {id:"addition",       name:"Addition & Subtraction",      emoji:"➕", minAge:5,
      desc:"Mental and written addition and subtraction methods",
-     levels:["Number bonds to 10 and 20, adding single digits","Adding/subtracting 2-digit numbers, column method introduction","Column addition and subtraction to 3 digits, estimating","Adding/subtracting 4-digit numbers, inverse operations","Multi-step problems, decimals, mental strategies"]},
+     levels:["Number bonds to 10 and 20, adding single digits","Adding/subtracting 2-digit numbers, column method introduction","Column addition and subtraction to 3 digits, estimating","Adding/subtracting 4-digit numbers, inverse operations","Multi-step problems, decimals, mental strategies","Multi-step problems with decimals, negative numbers, mental strategies","Adding/subtracting fractions with different denominators, mixed numbers","Algebraic addition: collecting like terms, simplifying expressions","Addition in different contexts: vectors, matrix addition, coordinates","Proof and generalisation: sum of consecutive numbers, algebraic proofs"]},
     {id:"multiplication", name:"Multiplication & Division",   emoji:"✖️", minAge:6,
      desc:"Times tables, short and long multiplication and division",
-     levels:["2, 5 and 10 times tables, arrays, grouping","3, 4 and 8 times tables, short multiplication/division","All tables to 12, short division with remainders","Long multiplication 2-digit, short division with fractions","Long multiplication and division, prime factors, BODMAS"]},
+     levels:["2, 5 and 10 times tables, arrays, grouping","3, 4 and 8 times tables, short multiplication/division","All tables to 12, short division with remainders","Long multiplication 2-digit, short division with fractions","Long multiplication and division, prime factors, BODMAS","Multiply/divide decimals, prime factorisation, factor trees","Multiply fractions and mixed numbers, multiply negative numbers","Multiply algebraic expressions, expand single brackets","Expand double brackets, factorise expressions, difference of squares","Advanced algebra: factorising quadratics, completing the square"]},
     {id:"fractions",      name:"Fractions, Decimals & %",     emoji:"½",  minAge:6,
      desc:"Fractions, decimals and percentages",
-     levels:["Halves, quarters and thirds, unit fractions","Equivalent fractions, ordering, simple addition","Adding/subtracting fractions same denominator, tenths","Decimal equivalents, hundredths, fractions of amounts","Percentages, fraction/decimal/% equivalence, multi-step"]},
+     levels:["Halves, quarters and thirds, unit fractions","Equivalent fractions, ordering, simple addition","Adding/subtracting fractions same denominator, tenths","Decimal equivalents, hundredths, fractions of amounts","Percentages, fraction/decimal/% equivalence, multi-step","Fractions of amounts with complex denominators, mixed operations","Dividing fractions by fractions, fraction/decimal/% conversions","Fractions in algebraic contexts, ratio as fractions","Recurring decimals, fraction arithmetic in problem solving","Advanced fraction work: compound fractions, limits, approximations"]},
     {id:"measurement",    name:"Measurement",                 emoji:"📏", minAge:5,
      desc:"Length, mass, capacity, time, money, perimeter and area",
-     levels:["Compare and measure length/mass/capacity, time to hour","Measure in cm/m/kg/l, money to £1, time to 5 mins","Perimeter, area basics, time to minute, Roman numerals","Area by counting, converting units, 24-hour clock","Area/perimeter formulae, volume, converting metric units"]},
+     levels:["Compare and measure length/mass/capacity, time to hour","Measure in cm/m/kg/l, money to £1, time to 5 mins","Perimeter, area basics, time to minute, Roman numerals","Area by counting, converting units, 24-hour clock","Area/perimeter formulae, volume, converting metric units","Area of triangles, parallelograms, compound shapes","Volume of prisms, surface area, converting between metric and imperial","Circumference and area of circles, arc length, sector area","3D shapes: surface area and volume of cylinders, pyramids, cones","Advanced measurement: spheres, frustums, similar shapes scale factors"]},
     {id:"geometry",       name:"Geometry — Shape",            emoji:"📐", minAge:5,
      desc:"2D and 3D shapes, angles, symmetry and properties",
-     levels:["Name 2D/3D shapes, sort by properties, symmetry lines","Quadrilaterals, polygons, right angles, lines of symmetry","Angles acute/obtuse/right, triangles, 3D shape nets","Angles on lines and points, regular/irregular polygons","Calculate angles, circles, area of triangles/parallelograms"]},
+     levels:["Name 2D/3D shapes, sort by properties, symmetry lines","Quadrilaterals, polygons, right angles, lines of symmetry","Angles acute/obtuse/right, triangles, 3D shape nets","Angles on lines and points, regular/irregular polygons","Calculate angles, circles, area of triangles/parallelograms","Angle rules: parallel lines, triangles, polygons interior/exterior","Congruence and similarity, scale drawings, loci and constructions","Pythagoras theorem, trigonometry: sin, cos, tan","Circle theorems, geometric proof, vectors","Advanced geometry: 3D trigonometry, sine and cosine rules"]},
     {id:"position",       name:"Position & Direction",        emoji:"🧭", minAge:6,
      desc:"Coordinates, translation, reflection and rotation",
-     levels:["Directions, half/quarter turns, patterns","Describe positions, first quadrant coordinates","Translate shapes, reflect in axes, describe movement","Four-quadrant coordinates, translation by vector","Reflection and translation, solve geometry problems"]},
+     levels:["Directions, half/quarter turns, patterns","Describe positions, first quadrant coordinates","Translate shapes, reflect in axes, describe movement","Four-quadrant coordinates, translation by vector","Reflection and translation, solve geometry problems","Transformations: enlargement with scale factor, centre of enlargement","Combining transformations, invariant points","Vectors: addition, subtraction, scalar multiplication","Vector geometry: midpoints, parallel lines using vectors","Advanced transformation geometry: matrices for transformations"]},
     {id:"statistics",     name:"Statistics & Data",           emoji:"📊", minAge:7,
      desc:"Tally charts, bar charts, line graphs, pie charts",
-     levels:["Tally charts, pictograms, block diagrams","Bar charts with labels, simple data questions","Bar charts scaled axes, line graphs, tables","Time graphs, calculate mean, compare data sets","Pie charts, line graphs, mean from frequency tables"]},
+     levels:["Tally charts, pictograms, block diagrams","Bar charts with labels, simple data questions","Bar charts scaled axes, line graphs, tables","Time graphs, calculate mean, compare data sets","Pie charts, line graphs, mean from frequency tables","Scatter graphs, correlation, lines of best fit","Cumulative frequency, box plots, interquartile range","Histograms with unequal class widths, frequency density","Probability: tree diagrams, conditional probability","Advanced statistics: hypothesis testing, sampling methods"]},
     {id:"ratio",          name:"Ratio & Proportion",          emoji:"⚖️", minAge:10,
      desc:"Ratio, proportion, scale and unequal sharing",
-     levels:["Introduction to ratio notation and simple ratios","Simplify ratios, share amounts in given ratio","Scale factors, ratio in recipes and maps","Proportion problems, percentage as ratio","Combine ratio and proportion in multi-step problems"]},
+     levels:["Introduction to ratio notation and simple ratios","Simplify ratios, share amounts in given ratio","Scale factors, ratio in recipes and maps","Proportion problems, percentage as ratio","Combine ratio and proportion in multi-step problems","Ratio in direct proportion, best value problems","Inverse proportion, ratio and percentage combined","Ratio in geometry: similar shapes, trigonometry ratios","Proportion: direct and inverse proportion graphs and equations","Advanced ratio: compound measures, rates of change"]},
     {id:"algebra",        name:"Algebra",                     emoji:"🔣", minAge:10,
      desc:"Formulae, sequences, unknowns and equations",
-     levels:["Number sequences and patterns, missing numbers","Formulae with one variable, substitution","Linear sequences, generating terms, simple equations","Solve one-step equations, express missing angles","Two-step equations, enumerate possibilities, formulae"]},
+     levels:["Number sequences and patterns, missing numbers","Formulae with one variable, substitution","Linear sequences, generating terms, simple equations","Solve one-step equations, express missing angles","Two-step equations, enumerate possibilities, formulae","Solving linear equations with brackets and fractions","Simultaneous equations by substitution and elimination","Quadratic equations: factorising, quadratic formula","Graphs of quadratics, cubics, reciprocals, exponentials","Advanced algebra: functions, iteration, proof"]},
   ],
   English: [
     {id:"phonics",        name:"Phonics & Decoding",          emoji:"🔤", minAge:4,
      desc:"Letter sounds, blending and segmenting",
-     levels:["Phase 2: s,a,t,p,i,n,m,d,g,o,c,k — CVC words","Phase 3: j,v,w,x,y,z,qu, digraphs ch,sh,th,ng","Phase 4: CCVC/CVCC words, blending longer words","Phase 5: alternative graphemes, split digraphs","Common exception words, polysyllabic words, fluency"]},
+     levels:["Phase 2: s,a,t,p,i,n,m,d,g,o,c,k — CVC words","Phase 3: j,v,w,x,y,z,qu, digraphs ch,sh,th,ng","Phase 4: CCVC/CVCC words, blending longer words","Phase 5: alternative graphemes, split digraphs","Common exception words, polysyllabic words, fluency","Polysyllabic words, morphology, word families","Etymology: Latin and Greek roots, word origins","Complex spelling patterns, technical vocabulary","Advanced decoding: ambiguous graphemes, accent and dialect","Linguistic analysis: phonological awareness in context"]},
     {id:"spelling",       name:"Spelling",                    emoji:"✏️", minAge:5,
      desc:"Spelling rules, patterns and common exception words",
-     levels:["KS1 common exception words, simple CVC patterns","Suffixes -ing/-ed/-er, double consonants, y to i","Prefixes un-/re-/mis-, soft c and g, homophones","KS2 Year 3-4 statutory word list, prefixes pre-/dis-","Year 5-6 statutory list, silent letters, word origins"]},
+     levels:["KS1 common exception words, simple CVC patterns","Suffixes -ing/-ed/-er, double consonants, y to i","Prefixes un-/re-/mis-, soft c and g, homophones","KS2 Year 3-4 statutory word list, prefixes pre-/dis-","Year 5-6 statutory list, silent letters, word origins","Complex prefixes: inter-, super-, anti-, auto-","Word origins: French, Latin, Greek influences on English","Specialist vocabulary across subjects, technical terms","Advanced etymology, spelling conventions by word origin","Morphological analysis: derivational and inflectional morphemes"]},
     {id:"grammar",        name:"Grammar & Punctuation",       emoji:"📝", minAge:5,
      desc:"Sentence structure, word types and punctuation",
-     levels:["Capital letters, full stops, question marks, finger spaces","Nouns, verbs, adjectives, exclamation marks, commas in lists","Conjunctions, adverbs, apostrophes, inverted commas","Pronouns, prepositions, fronted adverbials, paragraphs","Relative clauses, modal verbs, subjunctive, formal/informal"]},
+     levels:["Capital letters, full stops, question marks, finger spaces","Nouns, verbs, adjectives, exclamation marks, commas in lists","Conjunctions, adverbs, apostrophes, inverted commas","Pronouns, prepositions, fronted adverbials, paragraphs","Relative clauses, modal verbs, subjunctive, formal/informal","Passive voice, subjunctive mood, complex sentences","Punctuation: colons, semi-colons, dashes, parenthesis","Discourse markers, cohesive devices, text organisation","Register and formality, Standard English, dialect","Advanced grammar: syntax analysis, grammatical ambiguity"]},
     {id:"reading",        name:"Reading Comprehension",       emoji:"📖", minAge:5,
      desc:"Retrieval, inference and understanding texts",
-     levels:["Retell stories, sequence events, simple retrieval","Infer character feelings, predict, ask questions about text","Explain and justify using evidence, summarise main ideas","Compare texts, author purpose, vocabulary in context","Critical analysis, writer techniques, evaluate perspectives"]},
+     levels:["Retell stories, sequence events, simple retrieval","Infer character feelings, predict, ask questions about text","Explain and justify using evidence, summarise main ideas","Compare texts, author purpose, vocabulary in context","Critical analysis, writer techniques, evaluate perspectives","Extended inference, implicit meaning, reading between lines","Authorial intent, social and historical context","Comparative reading: compare themes, language, structure","Critical reading: evaluating bias, argument and rhetoric","Advanced literary analysis: symbolism, narrative technique, context"]},
     {id:"writing",        name:"Writing — Composition",       emoji:"🖊️", minAge:6,
      desc:"Stories, recounts, letters, instructions and reports",
-     levels:["Simple sentences, describe pictures, recount events","Stories with beginning/middle/end, simple instructions","Paragraphs, expanded noun phrases, different sentence types","Multi-paragraph stories, persuasive letters, formal reports","Complex narratives, evaluate and edit, audience and purpose"]},
+     levels:["Simple sentences, describe pictures, recount events","Stories with beginning/middle/end, simple instructions","Paragraphs, expanded noun phrases, different sentence types","Multi-paragraph stories, persuasive letters, formal reports","Complex narratives, evaluate and edit, audience and purpose","Extended writing: multi-genre, sustained argument","Writing for different audiences: broadening register","Crafting language: imagery, tone, voice, style","Editing and redrafting: improving coherence and impact","Advanced writing: literary techniques, independent authorial voice"]},
     {id:"vocabulary",     name:"Vocabulary & Word Study",     emoji:"💬", minAge:6,
      desc:"Word meanings, synonyms, antonyms and context",
-     levels:["Match words to pictures, simple definitions","Synonyms and antonyms, word families, compound words","Prefixes and suffixes change meaning, context clues","Formal/informal word choice, figurative language intro","Connotation, etymology, technical vocabulary by subject"]},
+     levels:["Match words to pictures, simple definitions","Synonyms and antonyms, word families, compound words","Prefixes and suffixes change meaning, context clues","Formal/informal word choice, figurative language intro","Connotation, etymology, technical vocabulary by subject","Academic vocabulary across subjects, morphological strategies","Figurative language: metaphor, irony, hyperbole in context","Word choice for effect: connotation, register, precision","Etymology and word history: how language evolves","Advanced vocabulary: linguistic analysis, word power in texts"]},
     {id:"poetry",         name:"Poetry & Creative Writing",   emoji:"🎭", minAge:7,
      desc:"Rhyme, rhythm, imagery and creative expression",
-     levels:["Rhyming couplets, simple poems, describe a scene","Similes, alliteration, acrostic poems, kennings","Metaphors, personification, performance poetry","Free verse, haiku, narrative poetry, poetic devices","Extended creative writing, evaluate techniques, original voice"]},
+     levels:["Rhyming couplets, simple poems, describe a scene","Similes, alliteration, acrostic poems, kennings","Metaphors, personification, performance poetry","Free verse, haiku, narrative poetry, poetic devices","Extended creative writing, evaluate techniques, original voice","Extended poetic forms: sonnets, odes, dramatic monologue","Poetic movement and context: Romantics, War poets","Comparative poetry: themes, form, language, context","Writing extended poetry: developing a poetic voice","Advanced poetry analysis: critical interpretation, reader response"]},
     {id:"media",          name:"Non-fiction & Media Literacy",emoji:"📰", minAge:7,
      desc:"Reports, persuasion, evaluating sources",
-     levels:["Information texts, labels, captions, simple reports","Recount texts, newspapers, fact vs opinion","Persuasive writing techniques, bias, argument structure","Formal reports, journalistic writing, evaluate reliability","Complex argument, rhetorical devices, digital media literacy"]},
+     levels:["Information texts, labels, captions, simple reports","Recount texts, newspapers, fact vs opinion","Persuasive writing techniques, bias, argument structure","Formal reports, journalistic writing, evaluate reliability","Complex argument, rhetorical devices, digital media literacy","Extended non-fiction: investigative journalism, documentary","Multimodal texts: image and text combined","Digital media creation: blogs, vlogs, podcasts","Media representation: gender, race, culture in media","Advanced media literacy: propaganda, fake news, political bias"]},
   ],
   Science: [
     {id:"plants",         name:"Plants",                      emoji:"🌱", minAge:5,
      desc:"Parts of plants, growth, pollination and life cycles",
-     levels:["Name basic parts: root, stem, leaf, flower","What plants need: water, light, warmth, nutrients","Flowers, pollination, seed dispersal, germination","Life cycle of flowering plants, photosynthesis basics","Plant reproduction, adaptation, plant classification"]},
+     levels:["Name basic parts: root, stem, leaf, flower","What plants need: water, light, warmth, nutrients","Flowers, pollination, seed dispersal, germination","Life cycle of flowering plants, photosynthesis basics","Plant reproduction, adaptation, plant classification","Photosynthesis equation, limiting factors, leaf structure","Plant hormones: tropisms, auxins and their effects","Sexual and asexual reproduction in plants","Plant classification: dichotomous keys, taxonomy","Ecology: plant communities, succession, conservation"]},
     {id:"animals",        name:"Animals Including Humans",    emoji:"🐾", minAge:5,
      desc:"Basic needs, food chains, human body and health",
-     levels:["Name and group animals, basic needs, offspring","Food chains, predator/prey, habitats and survival","Skeleton and muscles, nutrition, healthy eating","Digestion, teeth types, food groups, exercise and health","Circulatory system, heart, blood, drugs and lifestyle"]},
+     levels:["Name and group animals, basic needs, offspring","Food chains, predator/prey, habitats and survival","Skeleton and muscles, nutrition, healthy eating","Digestion, teeth types, food groups, exercise and health","Circulatory system, heart, blood, drugs and lifestyle","Breathing and gas exchange, respiration aerobic/anaerobic","Nervous system: neurones, reflex arc, brain function","Hormonal system: endocrine glands, feedback mechanisms","Reproduction: fertilisation, development, birth","Advanced biology: homeostasis, evolution, ecosystems"]},
     {id:"materials",      name:"Materials & Their Properties",emoji:"🧪", minAge:5,
      desc:"Properties of materials, changes and suitability",
-     levels:["Name materials: wood, plastic, metal, glass, fabric","Properties: hard/soft, waterproof, transparent, flexible","Solids, liquids, gases — particles and properties","Dissolving, filtering, evaporation — reversible changes","Irreversible changes, burning, rusting, thermal conductivity"]},
+     levels:["Name materials: wood, plastic, metal, glass, fabric","Properties: hard/soft, waterproof, transparent, flexible","Solids, liquids, gases — particles and properties","Dissolving, filtering, evaporation — reversible changes","Irreversible changes, burning, rusting, thermal conductivity","Atomic structure: protons, neutrons, electrons, periodic table","Chemical bonding: ionic, covalent, metallic","Chemical reactions: word and symbol equations, energy changes","Acids, bases, salts: neutralisation, pH scale","Advanced chemistry: rates, equilibrium, organic chemistry"]},
     {id:"seasons",        name:"Seasonal Changes & Weather",  emoji:"☀️", minAge:4,
      desc:"The four seasons, weather patterns and day length",
-     levels:["Four seasons: name and describe each","Weather: sunny, rainy, snowy, windy, measuring","Day length changes, sunrise and sunset across seasons","Weather symbols, recording, patterns and predictions","Climate vs weather, UK climate, impact on living things"]},
+     levels:["Four seasons: name and describe each","Weather: sunny, rainy, snowy, windy, measuring","Day length changes, sunrise and sunset across seasons","Weather symbols, recording, patterns and predictions","Climate vs weather, UK climate, impact on living things","Climate zones: tropical, temperate, polar, arid","Weather systems: pressure, fronts, precipitation","Climate change: evidence, causes, effects, solutions","Microhabitats and seasonal adaptation","Advanced climatology: models, feedback loops, prediction"]},
     {id:"living",         name:"Living Things & Habitats",    emoji:"🌿", minAge:6,
      desc:"Classification, adaptation and ecosystems",
-     levels:["Living/non-living, microhabitats, name local animals","Food chains, producers/consumers, describe habitats","Classification: vertebrates/invertebrates, keys","Adaptation to habitats, variation within species","Classification systems, ecosystems, human impact"]},
+     levels:["Living/non-living, microhabitats, name local animals","Food chains, producers/consumers, describe habitats","Classification: vertebrates/invertebrates, keys","Adaptation to habitats, variation within species","Classification systems, ecosystems, human impact","Cell biology: cell types, organelles, specialisation","Microscopy: magnification, cell size, drawing cells","Transport in cells: osmosis, diffusion, active transport","Genetics: DNA, chromosomes, genes, inheritance","Advanced biology: protein synthesis, mutations, genetic engineering"]},
     {id:"forces",         name:"Forces & Motion",             emoji:"🚀", minAge:7,
      desc:"Gravity, friction, magnetism and mechanisms",
-     levels:["Push and pull forces, magnets attract/repel","Gravity, friction, water resistance, air resistance","Simple mechanisms: levers, pulleys, gears","Effects of forces on shape and movement, balanced forces","Speed calculations, force diagrams, pressure"]},
+     levels:["Push and pull forces, magnets attract/repel","Gravity, friction, water resistance, air resistance","Simple mechanisms: levers, pulleys, gears","Effects of forces on shape and movement, balanced forces","Speed calculations, force diagrams, pressure","Newton's Laws: F=ma, resultant forces, free body diagrams","Momentum and impulse, conservation of momentum","Work, energy and power: W=Fd, P=W/t","Pressure: P=F/A, fluid pressure, Hooke's Law","Advanced mechanics: moments, circular motion, waves"]},
     {id:"light",          name:"Light & Shadow",              emoji:"💡", minAge:7,
      desc:"Light sources, reflection, shadows and seeing",
-     levels:["Light sources, dark without light, eyes to see","Shadows form opposite light source, shadow size","Reflection from surfaces, mirrors and periscopes","Refraction, prism, spectrum, colour and light","Light travel, speed of light, scientific applications"]},
+     levels:["Light sources, dark without light, eyes to see","Shadows form opposite light source, shadow size","Reflection from surfaces, mirrors and periscopes","Refraction, prism, spectrum, colour and light","Light travel, speed of light, scientific applications","Reflection: angle of incidence = angle of reflection, mirrors","Refraction: Snell's Law, critical angle, total internal reflection","Lenses: converging and diverging, focal length, ray diagrams","Electromagnetic spectrum: properties and uses of each wave type","Advanced optics: interference, diffraction, polarisation"]},
     {id:"sound",          name:"Sound",                       emoji:"🎵", minAge:7,
      desc:"Vibrations, pitch, volume and how sound travels",
-     levels:["Sounds come from vibrations, volume near/far","Pitch high/low linked to size, volume and distance","Insulating sound, string telephones, ear drum","How sound travels through solids/liquids/gases","Speed of sound, echoes, ultrasound applications"]},
+     levels:["Sounds come from vibrations, volume near/far","Pitch high/low linked to size, volume and distance","Insulating sound, string telephones, ear drum","How sound travels through solids/liquids/gases","Speed of sound, echoes, ultrasound applications","Wave properties: frequency, amplitude, wavelength, wave speed","Sound in different media, speed of sound, echoes","Musical instruments: standing waves, harmonics, resonance","The ear: structure and function, hearing range, decibels","Advanced acoustics: Doppler effect, ultrasound applications"]},
     {id:"electricity",    name:"Electricity & Circuits",      emoji:"⚡", minAge:8,
      desc:"Simple circuits, components and electrical safety",
-     levels:["Everyday uses of electricity, electrical safety","Simple circuits: battery, bulb, wire, switch","Insulators and conductors, testing materials","Series circuits, voltage, changing brightness/pitch","Circuit diagrams, resistance, electrical current basics"]},
+     levels:["Everyday uses of electricity, electrical safety","Simple circuits: battery, bulb, wire, switch","Insulators and conductors, testing materials","Series circuits, voltage, changing brightness/pitch","Circuit diagrams, resistance, electrical current basics","Ohm's Law: V=IR, series and parallel circuits calculations","Power: P=IV, energy: E=Pt, electrical safety","Electromagnetism: solenoids, electromagnets, applications","Induction: generators, transformers, mains electricity","Advanced electricity: semiconductors, logic gates, diodes"]},
     {id:"earth",          name:"Earth & Space",               emoji:"🌍", minAge:9,
      desc:"Solar system, Earth rotation, Moon and gravity",
-     levels:["Name planets in solar system, sun is a star","Earth rotation causes day and night, 365 days","Moon orbit of Earth, phases of the Moon","Geocentric vs heliocentric model, historical understanding","Gravity in space, satellites, space exploration"]},
+     levels:["Name planets in solar system, sun is a star","Earth rotation causes day and night, 365 days","Moon orbit of Earth, phases of the Moon","Geocentric vs heliocentric model, historical understanding","Gravity in space, satellites, space exploration","Rock cycle: sedimentary, igneous, metamorphic formation","Plate tectonics: structure of Earth, continental drift","Earthquakes and volcanoes: causes, effects, prediction","Atmosphere: composition, evolution, greenhouse effect","Advanced Earth science: carbon cycle, geologic time, climate"]},
     {id:"evolution",      name:"Evolution & Inheritance",     emoji:"🦕", minAge:10,
      desc:"Fossils, adaptation, inheritance and natural selection",
-     levels:["Fossils show life has changed over time","Parents pass traits to offspring, variation","Animals adapt to environments over many generations","Natural selection: survival of the fittest","Evidence for evolution, Darwin, DNA basics"]},
+     levels:["Fossils show life has changed over time","Parents pass traits to offspring, variation","Animals adapt to environments over many generations","Natural selection: survival of the fittest","Evidence for evolution, Darwin, DNA basics","Natural selection: variation, competition, survival, reproduction","Evidence for evolution: fossils, DNA, comparative anatomy","Speciation: geographic isolation, reproductive barriers","Human evolution: hominid fossil record, genetic evidence","Advanced evolution: Hardy-Weinberg, population genetics"]},
     {id:"properties2",    name:"Properties & Changes",        emoji:"🔬", minAge:9,
      desc:"States of matter, dissolving, separating and reactions",
-     levels:["Solids/liquids/gases, particle model basics","Dissolving, solutions, solute and solvent","Separating mixtures: filtering, sieving, evaporating","Irreversible changes, new substances formed","Combustion, oxidation, thermal decomposition"]},
+     levels:["Solids/liquids/gases, particle model basics","Dissolving, solutions, solute and solvent","Separating mixtures: filtering, sieving, evaporating","Irreversible changes, new substances formed","Combustion, oxidation, thermal decomposition","Rates of reaction: factors affecting rate, collision theory","Catalysts: enzymes, industrial catalysts, activation energy","Electrolysis: electrolytes, products at electrodes, uses","Energy in reactions: exothermic/endothermic, bond energies","Advanced chemistry: equilibrium, Le Chatelier's principle"]},
   ],
   History: [
     {id:"living_memory",  name:"Changes in Living Memory",    emoji:"👴", minAge:5,
      desc:"How life has changed within living memory",
-     levels:["How homes have changed: TVs, phones, appliances","How schools have changed: lessons, equipment, rules","How transport has changed: cars, planes, space","Changes to food, shops and everyday life","Oral history, interviewing grandparents, local change"]},
+     levels:["How homes have changed: TVs, phones, appliances","How schools have changed: lessons, equipment, rules","How transport has changed: cars, planes, space","Changes to food, shops and everyday life","Oral history, interviewing grandparents, local change","Explore changes in daily life within grandparents' lifetimes: transport, technology, food","Significant national events within living memory: Olympic Games, Royal events","Compare life in the 1950s-1980s with today using photographs and oral histories","Social changes within living memory: women's roles, multiculturalism, technology revolution","Economic and political changes: Thatcher era, devolution, EU membership debate"]},
     {id:"beyond_memory",  name:"Events Beyond Living Memory", emoji:"📜", minAge:5,
      desc:"Significant national/global events from the past",
-     levels:["Great Fire of London 1666: causes and effects","The Moon Landing 1969: space race and achievement","The Titanic 1912: why it sank, impact and memory","The Gunpowder Plot 1605: Guy Fawkes, treason, legacy","World events that changed history: suffragettes, plagues"]},
+     levels:["Great Fire of London 1666: causes and effects","The Moon Landing 1969: space race and achievement","The Titanic 1912: why it sank, impact and memory","The Gunpowder Plot 1605: Guy Fawkes, treason, legacy","World events that changed history: suffragettes, plagues","Events beyond living memory significant nationally: Great Fire 1666, Titanic 1912","Victorian Britain: industrial revolution, child labour, railways and empire","World War One: causes, trenches, home front, Armistice, commemoration","World War Two: causes, Blitz, evacuation, Holocaust, D-Day, legacy","Post-war Britain 1945-present: NHS, immigration, Cold War, Falklands, devolution"]},
     {id:"significant",    name:"Significant People & Events", emoji:"⭐", minAge:5,
      desc:"Important people who shaped Britain and the world",
-     levels:["Florence Nightingale: nursing, Crimean War, reform","Rosa Parks and Martin Luther King: civil rights","Neil Armstrong: space exploration, the Moon","Queen Elizabeth II: longest reign, modern history","Scientists and inventors: Darwin, Newton, Faraday, Curie"]},
+     levels:["Florence Nightingale: nursing, Crimean War, reform","Rosa Parks and Martin Luther King: civil rights","Neil Armstrong: space exploration, the Moon","Queen Elizabeth II: longest reign, modern history","Scientists and inventors: Darwin, Newton, Faraday, Curie","Significant people who changed Britain: Brunel, Florence Nightingale, Suffragettes","Significant people in world history: Gandhi, MLK, Mandela, Marie Curie","Religious and cultural significant figures: Muhammad, Jesus, Buddha in historical context","Scientific and exploratory figures: Darwin, Copernicus, Columbus — impact and controversy","Evaluate historical significance: why do some people matter more to history than others?"]},
     {id:"ancient",        name:"Ancient Civilisations",       emoji:"🏛️", minAge:7,
      desc:"Stone Age through to Roman Britain",
-     levels:["Stone Age: hunter-gatherers, cave art, Stonehenge","Bronze and Iron Age: farming, hillforts, Celts","Ancient Egypt: pharaohs, pyramids, mummification, Nile","Ancient Greece: Athens, democracy, Olympics, gods, philosophers","Roman Britain: invasion, Boudicca, roads, villas, legacy"]},
+     levels:["Stone Age: hunter-gatherers, cave art, Stonehenge","Bronze and Iron Age: farming, hillforts, Celts","Ancient Egypt: pharaohs, pyramids, mummification, Nile","Ancient Greece: Athens, democracy, Olympics, gods, philosophers","Roman Britain: invasion, Boudicca, roads, villas, legacy","Ancient Egypt: pharaohs, pyramids, mummies, hieroglyphics, River Nile civilisation","Ancient Greece: city-states, democracy, mythology, Olympics, philosophy, legacy","Ancient Rome: Republic to Empire, Julius Caesar, legions, Romanisation of Britain","Mesopotamia: Sumer, Babylon, writing, law codes, ziggurats, first cities","Compare ancient civilisations: trade, beliefs, governance, legacy to modern world"]},
     {id:"british",        name:"British History",             emoji:"👑", minAge:7,
      desc:"Anglo-Saxons, Vikings, Tudors, Victorians and beyond",
-     levels:["Anglo-Saxons: kingdoms, Beowulf, culture, Christianity","Vikings: raids, Danelaw, longships, Norse mythology","Tudors: Henry VIII, six wives, Reformation, Elizabeth I","Victorians: industrial revolution, empire, poverty, reform","WW1 and WW2: causes, trenches, home front, legacy"]},
+     levels:["Anglo-Saxons: kingdoms, Beowulf, culture, Christianity","Vikings: raids, Danelaw, longships, Norse mythology","Tudors: Henry VIII, six wives, Reformation, Elizabeth I","Victorians: industrial revolution, empire, poverty, reform","WW1 and WW2: causes, trenches, home front, legacy","Romans in Britain: invasion, Boudicca, forts, roads, Romanisation, withdrawal","Anglo-Saxons: kingdoms, Christianity, Alfred the Great, culture and settlements","Vikings: raids, settlements, Danelaw, Norse culture, Jorvik","Norman Conquest 1066: Battle of Hastings, Domesday Book, feudal system, castles","Medieval Britain: Magna Carta, Black Death, Peasants' Revolt, Wars of Roses"]},
     {id:"world_history",  name:"World History",               emoji:"🌐", minAge:8,
      desc:"Significant events and changes in world history",
-     levels:["Ancient civilisations: Mesopotamia, Indus Valley, China","Medieval world: Crusades, Black Death, Islamic Golden Age","Age of exploration: Columbus, Vasco da Gama, Magellan","Industrial Revolution: steam, factories, social change","Modern world: WW1, WW2, Cold War, decolonisation"]},
+     levels:["Ancient civilisations: Mesopotamia, Indus Valley, China","Medieval world: Crusades, Black Death, Islamic Golden Age","Age of exploration: Columbus, Vasco da Gama, Magellan","Industrial Revolution: steam, factories, social change","Modern world: WW1, WW2, Cold War, decolonisation","Early Islamic civilisation: Baghdad, scholars, medicine, mathematics, trade routes","The Maya: city-states, calendar, astronomy, writing, decline","Benin and West African kingdoms: Benin bronzes, trade, governance, Portuguese contact","Tang Dynasty China: silk road, inventions, paper, gunpowder, printing, global influence","Age of Exploration 1400-1600: Explorers, trade routes, colonisation, Columbian Exchange"]},
     {id:"local_history",  name:"Local & Community History",   emoji:"🏘️", minAge:6,
      desc:"History of the local area, buildings and community",
-     levels:["Describe changes to local area using old photos","Identify old buildings and their purpose","Find out how local area developed over time","Research using local archives, maps and census records","Compare local history with national events"]},
+     levels:["Describe changes to local area using old photos","Identify old buildings and their purpose","Find out how local area developed over time","Research using local archives, maps and census records","Compare local history with national events","Changes in our local area over the last 100 years using maps, photos, census records","Significant local events and people who shaped our town or village","Local industrial history: what was made here, who worked here, conditions","How our local area was affected by national events: WWI/II, industry, immigration","Connecting local history to national and world events — placing local in global context"]},
     {id:"chronology",     name:"Chronology & Historical Skills",emoji:"📅", minAge:5,
      desc:"Timelines, historical enquiry and source skills",
-     levels:["Before/after, older/newer, ordering events in sequence","BC and AD, centuries, simple timelines","Primary and secondary sources, what is evidence?","Cause and consequence, similarity and difference","Significance, interpretation, historical argument"]},
+     levels:["Before/after, older/newer, ordering events in sequence","BC and AD, centuries, simple timelines","Primary and secondary sources, what is evidence?","Cause and consequence, similarity and difference","Significance, interpretation, historical argument","Sequence events using timelines: BCE/CE, decades, centuries — place key events","Cause and consequence: identify why events happened and what resulted","Similarity and difference: compare people's lives across different historical periods","Using primary sources: evaluate reliability, bias, perspective of historical evidence","Historical significance: why do some events and people matter more than others?"]},
   ],
   Geography: [
     {id:"uk_geo",         name:"UK Geography",                emoji:"🇬🇧", minAge:5,
      desc:"UK countries, cities, physical features and regions",
-     levels:["4 countries, capital cities, surrounding seas","Counties, regions, major cities, Offa's Dyke","UK physical features: mountains, rivers, coasts","UK climate, land use, economic regions","Environmental issues, sustainability, UK in the world"]},
+     levels:["4 countries, capital cities, surrounding seas","Counties, regions, major cities, Offa's Dyke","UK physical features: mountains, rivers, coasts","UK climate, land use, economic regions","Environmental issues, sustainability, UK in the world","UK regions, capital cities, seas and key physical features","UK counties, major cities, population distribution, land use patterns","UK climate: factors affecting weather, regional variations, seasons","UK economic geography: industry, agriculture, tourism, trade and ports","UK challenges: urbanisation, inequality, housing, transport, sustainability"]},
     {id:"world_geo",      name:"World Geography",             emoji:"🌍", minAge:6,
      desc:"Continents, countries, capitals and world features",
-     levels:["7 continents and 5 oceans, basic locations","Major countries and capitals, equator and poles","Climate zones: tropical, polar, desert, temperate","Biomes, world rivers, mountain ranges, landmarks","Globalisation, trade, world population and migration"]},
+     levels:["7 continents and 5 oceans, basic locations","Major countries and capitals, equator and poles","Climate zones: tropical, polar, desert, temperate","Biomes, world rivers, mountain ranges, landmarks","Globalisation, trade, world population and migration","Seven continents, five oceans, lines of latitude and longitude, hemispheres","World's major countries, capital cities and their locations","World climate zones: tropical, arid, temperate, polar — causes and characteristics","World physical geography: major mountain ranges, rivers, deserts, rainforests","Global patterns: population, development, trade, migration, interdependence"]},
     {id:"physical",       name:"Physical Geography",          emoji:"🏔️", minAge:7,
      desc:"Weather, landscapes, rivers and natural processes",
-     levels:["Weather types, measuring, recording data","Landscapes: mountains, valleys, coasts, rivers","River formation, erosion, deposition, flooding","Volcanoes, earthquakes, tectonic plates","Climate change: causes, effects, action"]},
+     levels:["Weather types, measuring, recording data","Landscapes: mountains, valleys, coasts, rivers","River formation, erosion, deposition, flooding","Volcanoes, earthquakes, tectonic plates","Climate change: causes, effects, action","Rivers: source, tributaries, meanders, floodplains, erosion and deposition","Mountains: formation, types (fold, block, volcanic), high-altitude biomes","Coasts: erosion features — cliffs, arches, stacks; deposition — beaches, spits","Glaciation: ice ages, glaciers, U-valleys, corries, moraines, fjords","Weather systems: depressions, anticyclones, fronts, precipitation formation"]},
     {id:"human",          name:"Human Geography",             emoji:"🏙️", minAge:7,
      desc:"Settlement, land use, trade and economic activity",
-     levels:["Differences between villages, towns, cities","Land use types: farming, industry, leisure, housing","How settlements grow and change over time","Trade links, economic activity, imports/exports","Migration, population, global development issues"]},
+     levels:["Differences between villages, towns, cities","Land use types: farming, industry, leisure, housing","How settlements grow and change over time","Trade links, economic activity, imports/exports","Migration, population, global development issues","Settlement patterns: site and situation, villages, towns, cities, megacities","Land use: residential, commercial, industrial, rural — change over time","Economic activity: primary, secondary, tertiary, quaternary sectors","Trade and globalisation: supply chains, interdependence, fair trade, TNCs","Development: GDP, HDI, development gap, aid vs trade debate"]},
     {id:"maps",           name:"Maps & Fieldwork",            emoji:"🗺️", minAge:5,
      desc:"Map reading, grid references and fieldwork skills",
-     levels:["Simple maps, symbols, compass N/S/E/W","4-figure grid references, map keys and scale","6-figure grid references, contour lines, OS maps","Interpreting Ordnance Survey maps, aerial photographs","GIS, satellite imagery, fieldwork data collection"]},
+     levels:["Simple maps, symbols, compass N/S/E/W","4-figure grid references, map keys and scale","6-figure grid references, contour lines, OS maps","Interpreting Ordnance Survey maps, aerial photographs","GIS, satellite imagery, fieldwork data collection","Compass points (8), simple grid references on OS maps, key map symbols","4-figure grid references, scale, measuring distances, contour lines","6-figure grid references, interpreting contour patterns for relief","OS map skills: identifying land use, planning routes, measuring areas","GIS and digital mapping: Google Maps, data layers, spatial analysis"]},
     {id:"environment",    name:"Environmental Geography",     emoji:"🌿", minAge:8,
      desc:"Climate change, sustainability and environmental action",
-     levels:["How humans use and change the environment","Pollution: air, water, land — causes and effects","Deforestation, desertification, habitat loss","Climate change: greenhouse gases, rising temperatures","Sustainability, renewable energy, global solutions"]},
+     levels:["How humans use and change the environment","Pollution: air, water, land — causes and effects","Deforestation, desertification, habitat loss","Climate change: greenhouse gases, rising temperatures","Sustainability, renewable energy, global solutions","Deforestation: causes, effects on biodiversity and climate, sustainable forestry","Climate change: greenhouse gases, evidence, effects on physical and human systems","Renewable vs non-renewable energy: comparison, advantages, disadvantages","Water cycle and water security: scarcity, management, sustainable use","Sustainable development goals: measuring progress, global vs local action"]},
     {id:"fieldwork",      name:"Fieldwork & Local Study",     emoji:"🔭", minAge:7,
      desc:"Observing, recording and analysing the local area",
-     levels:["Observe and describe features of local area","Simple surveys and data collection outside","Map own school grounds, use compasses","Land use survey, traffic count, questionnaires","Analyse results, draw conclusions, geographical argument"]},
+     levels:["Observe and describe features of local area","Simple surveys and data collection outside","Map own school grounds, use compasses","Land use survey, traffic count, questionnaires","Analyse results, draw conclusions, geographical argument","Data collection methods: tallies, questionnaires, sketches, photographs, measurements","Analysing fieldwork data: bar charts, scatter graphs, maps, annotated sketches","Presenting fieldwork findings: written reports, posters, digital presentations","Evaluating fieldwork: reliability, improvements, comparing data sets","Independent geographical investigation: design, conduct, analyse, conclude, evaluate"]},
   ],
 
   // ── 11+ Preparation (Age 10-11) ──────────────────────────────────────
   "11+ Verbal Reasoning": [
-    {id:"vr_words",      name:"Word Relationships",    emoji:"🔤", minAge:10, desc:"Synonyms, antonyms, odd-one-out", levels:["Synonyms and antonyms","Word categories and odd one out","Analogies: word pairs","Hidden words and word connections","Complex verbal deductions"]},
-    {id:"vr_codes",      name:"Codes & Sequences",     emoji:"🔣", minAge:10, desc:"Letter codes, number sequences", levels:["Simple A=1 number codes","Letter shift codes","Complex coding patterns","Mixed code types","Multi-step code breaking"]},
-    {id:"vr_logic",      name:"Logic & Deductions",    emoji:"🧩", minAge:10, desc:"If/then reasoning, true/false", levels:["Simple true/false from statements","Two-step deductions","Multi-clue logic puzzles","Contradictions and validity","Complex argument evaluation"]},
-    {id:"vr_comprehension",name:"Comprehension",       emoji:"📖", minAge:10, desc:"Advanced reading comprehension", levels:["Main idea identification","Inference from text","Author's purpose and tone","Evaluating evidence","Critical analysis of argument"]},
-  ],
+    {id:"vr_words",      name:"Word Relationships",    emoji:"🔤", minAge:10, desc:"Synonyms, antonyms, odd-one-out", levels:["Synonyms and antonyms","Word categories and odd one out","Analogies: word pairs","Hidden words and word connections","Complex verbal deductions","Advanced synonyms and antonyms at 11+ level vocabulary","Complex analogies: semantic relationships, abstract connections","Word classification: odd-one-out with abstract categories","Hidden words, connected words, compound word patterns","Complex verbal deductions: multiple-step reasoning with words"]},
+    {id:"vr_codes",      name:"Codes & Sequences",     emoji:"🔣", minAge:10, desc:"Letter codes, number sequences", levels:["Simple A=1 number codes","Letter shift codes","Complex coding patterns","Mixed code types","Multi-step code breaking","Multi-step letter codes: A=1 type with offsets and reversals","Complex shift codes: variable shifts, mirror codes","Number sequence codes: arithmetic and geometric within codes","Mixed type codes: letter-number combinations","Timed code-breaking: speed and accuracy under exam conditions"]},
+    {id:"vr_logic",      name:"Logic & Deductions",    emoji:"🧩", minAge:10, desc:"If/then reasoning, true/false", levels:["Simple true/false from statements","Two-step deductions","Multi-clue logic puzzles","Contradictions and validity","Complex argument evaluation","Multi-statement logical deductions: true/false/cannot say","Logical sequences: complete the series with abstract reasoning","Family relationship problems: multi-step family trees","Spatial and ordering logic: who sits where, what order","Complex multi-variable logic puzzles: 11+ style exam questions"]},
+    {id:"vr_comprehension",name:"Comprehension",       emoji:"📖", minAge:10, desc:"Advanced reading comprehension", levels:["Main idea identification","Inference from text","Author's purpose and tone","Evaluating evidence","Critical analysis of argument","11+ style extended reading passages with inference questions","Author's language choices: effect, connotation, technique","Evaluating texts: comparing two passages, identifying bias","Complex inference and deduction from literary extracts","Timed comprehension under exam conditions with full mark scheme"]},
+      {id:"vr_spelling", name:"Spelling & Word Structure", emoji:"✏️", minAge:9,
+     desc:"Spot spelling mistakes and apply word structure rules",
+     levels:["Identify misspelled word from 4 options: Year 3-4 list","Correct the spelling in a sentence context","Homophones: which spelling is correct here?","Prefixes: identify correctly spelled prefixed word","Suffixes: which suffix makes a real word?","Silent letters and double letters: common patterns","Year 5-6 statutory spelling list words","Etymology: Latin and Greek root spelling patterns","Word families: find the correctly spelled related word","Speed spelling: 20 words timed, GL exam style"]},
+],
   "11+ Non-Verbal Reasoning": [
-    {id:"nvr_patterns",  name:"Pattern Recognition",   emoji:"🔷", minAge:10, desc:"Sequences and matrices", levels:["Simple shape sequences","2x2 pattern matrices","3x3 pattern matrices","Complex rotation patterns","Multi-rule pattern completion"]},
-    {id:"nvr_shapes",    name:"Shape Transformations", emoji:"📐", minAge:10, desc:"Rotation, reflection, nets", levels:["Reflection and rotation basics","Nets of 3D shapes","Paper folding and unfolding","3D cube rotations","Complex spatial reasoning"]},
-    {id:"nvr_codes",     name:"Symbol Codes",          emoji:"⬛", minAge:10, desc:"Shape-based codes and rules", levels:["One-feature rules","Two-feature codes","Three-feature codes","Complex shape codes","Multi-rule deductions"]},
-  ],
+    {id:"nvr_patterns",  name:"Pattern Recognition",   emoji:"🔷", minAge:10, desc:"Sequences and matrices", levels:["Simple shape sequences","2x2 pattern matrices","3x3 pattern matrices","Complex rotation patterns","Multi-rule pattern completion","Complete the sequence: 6-item series with two rules","Matrix completion: 3x3 grids with two simultaneous rules","Analogy matrices: abstract shape relationships","Complex rotation and reflection patterns combined","Full 11+ NVR paper: mixed question types under timed conditions"]},
+    {id:"nvr_shapes",    name:"Shape Transformations", emoji:"📐", minAge:10, desc:"Rotation, reflection, nets", levels:["Reflection and rotation basics","Nets of 3D shapes","Paper folding and unfolding","3D cube rotations","Complex spatial reasoning","Nets of all 5 Platonic solids: identify and construct","Complex paper folding: multiple folds with punch holes","3D rotation: visualise rotated 3D objects from 2D views","Similar and congruent shapes: identify from complex sets","Plans and elevations: front, side and top views of 3D shapes"]},
+    {id:"nvr_codes",     name:"Symbol Codes",          emoji:"⬛", minAge:10, desc:"Shape-based codes and rules", levels:["One-feature rules","Two-feature codes","Three-feature codes","Complex shape codes","Multi-rule deductions","Two-feature shape codes: identify rules for each feature","Three-feature codes: size, shading, position, number, rotation","Four-feature codes: most complex NVR code type","Mixed code types: sequences within codes","Full exam practice: timed NVR code papers with marking"]},
+      {id:"nvr_odd_one_out", name:"Odd One Out", emoji:"🔍", minAge:9,
+     desc:"Which shape is the odd one out and why?",
+     levels:["Odd one out by shading: one shape has different fill","Odd one out by type: one is not a polygon","Odd one out by number of sides","Odd one out by symmetry: one lacks a line of symmetry","Odd one out by size relative to others","Odd one out by internal feature position","Two possible odd ones out: explain which and why","Abstract odd one out: complex overlapping rules","Verbal odd one out linked to visual reasoning","CEM style mixed odd one out under timed conditions"]},
+],
   "11+ Maths": [
-    {id:"11m_number",    name:"Number Operations",     emoji:"🔢", minAge:10, desc:"Advanced arithmetic and number theory", levels:["Multi-step calculations","Factors, multiples, primes","Fractions decimals percentages","Ratio and proportion","Algebra and problem solving"]},
-    {id:"11m_shape",     name:"Shape & Space",         emoji:"📐", minAge:10, desc:"Geometry, area, volume, angles", levels:["Area and perimeter of polygons","Volume of cuboids","Circle calculations (pi)","Angles in parallel lines","Coordinate geometry"]},
-    {id:"11m_data",      name:"Data & Statistics",     emoji:"📊", minAge:10, desc:"Charts, averages, probability", levels:["Mean, median, mode, range","Pie charts and bar charts","Probability fractions","Frequency tables","Complex data interpretation"]},
+    {id:"11m_number",    name:"Number Operations",     emoji:"🔢", minAge:10, desc:"Advanced arithmetic and number theory", levels:["Multi-step calculations","Factors, multiples, primes","Fractions decimals percentages","Ratio and proportion","Algebra and problem solving","Efficient mental methods: breaking apart, compensation, working backwards","Negative numbers: four operations, order of operations, BIDMAS","Prime factorisation: HCF and LCM using Venn diagrams","Fractions, decimals, percentages: fluent conversion and comparison","Algebra: form and solve equations, substitution, sequences, nth term"]},
+    {id:"11m_shape",     name:"Shape & Space",         emoji:"📐", minAge:10, desc:"Geometry, area, volume, angles", levels:["Area and perimeter of polygons","Volume of cuboids","Circle calculations (pi)","Angles in parallel lines","Coordinate geometry","Area of circles, sectors, composite shapes involving circles","Volume and surface area: cuboids, cylinders, prisms","Angle proofs: parallel lines, polygons, circle theorems intro","Coordinates: midpoints, distance, linear graphs y=mx+c","Similarity and congruence: scale factors, proof, applications"]},
+    {id:"11m_data",      name:"Data & Statistics",     emoji:"📊", minAge:10, desc:"Charts, averages, probability", levels:["Mean, median, mode, range","Pie charts and bar charts","Probability fractions","Frequency tables","Complex data interpretation","Averages from frequency tables, choosing appropriate average","Scatter graphs: correlation, lines of best fit, interpolation","Probability: sample space diagrams, Venn diagrams, tree diagrams","Complex data interpretation: multiple charts, comparing distributions","Statistical reasoning: hypothesis, sample size, bias, conclusions"]},
   ],  Computing: [
     {id:"algorithms",     name:"Algorithms & Sequencing",     emoji:"🔢", minAge:5,
      desc:"Step-by-step instructions, sequences and logic",
-     levels:["Step-by-step instructions for everyday tasks","Sequences: what order, what happens next","Loops: repeating actions to save steps","Conditions: if this, then that — decisions","Nested loops, complex conditions, algorithm design"]},
+     levels:["Step-by-step instructions for everyday tasks","Sequences: what order, what happens next","Loops: repeating actions to save steps","Conditions: if this, then that — decisions","Nested loops, complex conditions, algorithm design","Algorithms in everyday life: recipes, instructions, directions, rules","Flowcharts: sequence, selection (if/else), iteration (loops)","Decomposition: breaking problems into smaller manageable parts","Pattern recognition: finding similarities to solve new problems efficiently","Abstraction: identifying and focusing on essential information only"]},
     {id:"coding",         name:"Programming",                 emoji:"💻", minAge:6,
      desc:"Creating programs using Scratch-style block coding",
-     levels:["Simple sequences in Scratch: move, turn, sound","Events: when key pressed, when sprite clicked","Loops: repeat, forever, count-controlled","Variables: store and change data in programs","Functions, parameters, debugging complex programs"]},
+     levels:["Simple sequences in Scratch: move, turn, sound","Events: when key pressed, when sprite clicked","Loops: repeat, forever, count-controlled","Variables: store and change data in programs","Functions, parameters, debugging complex programs","Scratch: sequences, events, motion, looks — simple animated story","Scratch: loops (repeat, forever), conditionals (if/if-else), variables","Python intro: print, input, variables, arithmetic, string operations","Python: if/elif/else statements, while and for loops, functions","Python: lists, dictionaries, file handling, debugging, commenting"]},
     {id:"networks",       name:"Networks & The Internet",     emoji:"🌐", minAge:7,
      desc:"How the internet works, websites and communication",
-     levels:["What is the internet? Computers connected globally","The World Wide Web, websites, search engines","How email works, digital communication forms","How data travels: packets, routers, IP addresses","Cloud computing, cybersecurity, HTTPS and encryption"]},
+     levels:["What is the internet? Computers connected globally","The World Wide Web, websites, search engines","How email works, digital communication forms","How data travels: packets, routers, IP addresses","Cloud computing, cybersecurity, HTTPS and encryption","What is the internet: routers, packets, IP addresses, DNS","World Wide Web vs internet: HTTP, URLs, web browsers, search engines","Network hardware: routers, switches, servers, clients, Wi-Fi, Ethernet","Cybersecurity: threats — malware, phishing, hacking; defences — firewalls, encryption","Communication technology: email protocols, VoIP, streaming, cloud computing"]},
     {id:"data",           name:"Data & Information",          emoji:"📊", minAge:6,
      desc:"Collecting, organising and presenting data",
-     levels:["Data: information we collect, store and use","Binary: computers use 0s and 1s, pixels","Spreadsheets: entering, sorting, filtering data","Charts and graphs from data, patterns and trends","Databases, big data, data analysis and ethics"]},
+     levels:["Data: information we collect, store and use","Binary: computers use 0s and 1s, pixels","Spreadsheets: entering, sorting, filtering data","Charts and graphs from data, patterns and trends","Databases, big data, data analysis and ethics","Data types: text, numbers, images, sound — how computers store each","Binary: counting in binary, converting to/from decimal, bytes and bits","Data storage: file sizes, compression, lossless vs lossy, cloud storage","Databases: records, fields, queries, sorting, filtering, spreadsheet databases","Big data: what it is, how it's collected, uses, privacy implications"]},
     {id:"esafety",        name:"E-Safety & Digital Literacy", emoji:"🛡️", minAge:5,
      desc:"Staying safe online, personal information and rights",
-     levels:["Personal information: what is private, who to tell","Cyberbullying: recognise, report, how to help","Reliable information: not everything online is true","Passwords, privacy settings, safe browsing","Digital footprint, copyright, responsible use"]},
+     levels:["Personal information: what is private, who to tell","Cyberbullying: recognise, report, how to help","Reliable information: not everything online is true","Passwords, privacy settings, safe browsing","Digital footprint, copyright, responsible use","Personal information: what to keep private online, why privacy matters","Cyberbullying: recognise, respond, report — bystander responsibility","Online reliability: evaluating websites, fake news, checking sources","Digital footprint: what you leave online, how it's used, permanence","Screen time, wellbeing, healthy habits: balance, sleep, relationships"]},
     {id:"creative",       name:"Creative Computing",          emoji:"🎨", minAge:7,
      desc:"Creating digital content: art, music, video, presentations",
-     levels:["Create digital artwork using painting tools","Create simple animations frame by frame","Record and edit audio, podcasts, voice overs","Create multimedia presentations with images and sound","Design websites, video editing, digital publishing"]},
+     levels:["Create digital artwork using painting tools","Create simple animations frame by frame","Record and edit audio, podcasts, voice overs","Create multimedia presentations with images and sound","Design websites, video editing, digital publishing","Digital art: using drawing tools, layers, colour, saving in different formats","Digital audio: recording, editing, importing, exporting, copyright","Video production: filming, editing, transitions, captions, publishing","Web design: HTML basics, structure, CSS styling, publishing a simple page","App design: planning, wireframing, prototyping, user testing, iteration"]},
   ],
 };
 
@@ -293,102 +299,108 @@ const US_CURRICULUM = {
   Math: [
     {id:"counting",       name:"Counting & Cardinality",      emoji:"🔢", minAge:5,
      desc:"Count to 100, compare numbers, understand quantity — Kindergarten",
-     levels:["Count to 20, one-to-one correspondence, cardinality","Count to 100, count on from any number, compare groups","Skip count by 2s, 5s, 10s, even and odd numbers","Place value to 1,000, compare and order 3-digit numbers","Place value to 1,000,000, rounding, comparing large numbers"]},
+     levels:["Count to 20, one-to-one correspondence, cardinality","Count to 100, count on from any number, compare groups","Skip count by 2s, 5s, 10s, even and odd numbers","Place value to 1,000, compare and order 3-digit numbers","Place value to 1,000,000, rounding, comparing large numbers","Count and compare numbers to 1,000; skip count by 2s, 5s, 10s, 100s","Place value to 10,000: expanded form, comparing, ordering, rounding to 1,000","Place value to 1,000,000: powers of 10, standard and word form","Whole numbers to 1 billion; integers: positive, negative, absolute value","Rational numbers: integers, fractions, decimals on the number line"]},
     {id:"operations",     name:"Operations & Algebraic Thinking",emoji:"➕", minAge:5,
      desc:"Addition, subtraction, multiplication, division — word problems",
-     levels:["Add and subtract within 10, word problems with objects","Add/subtract within 20, relate addition to subtraction","Multiplication as equal groups, division as sharing fairly","Multiply/divide within 100, properties of operations","Multi-step word problems, factors, multiples, patterns"]},
+     levels:["Add and subtract within 10, word problems with objects","Add/subtract within 20, relate addition to subtraction","Multiplication as equal groups, division as sharing fairly","Multiply/divide within 100, properties of operations","Multi-step word problems, factors, multiples, patterns","Multi-digit multiplication and division, partial products","Decimals: add, subtract, multiply, divide to hundredths","Fractions: all operations, mixed numbers","Ratios, rates, unit rates, proportional reasoning","Integers and rational numbers: all four operations"]},
     {id:"base_ten",       name:"Number & Operations — Base Ten",emoji:"🔟", minAge:5,
      desc:"Place value, multi-digit arithmetic and rounding",
-     levels:["Compose/decompose numbers 11-19 using tens and ones","Understand hundreds, add/subtract 2-digit numbers","Round to nearest 10/100, add/subtract within 1,000","Multi-digit multiplication, divide with remainders","Multiply multi-digit numbers, divide 4-digit by 2-digit"]},
+     levels:["Compose/decompose numbers 11-19 using tens and ones","Understand hundreds, add/subtract 2-digit numbers","Round to nearest 10/100, add/subtract within 1,000","Multi-digit multiplication, divide with remainders","Multiply multi-digit numbers, divide 4-digit by 2-digit","Numbers to millions, scientific notation intro","Decimal operations: all four operations, estimation","Powers of 10, exponents, order of operations (PEMDAS)","Rational and irrational numbers, absolute value","Real number system: classify and operate with all types"]},
     {id:"fractions",      name:"Fractions & Decimals",         emoji:"½",  minAge:7,
      desc:"Unit fractions, equivalent fractions, operations",
-     levels:["Equal parts of a whole, halves, fourths, thirds","Unit fractions on number line, equivalent fractions","Fractions greater than 1, compare with same denominator","Add/subtract fractions same denominator, multiply by whole","Add/subtract unlike denominators, multiply/divide fractions"]},
+     levels:["Equal parts of a whole, halves, fourths, thirds","Unit fractions on number line, equivalent fractions","Fractions greater than 1, compare with same denominator","Add/subtract fractions same denominator, multiply by whole","Add/subtract unlike denominators, multiply/divide fractions","Unit fractions and non-unit fractions: parts of whole and set","Equivalent fractions: visual models, number line representations","Compare and order fractions with different denominators","Add and subtract fractions: like and unlike denominators","Multiply and divide fractions: whole numbers, fractions, mixed numbers"]},
     {id:"measurement_us", name:"Measurement & Data",           emoji:"📏", minAge:5,
      desc:"Measuring length, time, money, graphs and data",
-     levels:["Order by length/height/weight, above and below","Measure in inches and centimeters, tell time to hour","Measure to nearest quarter inch, bar graphs, picture graphs","Perimeter of polygons, area by counting, time intervals","Convert measurement units, volume, line plots, data analysis"]},
+     levels:["Order by length/height/weight, above and below","Measure in inches and centimeters, tell time to hour","Measure to nearest quarter inch, bar graphs, picture graphs","Perimeter of polygons, area by counting, time intervals","Convert measurement units, volume, line plots, data analysis","Measurement conversions: metric and customary","Area and perimeter of complex polygons","Volume of rectangular prisms, nets","Surface area and volume of 3D figures","Measurement in real-world problem solving with algebraic thinking"]},
     {id:"geometry_us",    name:"Geometry",                     emoji:"📐", minAge:5,
      desc:"2D/3D shapes, area, perimeter and coordinate plane",
-     levels:["Name 2D and 3D shapes, sort by attributes","Partition shapes into equal parts, halves, fourths","Understand perimeter, identify quadrilaterals, area","Lines, angles, symmetry, classify triangles and quadrilaterals","Coordinate plane, graph points, classify 2D figures"]},
+     levels:["Name 2D and 3D shapes, sort by attributes","Partition shapes into equal parts, halves, fourths","Understand perimeter, identify quadrilaterals, area","Lines, angles, symmetry, classify triangles and quadrilaterals","Coordinate plane, graph points, classify 2D figures","Coordinate geometry: all four quadrants","Area: triangles, parallelograms, trapezoids","Angle relationships: supplementary, complementary, vertical","Transformations: translations, reflections, rotations, dilations","Pythagorean theorem, distance formula, geometric proofs"]},
     {id:"number_system",  name:"The Number System",            emoji:"🔣", minAge:9,
      desc:"Factors, multiples, decimals and negative numbers",
-     levels:["Factors and multiples, prime and composite numbers","Decimal notation, compare decimals to thousandths","Negative numbers on number line, absolute value","GCF and LCM, fraction/decimal/percent equivalence","Rational numbers, operations with integers"]},
+     levels:["Factors and multiples, prime and composite numbers","Decimal notation, compare decimals to thousandths","Negative numbers on number line, absolute value","GCF and LCM, fraction/decimal/percent equivalence","Rational numbers, operations with integers","Factors and multiples: GCF, LCM, prime and composite numbers","Rational numbers: add, subtract, multiply, divide positive and negative","Rates, ratios and proportional reasoning: unit rates, equivalent ratios","Percent: meaning, conversions, percent of a number, percent change","Scientific notation: writing, comparing, multiplying and dividing"]},
     {id:"expressions",    name:"Expressions & Equations",      emoji:"📐", minAge:10,
      desc:"Variables, simple equations and inequalities",
-     levels:["Understand variables, evaluate expressions","Write and solve one-step equations","Write and graph inequalities","Dependent and independent variables","Analyse patterns, represent relationships"]},
+     levels:["Understand variables, evaluate expressions","Write and solve one-step equations","Write and graph inequalities","Dependent and independent variables","Analyse patterns, represent relationships","Write and evaluate numerical expressions: order of operations, parentheses","Variables: write expressions and equations with variables","Equivalent expressions: combine like terms, distributive property","Solve one-step equations: addition, subtraction, multiplication, division","Solve two-step equations and inequalities; graph solutions on number line"]},
   ],
   "English Language Arts": [
     {id:"reading_lit",    name:"Reading — Literature",         emoji:"📚", minAge:5,
      desc:"Key ideas, story structure, character and theme",
-     levels:["Retell stories, identify characters, setting, events","Ask and answer questions, central message, lesson","Describe characters and how they affect the story","Determine theme, summarise, compare stories and myths","Quote accurately, compare themes, analyse how chapters fit"]},
+     levels:["Retell stories, identify characters, setting, events","Ask and answer questions, central message, lesson","Describe characters and how they affect the story","Determine theme, summarise, compare stories and myths","Quote accurately, compare themes, analyse how chapters fit","Ask and answer questions about key details in literary texts","Determine theme or central message; describe how characters respond to challenges","Compare and contrast characters, settings, or events using details from text","Determine theme and summarise; analyse character development over a story","Cite textual evidence; analyse how characters, setting, plot interact"]},
     {id:"reading_info",   name:"Reading — Informational Text", emoji:"📰", minAge:5,
      desc:"Main idea, text features and author's purpose",
-     levels:["Identify main topic, key details, connections","Ask and answer questions, identify main idea, retell","Determine main idea, explain how reasons support it","Determine main idea, explain how examples support it","Quote text, determine main idea, explain author's purpose"]},
+     levels:["Identify main topic, key details, connections","Ask and answer questions, identify main idea, retell","Determine main idea, explain how reasons support it","Determine main idea, explain how examples support it","Quote text, determine main idea, explain author's purpose","Identify main topic and key details in informational texts","Determine main idea and key details; explain how author supports points","Explain how key details support the main idea; compare two texts on same topic","Determine main idea; explain how it is supported by key details; summarise","Cite textual evidence; determine two or more main ideas; analyse text structure"]},
     {id:"foundational",   name:"Foundational Reading Skills",  emoji:"🔤", minAge:4,
      desc:"Phonics, phonological awareness and reading fluency",
-     levels:["Phonemic awareness: rhyme, syllables, initial sounds","Letter-sound relationships, decode CVC words","Vowel teams, blends, digraphs, sight words 100","R-controlled vowels, prefixes/suffixes, fluency grade 2","Multisyllabic words, fluency with grade 3 texts"]},
+     levels:["Phonemic awareness: rhyme, syllables, initial sounds","Letter-sound relationships, decode CVC words","Vowel teams, blends, digraphs, sight words 100","R-controlled vowels, prefixes/suffixes, fluency grade 2","Multisyllabic words, fluency with grade 3 texts","Phonics: consonant blends, digraphs, long vowel patterns, syllable types","Decoding multisyllabic words: prefixes, suffixes, root words, syllabication","Fluency: read grade-level text with accuracy, appropriate rate, expression","Vocabulary strategies: context clues, word relationships, reference materials","Academic vocabulary: domain-specific words, figurative language, connotations"]},
     {id:"writing_us",     name:"Writing",                      emoji:"✏️", minAge:5,
      desc:"Opinion, informational and narrative writing",
-     levels:["Write name, draw and write about topics","Write opinion with reason, informational, narrative","Write opinion with multiple reasons, informational reports","Write structured opinion, informational, narrative essays","Research-based writing, precise language, clear structure"]},
+     levels:["Write name, draw and write about topics","Write opinion with reason, informational, narrative","Write opinion with multiple reasons, informational reports","Write structured opinion, informational, narrative essays","Research-based writing, precise language, clear structure","Opinion writing: introduce topic, state opinion, supply reasons, provide conclusion","Informative writing: introduce topic, develop with facts and definitions, conclude","Narrative writing: establish situation, introduce narrator/characters, sequence events","Research-based writing: gather information from multiple sources, cite sources","Extended argument: claim, counterclaim, evidence, analysis, formal style"]},
     {id:"speaking",       name:"Speaking & Listening",         emoji:"🗣️", minAge:5,
      desc:"Collaborative discussions and presentations",
-     levels:["Participate in conversations, follow rules for discussion","Build on others' talk, ask clarifying questions","Determine main ideas, report on topics clearly","Engage in discussion, report on topics with facts","Adapt speech for context, present claims, multimedia"]},
+     levels:["Participate in conversations, follow rules for discussion","Build on others' talk, ask clarifying questions","Determine main ideas, report on topics clearly","Engage in discussion, report on topics with facts","Adapt speech for context, present claims, multimedia","Participate in collaborative discussions: listen, take turns, stay on topic","Report on a topic using facts and details; speak clearly at understandable pace","Summarise texts read aloud; identify reasons and evidence a speaker provides","Present claims and findings sequentially; use appropriate facts and details","Adapt speech to context: formal presentations, evidence-based discussions"]},
     {id:"language_us",    name:"Language & Grammar",           emoji:"📝", minAge:5,
      desc:"Grammar conventions, vocabulary and figurative language",
-     levels:["Print letters, capitalisation, end punctuation","Nouns, verbs, adjectives, commas in series","Irregular nouns/verbs, adjectives, adverbs, commas","Relative pronouns/adverbs, progressive verbs, modifiers","Perfect verbs, shifts in verb tense, correlative conjunctions"]},
+     levels:["Print letters, capitalisation, end punctuation","Nouns, verbs, adjectives, commas in series","Irregular nouns/verbs, adjectives, adverbs, commas","Relative pronouns/adverbs, progressive verbs, modifiers","Perfect verbs, shifts in verb tense, correlative conjunctions","Nouns, pronouns, verbs, adjectives, adverbs: identify and use correctly","Capitalization, punctuation, spelling: commas, apostrophes, quotation marks","Sentence variety: simple, compound, complex; subordinating conjunctions","Formal vs informal English; correct shifts in verb tense; pronoun agreement","Subject-verb agreement; active vs passive voice; mood — indicative, imperative"]},
   ],
   Science: [
     {id:"earth_space_us", name:"Earth & Space Science",        emoji:"🌍", minAge:5,
      desc:"Weather, Earth materials, solar system — NGSS aligned",
-     levels:["Weather patterns: sunny, rainy, snowy, seasonal changes","Earth materials: rocks, soil, water — properties and uses","Earth's surface: mountains, valleys, plains, water bodies","Solar system: sun, moon, planets, Earth's rotation","Earth processes: erosion, weathering, water cycle, fossils"]},
+     levels:["Weather patterns: sunny, rainy, snowy, seasonal changes","Earth materials: rocks, soil, water — properties and uses","Earth's surface: mountains, valleys, plains, water bodies","Solar system: sun, moon, planets, Earth's rotation","Earth processes: erosion, weathering, water cycle, fossils","Weather and climate: temperature, precipitation, wind; patterns and prediction","Earth's materials: rocks, soil, water; properties, uses, natural resources","Earth's systems: lithosphere, hydrosphere, atmosphere, biosphere interactions","Earth's history: fossils, rock layers, continental drift, geological time","Space systems: Earth-Moon-Sun; solar system; stars; universe scale and structure"]},
     {id:"life_science",   name:"Life Science",                 emoji:"🌿", minAge:5,
      desc:"Plants, animals, ecosystems and heredity — NGSS aligned",
-     levels:["Needs of living things: plants and animals, survival","Life cycles: plants, insects, frogs, birds","Ecosystems: food chains, habitats, interdependence","Heredity: traits from parents, variation, adaptation","Natural selection, evolution evidence, biodiversity"]},
+     levels:["Needs of living things: plants and animals, survival","Life cycles: plants, insects, frogs, birds","Ecosystems: food chains, habitats, interdependence","Heredity: traits from parents, variation, adaptation","Natural selection, evolution evidence, biodiversity","Organisms and environments: basic needs, habitats, adaptations, food webs","Life cycles and traits: inherited and acquired traits, reproduction strategies","Ecosystems: energy flow, matter cycling, biodiversity, human impact","Heredity and evolution: variation, natural selection, fossil evidence","Body systems: structure and function of major human body systems"]},
     {id:"physical_sci",   name:"Physical Science",             emoji:"⚡", minAge:6,
      desc:"Matter, forces, motion and energy — NGSS aligned",
-     levels:["Properties of matter: solid, liquid, gas, weight, volume","Forces and motion: pushes/pulls, speed, direction","Energy: light, heat, sound, electrical — forms and transfer","Waves: light and sound properties, communication","Chemical reactions, conservation of matter, energy transfer"]},
+     levels:["Properties of matter: solid, liquid, gas, weight, volume","Forces and motion: pushes/pulls, speed, direction","Energy: light, heat, sound, electrical — forms and transfer","Waves: light and sound properties, communication","Chemical reactions, conservation of matter, energy transfer","Matter: properties, states, physical vs chemical changes, mixtures, solutions","Forces and motion: push/pull, speed, gravity, friction, balanced/unbalanced forces","Energy: forms, transfer, conservation; sound, light, heat, electricity","Waves: properties of light and sound waves; electromagnetic spectrum","Engineering design: define problem, brainstorm solutions, test, evaluate, improve"]},
     {id:"engineering",    name:"Engineering Design",           emoji:"🔧", minAge:6,
      desc:"Define problems, design solutions, test and improve",
-     levels:["Identify a problem, brainstorm and choose a solution","Build and test a model, improve based on results","Define criteria and constraints, compare solutions","Optimise solutions, communicate results scientifically","System thinking, trade-offs, societal impact of solutions"]},
+     levels:["Identify a problem, brainstorm and choose a solution","Build and test a model, improve based on results","Define criteria and constraints, compare solutions","Optimise solutions, communicate results scientifically","System thinking, trade-offs, societal impact of solutions","Engineering design process: identify problem, criteria and constraints","Generate and test solutions: prototyping, fair testing, iteration","Materials properties in engineering: choosing right material for function","Simple machines: lever, pulley, inclined plane, wheel and axle, screw, wedge","Systems thinking: inputs, outputs, feedback, optimising complex systems"]},
   ],
   "Social Studies": [
     {id:"community",      name:"Community & Citizenship",      emoji:"🏘️", minAge:5,
      desc:"Rules, rights, responsibilities and community roles",
-     levels:["Classroom and school rules, why we have them","Community helpers: police, firefighters, doctors, teachers","Rights and responsibilities at home, school, community","Local government: mayor, city council, how decisions made","State and national government, Constitution, Bill of Rights"]},
+     levels:["Classroom and school rules, why we have them","Community helpers: police, firefighters, doctors, teachers","Rights and responsibilities at home, school, community","Local government: mayor, city council, how decisions made","State and national government, Constitution, Bill of Rights","Roles in community: family, school, neighbourhood, local government","Rules and laws: why we have them, how they are made, rights and responsibilities","Community helpers and workers: services, goods, supply and demand basics","Local government: mayor, city council, services provided, civic participation","Communities across America: urban, suburban, rural; how geography shapes life"]},
     {id:"us_history",     name:"American History",             emoji:"🦅", minAge:6,
      desc:"Native Americans through Civil Rights Movement",
-     levels:["Native American peoples: culture, traditions, regions","Colonial America: Pilgrims, Jamestown, 13 colonies","American Revolution: causes, key figures, Declaration of Independence","Civil War: slavery, Lincoln, battles, abolition, Reconstruction","Civil Rights Movement: segregation, MLK, Rosa Parks, legislation"]},
+     levels:["Native American peoples: culture, traditions, regions","Colonial America: Pilgrims, Jamestown, 13 colonies","American Revolution: causes, key figures, Declaration of Independence","Civil War: slavery, Lincoln, battles, abolition, Reconstruction","Civil Rights Movement: segregation, MLK, Rosa Parks, legislation","Native Americans: major tribes, cultures, traditions, relationship with land","European exploration and colonisation: Columbus, Pilgrims, 13 Colonies, reasons","American Revolution: causes, Declaration of Independence, key figures, outcome","Constitution and early republic: founding documents, branches of government","Westward expansion: Manifest Destiny, Oregon Trail, impact on Native Americans"]},
     {id:"world_hist_us",  name:"World History",                emoji:"🌐", minAge:8,
      desc:"Ancient civilisations to modern global events",
-     levels:["Ancient Egypt, Greece, Rome: achievements and legacy","Medieval world: feudalism, Crusades, Black Death, Islam","Age of Exploration: Columbus, conquistadors, colonisation","Industrial Revolution, imperialism, World War 1","World War 2, Cold War, decolonisation, modern global issues"]},
+     levels:["Ancient Egypt, Greece, Rome: achievements and legacy","Medieval world: feudalism, Crusades, Black Death, Islam","Age of Exploration: Columbus, conquistadors, colonisation","Industrial Revolution, imperialism, World War 1","World War 2, Cold War, decolonisation, modern global issues","Ancient civilisations: Mesopotamia, Egypt, Greece, Rome — achievements and legacy","Medieval world: feudalism, Islamic Golden Age, Crusades, Black Death","Renaissance and Reformation: humanism, scientific revolution, religious change","Age of exploration and colonisation: trade routes, empires, cultural exchange","Industrial Revolution: causes, effects on society, workers, cities, global trade"]},
     {id:"us_geography",   name:"US Geography",                 emoji:"🇺🇸", minAge:6,
      desc:"50 states, regions, physical features and human geography",
-     levels:["Cardinal directions, map symbols, continents and oceans","US regions: Northeast, Southeast, Midwest, Southwest, West","50 states and capitals, major physical features","US climate zones, rivers (Mississippi), mountain ranges","US population, cities, economic regions, immigration patterns"]},
+     levels:["Cardinal directions, map symbols, continents and oceans","US regions: Northeast, Southeast, Midwest, Southwest, West","50 states and capitals, major physical features","US climate zones, rivers (Mississippi), mountain ranges","US population, cities, economic regions, immigration patterns","US regions: Northeast, Southeast, Midwest, Southwest, West — features and culture","Physical features of the US: Rocky Mountains, Mississippi River, Great Plains","US climate zones: factors affecting climate, regional differences","Human geography: population patterns, immigration, urbanisation, land use","US in the world: trade, alliances, foreign policy, global interdependence"]},
     {id:"world_geo_us",   name:"World Geography",              emoji:"🌍", minAge:7,
      desc:"Continents, countries, cultures and world issues",
-     levels:["7 continents, 5 oceans, major countries and capitals","Physical geography: biomes, climate zones, landforms","Human geography: population, urbanisation, migration","Cultural diversity: language, religion, customs worldwide","Global issues: trade, climate, conflict, interdependence"]},
+     levels:["7 continents, 5 oceans, major countries and capitals","Physical geography: biomes, climate zones, landforms","Human geography: population, urbanisation, migration","Cultural diversity: language, religion, customs worldwide","Global issues: trade, climate, conflict, interdependence","World regions: identify major world regions on maps, key physical features","Population geography: where people live, why, migration patterns","Cultural geography: language, religion, traditions, cultural diffusion","Economic geography: developed vs developing nations, resources, trade patterns","Environmental geography: human impact, climate zones, natural disasters, sustainability"]},
     {id:"economics_us",   name:"Economics & Financial Literacy",emoji:"💵", minAge:7,
      desc:"Needs vs wants, money, trade and economic systems",
-     levels:["Needs vs wants, goods and services, making choices","Earning, spending, saving, importance of budgeting","Supply and demand, producers and consumers, markets","Trade: imports, exports, comparative advantage, global trade","Economic systems, entrepreneurship, personal finance"]},
-  ],
+     levels:["Needs vs wants, goods and services, making choices","Earning, spending, saving, importance of budgeting","Supply and demand, producers and consumers, markets","Trade: imports, exports, comparative advantage, global trade","Economic systems, entrepreneurship, personal finance","Scarcity and choice: needs vs wants, opportunity cost, making decisions","Supply and demand: how prices are set, market economy basics","Producers and consumers: specialisation, trade, interdependence","Money and banking: saving, borrowing, interest, budgeting basics","Government's economic role: taxes, public goods, economic systems comparison"]},
+      {id:"11m_algebra", name:"Algebra & Equations", emoji:"🔡", minAge:9,
+     desc:"Form and solve equations to find unknowns",
+     levels:["Missing number: □ + 7 = 15, find the value","Simple equations: x + 5 = 12, solve for x","Two-step equations: 2x + 3 = 11, solve for x","Equations with brackets: 3(x + 2) = 15","Word problems: form and solve an equation","Substitution: find value when n=3 in expressions","Function machines: two-step, find input or output","Sequences and nth term: find the formula","Simultaneous equations: x + y = 10, x - y = 2","Multi-step algebraic word problems: GL exam style"]},
+    {id:"11m_worded", name:"Multi-Step Word Problems", emoji:"📝", minAge:9,
+     desc:"Real-world problems requiring multiple calculation steps",
+     levels:["Single-operation word problems: choose the right operation","Two-step problems: e.g. total cost with change","Ratio word problems: share an amount in given ratio","Percentage problems: discount, profit and loss","Speed distance time: find the missing variable","Time problems: intervals, timetables, before and after","Money problems: bills, VAT, best value comparisons","Mixture problems: combining different rates or prices","Geometry word problems: apply formulae in context","Full GL/CEM mock: 50 questions in 50 minutes timed"]},
+],
   Computing: [
     {id:"comp_thinking",  name:"Computational Thinking",       emoji:"🧠", minAge:5,
      desc:"Decomposition, patterns, abstraction and algorithms",
-     levels:["Break problems into steps, spot patterns in sequences","Decompose complex tasks, identify what to ignore","Algorithm design, precise unambiguous instructions","Generalise solutions, evaluate efficiency of solutions","Abstraction in code, modelling real-world problems"]},
+     levels:["Break problems into steps, spot patterns in sequences","Decompose complex tasks, identify what to ignore","Algorithm design, precise unambiguous instructions","Generalise solutions, evaluate efficiency of solutions","Abstraction in code, modelling real-world problems","Decomposition: break complex problems into smaller steps","Pattern recognition: find repeated elements to create efficient solutions","Abstraction: remove unnecessary detail, focus on what matters","Algorithms: write precise step-by-step instructions for solving problems","Evaluation: test solutions, identify errors, improve and optimise"]},
     {id:"programming_us", name:"Programming",                  emoji:"💻", minAge:6,
      desc:"Creating programs in Scratch and text-based languages",
-     levels:["Scratch: sequences, events, motion and sounds","Scratch: loops, conditions, variables","Scratch: functions/sprites, simple games and stories","Python/JS introduction: variables, loops, conditions","Functions, lists, debugging, sharing and collaborating"]},
+     levels:["Scratch: sequences, events, motion and sounds","Scratch: loops, conditions, variables","Scratch: functions/sprites, simple games and stories","Python/JS introduction: variables, loops, conditions","Functions, lists, debugging, sharing and collaborating","Scratch: sequences, events, loops, basic game or animation","Scratch: variables, conditionals, user input, more complex projects","Python basics: print, variables, input, arithmetic, string formatting","Python: conditionals, loops, functions, simple programs with purpose","Python: lists, file I/O, modules, debugging, commenting, documentation"]},
     {id:"networks_us",    name:"Networks & The Internet",      emoji:"🌐", minAge:7,
      desc:"How the internet works and digital communication",
-     levels:["Devices connect to share information, basic network","The internet vs World Wide Web, search effectively","Email, messaging, video calls — digital communication tools","How websites work: HTML basics, DNS, IP addresses","Cybersecurity: threats, protection, staying safe online"]},
+     levels:["Devices connect to share information, basic network","The internet vs World Wide Web, search effectively","Email, messaging, video calls — digital communication tools","How websites work: HTML basics, DNS, IP addresses","Cybersecurity: threats, protection, staying safe online","Internet basics: packets, routers, IP addresses, how data travels","Web vs internet: HTTP, browsers, URLs, search engines, how websites work","Cybersecurity: passwords, phishing, malware, how to stay safe online","Privacy: data collection, cookies, personal information, digital rights","Network infrastructure: client-server, cloud computing, IoT, future internet"]},
     {id:"data_us",        name:"Data & Analysis",              emoji:"📊", minAge:6,
      desc:"Collecting, visualising and interpreting data",
-     levels:["Collect and organise data, tally charts, pictographs","Spreadsheets: enter and sort data, simple charts","Create graphs, identify patterns and outliers","Database queries, filtering and sorting complex data","Statistical thinking, bias in data, ethical data use"]},
+     levels:["Collect and organise data, tally charts, pictographs","Spreadsheets: enter and sort data, simple charts","Create graphs, identify patterns and outliers","Database queries, filtering and sorting complex data","Statistical thinking, bias in data, ethical data use","Binary: bits and bytes, counting in binary, representing data","Data types: text, numbers, images, audio — how computers store information","Spreadsheets: entering data, formulas, sorting, filtering, basic charts","Databases: tables, records, fields, queries, sorting, relational databases","Data science: collecting, cleaning, analysing, visualising, interpreting data"]},
     {id:"digital_citizen",name:"Digital Citizenship",          emoji:"🛡️", minAge:5,
      desc:"Online safety, privacy and responsible technology use",
-     levels:["Personal information: private vs public, trusted adults","Cyberbullying: recognise, respond, report, empathy","Media balance, screen time, healthy technology habits","Privacy settings, strong passwords, phishing awareness","Digital footprint, copyright, fair use, credibility of sources"]},
+     levels:["Personal information: private vs public, trusted adults","Cyberbullying: recognise, respond, report, empathy","Media balance, screen time, healthy technology habits","Privacy settings, strong passwords, phishing awareness","Digital footprint, copyright, fair use, credibility of sources","Online identity: usernames, privacy settings, what to share and not share","Cyberbullying: recognise, respond, report; be an upstander not bystander","Media literacy: evaluate websites, identify fake news, check sources","Copyright and fair use: creative commons, citing sources, plagiarism","Screen time and wellbeing: balanced technology use, healthy digital habits"]},
     {id:"impacts",        name:"Impacts of Computing",         emoji:"🤖", minAge:8,
      desc:"How technology shapes society, AI and the future",
-     levels:["How computers help us: medicine, transport, communication","Automation: jobs technology does, jobs humans do","Artificial intelligence: what it is, examples in daily life","Social media: benefits, risks, misinformation, mental health","Ethical computing: bias, accessibility, environmental impact"]},
+     levels:["How computers help us: medicine, transport, communication","Automation: jobs technology does, jobs humans do","Artificial intelligence: what it is, examples in daily life","Social media: benefits, risks, misinformation, mental health","Ethical computing: bias, accessibility, environmental impact","Positive impacts of technology: healthcare, communication, education, accessibility","Negative impacts: job displacement, addiction, environment, digital divide","Artificial intelligence: what it is, how it works, examples in daily life","Algorithmic bias: how algorithms can be unfair, who is responsible","Future of technology: emerging trends, ethical questions, citizen responsibility"]},
   ],
 };
 
@@ -396,87 +408,87 @@ const CA_CURRICULUM = {
   Mathematics: [
     {id:"number_sense",   name:"Number Sense",                 emoji:"🔢", minAge:4,
      desc:"Counting, place value, fractions and operations — Ontario aligned",
-     levels:["Count to 50, subitize groups, compare quantities (Kindergarten)","Numbers to 200, place value, addition/subtraction to 20","Numbers to 1000, multiplication/division patterns, fractions","Multi-digit operations, fractions on number line, decimals intro","Operations with fractions and decimals, ratios, proportional reasoning"]},
+     levels:["Count to 50, subitize groups, compare quantities (Kindergarten)","Numbers to 200, place value, addition/subtraction to 20","Numbers to 1000, multiplication/division patterns, fractions","Multi-digit operations, fractions on number line, decimals intro","Operations with fractions and decimals, ratios, proportional reasoning","Number relationships to 10,000, rounding strategies","Mental math: compensation, friendly numbers","Integers: meaning, ordering, adding and subtracting","Rational numbers: fractions, decimals, percents","Powers and exponents, order of operations"]},
     {id:"algebra_ca",     name:"Algebra",                      emoji:"🔣", minAge:7,
      desc:"Patterns, relationships, variables and equations",
-     levels:["Identify and extend repeating and growing patterns","Describe patterns with tables and rules","Represent patterns with variables, solve simple equations","Linear patterns, algebraic expressions, solving equations","Systems of relationships, algebraic modelling, coding connections"]},
+     levels:["Identify and extend repeating and growing patterns","Describe patterns with tables and rules","Represent patterns with variables, solve simple equations","Linear patterns, algebraic expressions, solving equations","Systems of relationships, algebraic modelling, coding connections","Patterns: identify, describe, extend, create growing and shrinking patterns","Variables: understand variables as placeholders, simple expressions","Linear relationships: tables of values, graphs, equations y=mx+b","Solving equations: one-step, two-step, check by substitution","Algebraic reasoning: model real situations, solve problems, justify solutions"]},
     {id:"data_ca",        name:"Data Literacy",                emoji:"📊", minAge:5,
      desc:"Collecting, organising and interpreting data — statistics",
-     levels:["Sort and classify objects, simple graphs (pictographs)","Bar graphs, tally charts, ask questions about data","Stem-and-leaf plots, mean/median/mode intro, bias awareness","Scatter plots, correlation, data collection methods","Statistical reasoning, probability, census vs sample"]},
+     levels:["Sort and classify objects, simple graphs (pictographs)","Bar graphs, tally charts, ask questions about data","Stem-and-leaf plots, mean/median/mode intro, bias awareness","Scatter plots, correlation, data collection methods","Statistical reasoning, probability, census vs sample","Collecting and organising data: surveys, experiments","Graphing: double bar, broken line, scatter plot","Measures of central tendency and spread","Probability: theoretical, experimental, tree diagrams","Data analysis: drawing conclusions, making predictions"]},
     {id:"spatial",        name:"Spatial Sense",                emoji:"📐", minAge:5,
      desc:"2D/3D shapes, measurement, location and transformation",
-     levels:["Name 2D/3D shapes, describe location, measure length","Perimeter, area basics, angles as turns, coordinate grid","Area of rectangles, volume basics, transformations","Surface area, volume of prisms, Cartesian plane, scale","Pythagorean theorem intro, geometric reasoning, design projects"]},
+     levels:["Name 2D/3D shapes, describe location, measure length","Perimeter, area basics, angles as turns, coordinate grid","Area of rectangles, volume basics, transformations","Surface area, volume of prisms, Cartesian plane, scale","Pythagorean theorem intro, geometric reasoning, design projects","2D shapes: properties, sorting, identifying in the environment","3D figures: identify, describe properties, nets, views","Location and movement: grid coordinates, transformations","Geometric relationships: angles, parallel, perpendicular, congruence","Measurement and geometry: area, perimeter, surface area, volume connections"]},
     {id:"financial",      name:"Financial Literacy",           emoji:"💰", minAge:6,
      desc:"Money, earning, spending, saving and budgeting",
-     levels:["Identify coins and bills, make amounts, simple purchases","Estimate costs, make change, save for a goal","Budgeting: income vs expenses, wants vs needs, planning","Interest, taxes intro, charitable giving, consumer rights","Credit, debt, financial planning, economic citizenship"]},
+     levels:["Identify coins and bills, make amounts, simple purchases","Estimate costs, make change, save for a goal","Budgeting: income vs expenses, wants vs needs, planning","Interest, taxes intro, charitable giving, consumer rights","Credit, debt, financial planning, economic citizenship","Money: count coins and bills, make change, compare costs","Budgeting: needs vs wants, making a simple budget, saving goals","Banking basics: accounts, deposits, withdrawals, interest concept","Consumer math: unit price, best buy, taxes, discounts, tipping","Financial literacy: debt, credit, investing basics, economic choices"]},
     {id:"social_emo",     name:"Social-Emotional Learning",    emoji:"❤️", minAge:5,
      desc:"Growth mindset, problem-solving and resilience in learning",
-     levels:["I can learn from mistakes, try different strategies","Identify helpful vs unhelpful thinking, persist with challenges","Reflect on learning, seek help, collaborate on problems","Manage frustration, set goals, monitor own learning","Self-advocacy, mentor others, contribute to math community"]},
+     levels:["I can learn from mistakes, try different strategies","Identify helpful vs unhelpful thinking, persist with challenges","Reflect on learning, seek help, collaborate on problems","Manage frustration, set goals, monitor own learning","Self-advocacy, mentor others, contribute to math community","Self-awareness: identifying emotions, strengths, areas for growth","Social skills: listening, cooperation, conflict resolution, empathy","Goal setting: SMART goals, planning, persisting through challenges","Decision making: consequences, values, responsible choices","Community and global citizenship: rights, responsibilities, contributing"]},
   ],
   Language: [
     {id:"reading_ca",     name:"Reading",                      emoji:"📖", minAge:4,
      desc:"Phonics, decoding, fluency and comprehension — Ontario",
-     levels:["Letter sounds, phonemic awareness, 45 core phonemes, CVC words","Blending and segmenting, common sight words, simple books","Fluency with grade-level texts, monitor comprehension","Text features, main idea, inference, author's craft","Critical literacy, comparing perspectives, synthesising across texts"]},
+     levels:["Letter sounds, phonemic awareness, 45 core phonemes, CVC words","Blending and segmenting, common sight words, simple books","Fluency with grade-level texts, monitor comprehension","Text features, main idea, inference, author's craft","Critical literacy, comparing perspectives, synthesising across texts","Reading strategies: predict, connect, visualise, question, infer, determine importance","Reading comprehension: retell, identify main idea, make inferences from text","Reading for purpose: fiction vs non-fiction, author's intent, text features","Critical literacy: whose voice is heard, what perspectives are missing","Independent reading: self-select texts, monitor comprehension, read widely"]},
     {id:"writing_ca",     name:"Writing",                      emoji:"✏️", minAge:5,
      desc:"Narrative, expository, persuasive and multimedia writing",
-     levels:["Write simple sentences about familiar topics with pictures","Paragraph structure, narrative with beginning/middle/end","Multi-paragraph writing, persuasive letters, research reports","Complex narratives, formal/informal register, citation basics","Extended essays, argument writing, multimedia composition"]},
+     levels:["Write simple sentences about familiar topics with pictures","Paragraph structure, narrative with beginning/middle/end","Multi-paragraph writing, persuasive letters, research reports","Complex narratives, formal/informal register, citation basics","Extended essays, argument writing, multimedia composition","Writing process: brainstorm, plan, draft, revise, edit, publish","Narrative writing: personal narrative, fiction, descriptive details, voice","Informational writing: research, note-taking, organise, cite sources","Persuasive writing: opinion, reasons, evidence, counter-argument, call to action","Writing for real purposes: letters, blogs, scripts, multi-modal texts"]},
     {id:"oral",           name:"Oral Communication",           emoji:"🗣️", minAge:4,
      desc:"Listening, speaking, discussion and presentation skills",
-     levels:["Follow simple instructions, speak in full sentences, listen actively","Small group discussion, take turns, ask relevant questions","Present information clearly, active listening strategies","Formal presentations, debate, adjusting for audience and purpose","Lead discussions, evaluate effectiveness, interview techniques"]},
+     levels:["Follow simple instructions, speak in full sentences, listen actively","Small group discussion, take turns, ask relevant questions","Present information clearly, active listening strategies","Formal presentations, debate, adjusting for audience and purpose","Lead discussions, evaluate effectiveness, interview techniques","Active listening: focus, ask questions, respond respectfully","Speaking clearly: volume, pace, eye contact, appropriate vocabulary","Collaborative discussion: build on others' ideas, disagree respectfully","Oral presentation: prepare, practise, use visuals, handle questions","Media communication: podcast, video, digital storytelling, audiences"]},
     {id:"media_ca",       name:"Media Literacy",               emoji:"📱", minAge:6,
      desc:"Analyse, create and evaluate media texts — digital literacy",
-     levels:["Identify different types of media, messages in advertising","Identify point of view in media, create simple media texts","Analyse how media constructs meaning, audience awareness","Evaluate credibility of online sources, responsible creation","Media and identity, algorithmic bias, ethical media production"]},
+     levels:["Identify different types of media, messages in advertising","Identify point of view in media, create simple media texts","Analyse how media constructs meaning, audience awareness","Evaluate credibility of online sources, responsible creation","Media and identity, algorithmic bias, ethical media production","Identify types of media: print, digital, audio, video, social media","Analyse media messages: purpose, audience, techniques used to persuade","Evaluate media: reliability, bias, representation, stereotypes","Create media texts: plan, produce, reflect on purpose and audience","Media and society: how media shapes culture, values, identity, democracy"]},
   ],
   "Science & Technology": [
     {id:"life_systems",   name:"Life Systems",                 emoji:"🌿", minAge:5,
      desc:"Plants, animals, human body, habitats and ecosystems",
-     levels:["Needs of living things, parts of plants, animals and habitats","Life cycles of plants and animals, growth and change","Human body systems, nutrition, health and well-being","Ecosystems: food chains, biotic/abiotic, biodiversity","Population dynamics, human impact on ecosystems, conservation"]},
+     levels:["Needs of living things, parts of plants, animals and habitats","Life cycles of plants and animals, growth and change","Human body systems, nutrition, health and well-being","Ecosystems: food chains, biotic/abiotic, biodiversity","Population dynamics, human impact on ecosystems, conservation","Characteristics of living things: cells, growth, response, reproduction","Plant systems: roots, stems, leaves, flowers — structure and function","Animal systems: digestive, circulatory, respiratory, skeletal, nervous","Ecosystems: food webs, energy flow, biodiversity, interdependence","Sustainability: human impact on ecosystems, conservation, stewardship"]},
     {id:"matter_ca",      name:"Matter & Materials",           emoji:"🧪", minAge:5,
      desc:"Properties of materials, states of matter and changes",
-     levels:["Properties of materials, sort by: hard/soft, magnetic","States of matter: solid, liquid, gas, observable changes","Physical vs chemical changes, mixtures, solutions","Particle model, changes of state, heat and temperature","Atomic structure basics, periodic table intro, chemical reactions"]},
+     levels:["Properties of materials, sort by: hard/soft, magnetic","States of matter: solid, liquid, gas, observable changes","Physical vs chemical changes, mixtures, solutions","Particle model, changes of state, heat and temperature","Atomic structure basics, periodic table intro, chemical reactions","Properties of matter: physical properties, measuring, comparing materials","States of matter: solid, liquid, gas — particle model, changing states","Pure substances vs mixtures: elements, compounds, mechanical mixtures, solutions","Chemical vs physical change: evidence, reversibility, new substances","Atomic theory: atoms, elements, periodic table basics, chemical bonding intro"]},
     {id:"energy_ca",      name:"Energy & Control",             emoji:"⚡", minAge:7,
      desc:"Forces, motion, electricity, light and sound",
-     levels:["Push/pull forces, magnets attract/repel, simple machines","Electricity: circuits, series, safety, conductors/insulators","Light: sources, reflection, refraction, colour spectrum","Sound: vibrations, pitch, volume, how sound travels","Forms of energy, energy transformation, conservation of energy"]},
+     levels:["Push/pull forces, magnets attract/repel, simple machines","Electricity: circuits, series, safety, conductors/insulators","Light: sources, reflection, refraction, colour spectrum","Sound: vibrations, pitch, volume, how sound travels","Forms of energy, energy transformation, conservation of energy","Forms of energy: mechanical, thermal, light, sound, electrical, chemical","Energy transfer and transformation: follow energy through a system","Heat energy: conduction, convection, radiation, insulators and conductors","Light and optics: reflection, refraction, colour, lenses and mirrors","Electricity and magnetism: circuits, electromagnets, generators, renewable energy"]},
     {id:"structures",     name:"Structures & Mechanisms",      emoji:"🏗️", minAge:6,
      desc:"Simple machines, structures, forces and design process",
-     levels:["Strong shapes in structures, build stable structures","Simple machines: lever, pulley, wheel, ramp, screw","Mechanical advantage, gears, pneumatics and hydraulics","Design process: identify, design, build, test, improve","Complex structures, loads, materials engineering, systems"]},
+     levels:["Strong shapes in structures, build stable structures","Simple machines: lever, pulley, wheel, ramp, screw","Mechanical advantage, gears, pneumatics and hydraulics","Design process: identify, design, build, test, improve","Complex structures, loads, materials engineering, systems","Structures in nature and built environment: identify function and design","Forces on structures: load, tension, compression, torsion, shear","Properties of materials: strength, flexibility, hardness for structural use","Design process: identify need, design, build, test, evaluate, improve","Sustainable design: environmental impact, materials choice, life cycle"]},
     {id:"earth_ca",       name:"Earth & Space Systems",        emoji:"🌍", minAge:6,
      desc:"Rocks, water cycle, weather, climate and solar system",
-     levels:["Rocks and minerals, soil formation, erosion","Water cycle: evaporation, condensation, precipitation","Weather patterns, climate vs weather, Canadian climate regions","Solar system, moon phases, Earth's rotation and revolution","Climate change, human impact, sustainability, Indigenous knowledge"]},
+     levels:["Rocks and minerals, soil formation, erosion","Water cycle: evaporation, condensation, precipitation","Weather patterns, climate vs weather, Canadian climate regions","Solar system, moon phases, Earth's rotation and revolution","Climate change, human impact, sustainability, Indigenous knowledge","Weather: measuring, recording, predicting; instruments and meteorology","Water cycle: evaporation, condensation, precipitation, collection, groundwater","Rocks and minerals: types, formation, properties, identification, uses","Soils: composition, formation, properties, importance to ecosystems","Climate change: causes, evidence, effects in Canada, global solutions"]},
   ],
   "Social Studies": [
     {id:"canadian",       name:"Canadian Heritage & Identity", emoji:"🍁", minAge:6,
      desc:"First Nations, colonial history, Confederation and modern Canada",
-     levels:["My community: home, school, neighbourhood, local leaders","First Nations peoples: diverse cultures, traditions, land relationships","New France and British colonisation: fur trade, conflict, cultural exchange","Confederation 1867: Fathers of Confederation, why Canada united","WW1, WW2, peacekeeping: Canada's role and contribution"]},
+     levels:["My community: home, school, neighbourhood, local leaders","First Nations peoples: diverse cultures, traditions, land relationships","New France and British colonisation: fur trade, conflict, cultural exchange","Confederation 1867: Fathers of Confederation, why Canada united","WW1, WW2, peacekeeping: Canada's role and contribution","Indigenous peoples of Canada: First Nations, Métis, Inuit — culture and contributions","Early Canadian history: explorers, New France, British colonisation, Confederation","Canadian identity: multiculturalism, Charter of Rights, official languages","Canadian government: federal, provincial, municipal — roles and responsibilities","Canada in the world: NATO, UN, peacekeeping, trade, foreign policy"]},
     {id:"ca_geography",   name:"Canadian Geography",           emoji:"🗺️", minAge:5,
      desc:"Provinces, territories, physical features and regions",
-     levels:["Province and territory names and capitals on a map","Natural regions: Canadian Shield, Prairies, Rockies, Arctic","Physical features: Great Lakes, St. Lawrence, Rocky Mountains","Climate regions, natural resources, Indigenous territories","Population distribution, urbanisation, regional identity"]},
+     levels:["Province and territory names and capitals on a map","Natural regions: Canadian Shield, Prairies, Rockies, Arctic","Physical features: Great Lakes, St. Lawrence, Rocky Mountains","Climate regions, natural resources, Indigenous territories","Population distribution, urbanisation, regional identity","Canada's regions: Atlantic, Central, Prairie, Pacific, Northern — features and resources","Physical geography: Canadian Shield, Rocky Mountains, Great Lakes, rivers","Natural resources: forestry, mining, agriculture, oil — sustainability","Population geography: distribution, urbanisation, immigration, diversity","Environmental geography: climate zones, ecosystems, conservation in Canada"]},
     {id:"world_hist_ca",  name:"World History & Global Geography",emoji:"🌐", minAge:7,
      desc:"Ancient civilisations, exploration and global connections",
-     levels:["Ancient civilisations: Egypt, Greece, Rome, China, Mesopotamia","Medieval world: feudalism, Islam, trade routes, Black Death","Age of Exploration: European contact, colonisation and its impacts","Industrial Revolution, imperialism, WW1 and WW2 global impact","Cold War, decolonisation, United Nations, modern global issues"]},
+     levels:["Ancient civilisations: Egypt, Greece, Rome, China, Mesopotamia","Medieval world: feudalism, Islam, trade routes, Black Death","Age of Exploration: European contact, colonisation and its impacts","Industrial Revolution, imperialism, WW1 and WW2 global impact","Cold War, decolonisation, United Nations, modern global issues","Ancient civilisations: contributions to science, arts, governance, philosophy","Medieval and early modern world: feudalism, trade routes, religious change","European contact and colonisation: impact on Indigenous peoples worldwide","Industrial Revolution: causes, effects on work, cities, environment globally","Modern world history: WWI, WWII, Cold War, decolonisation, globalisation"]},
     {id:"government_ca",  name:"Government & Citizenship",     emoji:"⚖️", minAge:7,
      desc:"Democratic government, rights, responsibilities and law",
-     levels:["Rules vs laws, class rules, school community decisions","Municipal government: mayor, councillors, local services","Provincial government: Premier, MPPs, how laws are made","Federal government: Prime Minister, Parliament, Constitution","Canadian Charter of Rights and Freedoms, Indigenous rights, treaties"]},
+     levels:["Rules vs laws, class rules, school community decisions","Municipal government: mayor, councillors, local services","Provincial government: Premier, MPPs, how laws are made","Federal government: Prime Minister, Parliament, Constitution","Canadian Charter of Rights and Freedoms, Indigenous rights, treaties","Rules and laws: why communities need them, how they protect rights","Local government: how it works, services provided, how to participate","Provincial and federal government: roles, responsibilities, how bills become law","Democracy and voting: rights, responsibilities, how elections work in Canada","Global governance: United Nations, international law, Canada's global role"]},
     {id:"economics_ca",   name:"Economics & Sustainable Development",emoji:"🌱", minAge:7,
      desc:"Resources, trade, financial literacy and sustainability",
-     levels:["Needs vs wants, goods and services, producers and consumers","Natural resources: renewable vs non-renewable, responsible use","Trade: why Canada trades, imports/exports, major trading partners","Economic systems, entrepreneurship, Indigenous economic models","Sustainable development goals, green economy, global responsibility"]},
+     levels:["Needs vs wants, goods and services, producers and consumers","Natural resources: renewable vs non-renewable, responsible use","Trade: why Canada trades, imports/exports, major trading partners","Economic systems, entrepreneurship, Indigenous economic models","Sustainable development goals, green economy, global responsibility","Needs and wants: scarcity, choice, opportunity cost in daily life","Canadian economy: sectors, major industries, trade partners, labour market","Entrepreneurship: innovation, risk, reward, social enterprise","Global economics: trade, interdependence, fair trade, development","Financial decisions: budgeting, saving, investing, understanding debt"]},
     {id:"global_issues",  name:"Global Issues & Perspectives", emoji:"🌐", minAge:9,
      desc:"Sustainability, climate, human rights and global connections",
-     levels:["Global citizenship: rights and responsibilities worldwide","Climate change: causes, effects, Canadian and global action","Poverty and inequality: causes, solutions, international aid","Conflict, peacekeeping and the UN: Canada's role","Sustainable Development Goals, activism, making a difference"]},
+     levels:["Global citizenship: rights and responsibilities worldwide","Climate change: causes, effects, Canadian and global action","Poverty and inequality: causes, solutions, international aid","Conflict, peacekeeping and the UN: Canada's role","Sustainable Development Goals, activism, making a difference","Human rights: Universal Declaration, examples of violations, advocacy","Poverty and inequality: causes, effects, organisations working for change","Environmental sustainability: climate change, biodiversity loss, solutions","Migration and refugees: causes, experiences, responsibility, policy","Global citizenship: taking action locally, nationally and globally"]},
   ],
   "Computer Studies": [
     {id:"comp_think_ca",  name:"Computational Thinking",       emoji:"🧠", minAge:5,
      desc:"Algorithms, decomposition, patterns and problem-solving",
-     levels:["Follow and give step-by-step instructions, spot patterns","Decompose problems, identify what information is needed","Design algorithms, evaluate different solutions","Generalise solutions, use abstraction to simplify problems","Model complex problems, optimise solutions, evaluate efficiency"]},
+     levels:["Follow and give step-by-step instructions, spot patterns","Decompose problems, identify what information is needed","Design algorithms, evaluate different solutions","Generalise solutions, use abstraction to simplify problems","Model complex problems, optimise solutions, evaluate efficiency","Decomposition: break problems into parts, identify steps in daily processes","Abstraction: identify essential information, create simplified models","Algorithms: write clear instructions, identify errors, improve solutions","Pattern recognition: identify repeating elements, apply to new problems","Debugging: find and fix errors systematically, test and verify solutions"]},
     {id:"coding_ca",      name:"Coding & Programming",         emoji:"💻", minAge:6,
      desc:"Scratch, Python and block-based programming",
-     levels:["Scratch: sequences, events, sprites and backdrops","Scratch: loops, conditionals, variables, simple games","Python intro: print, input, variables, if/else statements","Python: loops, functions, lists, debug and test programs","Projects: create original programs, collaborate, present code"]},
+     levels:["Scratch: sequences, events, sprites and backdrops","Scratch: loops, conditionals, variables, simple games","Python intro: print, input, variables, if/else statements","Python: loops, functions, lists, debug and test programs","Projects: create original programs, collaborate, present code","Scratch: sequences, events, motion, basic interactive program","Scratch: loops, conditionals, variables, interactive game or story","Python: print, variables, input, arithmetic, string manipulation","Python: if/elif/else, for/while loops, functions with parameters","Python: lists, file handling, modules, commenting, collaborative projects"]},
     {id:"digital_cit_ca", name:"Digital Citizenship",          emoji:"🛡️", minAge:5,
      desc:"Online safety, privacy, wellbeing and responsible use",
-     levels:["Personal information safety, trusted adults, reporting concerns","Cyberbullying: recognition, empathy, bystander responsibility","Screen time balance, mental health, healthy digital habits","Critical thinking online: misinformation, advertising, algorithms","Privacy rights, digital footprint, responsible content creation"]},
+     levels:["Personal information safety, trusted adults, reporting concerns","Cyberbullying: recognition, empathy, bystander responsibility","Screen time balance, mental health, healthy digital habits","Critical thinking online: misinformation, advertising, algorithms","Privacy rights, digital footprint, responsible content creation","Digital identity: managing your online presence, privacy settings","Cyberbullying: recognise, respond, report; creating positive online culture","Information literacy: evaluating digital sources, fact-checking, citations","Copyright and intellectual property: creating and respecting original work","Digital wellbeing: screen time, sleep, relationships, healthy technology use"]},
     {id:"data_ca2",       name:"Data Literacy & Computing",    emoji:"📊", minAge:7,
      desc:"Collecting, analysing and presenting data ethically",
-     levels:["Collect and record data, simple graphs and charts","Spreadsheets: sort, filter, create charts from data","Statistical thinking: mean, median, bias, sampling","Database design, queries, analysis of large data sets","Ethical data use, privacy, AI and machine learning basics"]},
+     levels:["Collect and record data, simple graphs and charts","Spreadsheets: sort, filter, create charts from data","Statistical thinking: mean, median, bias, sampling","Database design, queries, analysis of large data sets","Ethical data use, privacy, AI and machine learning basics","Data collection: surveys, experiments, observations — organising data","Data representation: bar graphs, line graphs, pictographs, circle graphs","Binary and data storage: how computers represent information","Spreadsheets: entering, sorting, filtering, formulas, creating charts","Data privacy: how companies collect data, rights, protecting personal information"]},
   ],
 };
 
@@ -617,33 +629,76 @@ Language: ${age<=6?"Very simple, max 1 short sentence":"Clear and friendly 1-2 s
 Return ONLY valid JSON no markdown:
 {"question":"...","options":["A) ...","B) ...","C) ...","D) ..."],"correct":"A","explanation":"simple 1-sentence","difficulty":"easy"}`;
 
-const sessionSys = (child, subject, topic, mode, sC, sT, askedQs=[]) => {
-  const t=TUTORS[child.tutor];
-  const acc=sT>0?sC/sT:0.5;
-  const easier=acc<0.45&&sT>=3, harder=acc>0.82&&sT>=3;
-  const topicLevel=topic?(child.topicLevels?.[subject]?.[topic.id]||1):child.level[subject];
-  return `You are ${child.tutor}. Style: ${t.style}
-Child: ${child.name}, age ${child.age}, ${child.country} (${child.yearGroup})
-Subject: ${subject}
-Topic: ${topic?.name||subject}
-Country curriculum: ${child.country||"UK"} — questions must align to ${child.country||"UK"} national curriculum standards
-Level: ${topicLevel} (${getLevelContext(topicLevel)})
-Curriculum context: ${topic?.levels?.[Math.min(topicLevel-1,4)]||"age-appropriate content"}
-Year group: ${child.yearGroup} (${child.country||"UK"})
-Accuracy: ${Math.round(acc*100)}% (${sT} questions)
-${easier?"Child is struggling — make it easier, add a helpful hint":""}${harder?"Child is excelling — push harder, increase complexity":""}
-IMPORTANT: 
-- Generate ONE question at level ${topicLevel} difficulty
-- These EXACT questions have already been asked — DO NOT repeat them: ${askedQs.slice(-10).join(' ||| ')||'none yet'}
-- You MUST generate a completely different question on a different aspect of the topic
-- Vary the format each time: multiple choice, true/false, fill the blank, word problems, what-comes-next
-- If stuck, approach the topic from a completely different angle
-${easier?"⚠️ Struggling — easier + hint":""}${harder?"✨ Excelling — slightly harder":""}
-Language: ${child.age<=6?"Very simple max 1 sentence":"Clear friendly"}
-${mode==="visual"?"Include SVG 220x140px illustrating the TOPIC ONLY — never show the answer, never label the correct option, never include text that gives away the answer.":""}
-Return ONLY valid JSON:
-{"question":"...","options":["A) ...","B) ...","C) ...","D) ..."],"correct":"A","explanation":"in ${child.tutor} style","hint":"${easier?"helpful hint":""}","encouragement":"short ${child.tutor} celebration","difficulty":"easy|medium|hard"${mode==="visual"?`,"svg":"<svg width='220' height='140' viewBox='0 0 220 140' xmlns='http://www.w3.org/2000/svg'><!-- bright simple illustration --></svg>"`:""}}`
+
+const YEAR_GROUP_CONTENT = {
+  UK:{
+    "Reception":{Maths:"Count to 20, recognise numerals, add subtract single digits, simple shapes, measure compare",English:"Phonics Phase 2-3, CVC words, simple sentences, listening to stories, rhyme",Science:"Seasons, plants animals local environment, everyday materials, senses"},
+    "Year 1":{Maths:"Count to 100, place value to 100, add subtract to 20, 2s 5s 10s times tables, halves quarters, basic measurements, 2D 3D shapes",English:"Phase 3-5 phonics, common exception words, capital letters full stops, nouns verbs adjectives, simple joined sentences",Science:"Seasonal changes, wild and garden plants, fish amphibians reptiles birds mammals, everyday materials properties",History:"Changes within living memory, significant events beyond living memory",Geography:"UK four countries capitals, hot cold areas of world, compass points",Computing:"Simple programs, logical reasoning, use technology safely"},
+    "Year 2":{Maths:"Numbers to 100, column addition subtraction, 2 5 10 times tables, halves thirds quarters, standard measurements, 2D 3D shapes",English:"Year 2 exception words, nouns pronouns verbs adjectives adverbs, subordination coordination, apostrophes",Science:"Living things habitats food chains, plants growth, animals nutrition exercise hygiene, materials properties",History:"Great Fire of London, significant explorers, local history",Geography:"UK regions rivers mountains, world continents oceans"},
+    "Year 3":{Maths:"4-digit numbers, column add subtract, 3 4 8 times tables, fractions shapes, 12 24 hour time, perimeter, angles, bar charts",English:"Prefixes suffixes, apostrophes, speech punctuation, paragraphs, conjunctions adverbs prepositions",Science:"Plants pollination life cycle. Light reflection shadows. Forces magnets. Rocks fossils soil.",History:"Ancient Egypt. Stone Age to Iron Age.",Geography:"Europe countries capitals rivers. Trade links.",Computing:"Algorithms Scratch programming, online safety"},
+    "Year 4":{Maths:"Numbers to 10000, all 12 times tables, decimals 2dp, equivalent fractions, area perimeter, Roman numerals, coordinates, line graphs",English:"Year 3-4 spelling list, fronted adverbials, noun phrases, determiners, Standard English, paragraph cohesion",Science:"Digestion teeth. Sound vibrations pitch volume. Electricity circuits. States of matter.",History:"Ancient Greece democracy legacy. Roman Britain.",Geography:"UK rivers, OS maps, grid references, settlements",Computing:"Scratch with user input, databases, internet"},
+    "Year 5":{Maths:"Numbers to million, negative, BODMAS, 4-digit x 2-digit, fractions mixed numbers, percentages, area triangles, converting units, volume",English:"Year 5-6 spelling list, relative clauses, modal verbs, passive voice, semi-colons colons dashes",Science:"Life cycles plants mammals birds amphibians. Dissolving separating mixtures. Earth space solar system.",History:"Anglo-Saxons Vikings. WWII causes effects.",Geography:"World biomes, climate zones, water cycle, trade",Computing:"Python variables input output conditions loops. Networks."},
+    "Year 6":{Maths:"Algebra, ratio proportion, all fraction operations, percentages, area circles, volume, mean, negative numbers, equations",English:"Complex sentences, literary techniques, argument debate, report journalism, critical reading, authorial intent",Science:"Evolution adaptation inheritance. Light refraction. Circulatory system. Electricity voltage.",History:"WW2 in depth, post-war Britain, chronological history",Geography:"Fair trade, development, map skills 6-figure references",Computing:"Advanced Python, cybersecurity, AI intro"},
+  },
+  US:{
+    "Kindergarten":{Math:"Count to 100, compare numbers, add subtract within 10, shapes, measurement comparison","English Language Arts":"Letter-sound correspondence, sight words, retell stories, describe characters",Science:"Pushes pulls, living non-living things, weather, needs of plants animals","Social Studies":"Self family classroom, community helpers, basic maps"},
+    "Grade 1":{Math:"Count to 120, add subtract within 20, place value, measure lengths, tell time","English Language Arts":"Decode words, sight words, ask answer questions, write opinion sentences",Science:"Sound light vibrations reflection. Plants animals structures. Sky patterns.","Social Studies":"Families communities, goods services, historical figures"},
+    "Grade 2":{Math:"Add subtract within 100, place value to 1000, standard measurement, time, money, arrays","English Language Arts":"Multisyllabic words, main topic key details, compare texts, write informative narrative",Science:"Solid liquid gas. Animals habitats. Earth materials.","Social Studies":"Communities government economics, US regions"},
+    "Grade 3":{Math:"Multiply divide within 100, fractions number line, area perimeter, time intervals, bar graphs","English Language Arts":"Chapter books, message or lesson, compare characters settings, opinion writing with evidence",Science:"Heredity traits. Life cycles. Weather climate. Magnets.","Social Studies":"Geography continents oceans, US regions, supply demand"},
+    "Grade 4":{Math:"Multi-digit multiplication division, fractions same denominator, decimal notation, classify shapes","English Language Arts":"Infer from text, determine theme, compare narrators, multi-paragraph essays",Science:"Energy transfer waves sound light. Rocks weathering. Plant animal structures.","Social Studies":"US regions, state history, Native American cultures, government branches"},
+    "Grade 5":{Math:"Multiply divide fractions, decimals thousandths, volume, coordinate plane, data analysis","English Language Arts":"Figurative language, cite textual evidence, argument with counterclaims",Science:"Matter properties states changes. Ecosystems food webs. Earth systems.","Social Studies":"US history Constitution, Civil War, immigration, westward expansion"},
+  },
+  CA:{
+    "Kindergarten":{Mathematics:"Count to 20, compare groups, simple patterns, basic shapes",Language:"Letter recognition, retell stories, print concepts","Science & Technology":"Needs of living things, seasonal changes, materials","Social Studies":"Self family classroom, community, Indigenous peoples intro"},
+    "Grade 1":{Mathematics:"Count to 50, add subtract to 20, simple fractions, 2D 3D shapes, non-standard measurement",Language:"Phonics, sight words, retell texts, simple sentences","Science & Technology":"Living things, seasonal change, properties of objects","Social Studies":"Family community traditions, Canada's diverse communities"},
+    "Grade 2":{Mathematics:"Count to 200, add subtract to 100, multiplication patterns, fractions, standard measurement",Language:"Decoding strategies, main idea, compare texts, write recounts","Science & Technology":"Animals growth changes, liquids solids, simple machines","Social Studies":"Canadian communities, Indigenous peoples, local geography"},
+    "Grade 3":{Mathematics:"Numbers to 1000, multiplication division facts, fractions, perimeter area, bar graphs",Language:"Chapter books, structured paragraphs, research, oral presentations","Science & Technology":"Plants. Matter materials. Forces movement. Soils.","Social Studies":"Urban rural communities, natural resources, provincial regions"},
+    "Grade 4":{Mathematics:"Numbers to 10000, all multiplication facts, decimals, fractions, area perimeter, probability",Language:"Infer interpret, structured essays, research, persuasive writing","Science & Technology":"Habitats communities. Matter materials. Light sound. Rocks minerals.","Social Studies":"Medieval societies, Indigenous peoples, Canada's regions"},
+    "Grade 5":{Mathematics:"Integers, fractions operations, percent, surface area volume, data analysis",Language:"Critical literacy, literary techniques, argument writing, research","Science & Technology":"Human organ systems. Properties of matter. Forces on structures.","Social Studies":"First contact, Treaties, Confederation, rights governance"},
+    "Grade 6":{Mathematics:"Rational numbers, ratio proportion, algebra, geometric relationships, statistics",Language:"Authorial intent, literary analysis, debate argument, complex research","Science & Technology":"Biodiversity. Flight. Space. Electricity.","Social Studies":"Canada in world, globalisation, human rights, sustainability"},
+  },
 };
+
+function getYearGroupContent(child, subject) {
+  const country = child.country||"UK";
+  const yg = child.yearGroup||YEAR[country]?.[child.age]||"Year 3";
+  return YEAR_GROUP_CONTENT[country]?.[yg]?.[subject]||null;
+}
+
+const sessionSys = (child, subject, topic, mode, sC, sT, askedQs=[]) => {
+  const t = TUTORS[child.tutor];
+  const acc = sT>0 ? sC/sT : 0.5;
+  const easier = acc<0.45 && sT>=3;
+  const harder = acc>0.82 && sT>=3;
+  const country = child.country||"UK";
+  const yearGroup = child.yearGroup||YEAR[country]?.[child.age]||"Year 3";
+  const topicLevel = topic ? (child.topicLevels?.[subject]?.[topic.id]||1) : (child.level?.[subject]||1);
+  const yearContent = getYearGroupContent(child, subject);
+  const levelObj = topic?.levels?.[topicLevel-1]||topic?.desc||yearContent||"age-appropriate content";
+  const lang = country==="US"?"American English (math, color, grade)":country==="CA"?"Canadian English (math, colour, grade)":"British English (maths, colour, year group)";
+  return `You are ${child.tutor}. Style: ${t.style}
+
+CHILD: ${child.name} | ${yearGroup} | Age ${child.age} | ${country}
+SUBJECT: ${subject} | TOPIC: ${topic?.name||subject} | LANGUAGE: ${lang}
+
+${yearGroup} ${subject} CURRICULUM (${country}) — questions MUST stay within this:
+"${yearContent||levelObj}"
+TOPIC LEVEL ${topicLevel}/10: "${levelObj}"
+
+RULES (no exceptions):
+1. Pitch question at exactly ${yearGroup} level — not above, not below
+2. Vocabulary suitable for age ${child.age} only
+3. Examples from a ${child.age}-year-old's everyday life in ${country}
+4. ${lang} throughout
+${easier?"5. Simplify — child struggling. Add a hint.":""}${harder?"5. Slightly more challenging — still within ${yearGroup}":""}
+
+Do NOT repeat: ${askedQs.slice(-8).join(" | ")||"none yet"}
+Vary formats: multiple choice, true/false, fill-blank, word problems, spot-mistake
+
+Return ONLY valid JSON:
+{"question":"...","options":["A) ...","B) ...","C) ...","D) ..."],"correct":"A","explanation":"brief, ${child.tutor} style","hint":"${easier?"helpful hint":""}","encouragement":"short cheer","difficulty":"${topicLevel<=3?"easy":topicLevel<=7?"medium":"hard"}"}`;
+};
+
 
 // ── SPEECH ────────────────────────────────────────────────────────────────
 function cleanForSpeech(text) {
@@ -1069,7 +1124,7 @@ function Diagnostic({child,onDone}) {
 }
 
 // ── 7. Child Dashboard ────────────────────────────────────────────────────
-function ChildDash({child,isParentView,onSession,onGames,onBadges,onParentView,onMyStats,onSignOut,onChangeAvatar}) {
+function ChildDash({child,isParentView,onSession,onGames,onBadges,onParentView,onMyStats,onSignOut,onChangeAvatar,onLeaderboard,onWeeklyChallenge,children}) {
   const tutor=TUTORS[child.tutor]||TUTORS.sparky;
   const tColor=tutor?.color||C.primary;
   const hour=new Date().getHours();
@@ -1197,6 +1252,8 @@ function ChildDash({child,isParentView,onSession,onGames,onBadges,onParentView,o
         {/* ── Bottom buttons ── */}
         <div style={{padding:"0 16px 32px"}}>
           {!isParentView&&<Btn onClick={onMyStats} v="ghost" style={{width:"100%",marginBottom:10}}>📊 My Progress</Btn>}
+          {children&&children.length>1&&<Btn onClick={onLeaderboard} v="ghost" style={{width:"100%",marginBottom:10}}>🏆 Family Leaderboard</Btn>}
+          {children&&children.length>1&&<Btn onClick={onWeeklyChallenge} v="ghost" style={{width:"100%",marginBottom:10}}>⚡ Weekly Challenge</Btn>}
           {!isParentView&&<Btn onClick={onChangeAvatar} v="ghost" style={{width:"100%",marginBottom:10}}>🎨 Change Avatar</Btn>}
           {!isParentView&&<Btn onClick={onSignOut} v="ghost" style={{width:"100%",marginBottom:10}}>🚪 Sign Out</Btn>}
           {!isParentView&&<button onClick={()=>{if(window.confirm("Report an issue with a question or content?"))alert("Thank you! Our team will review this.");}} style={{fontSize:12,fontWeight:700,color:C.muted,background:"none",border:"none",cursor:"pointer",fontFamily:F,width:"100%"}}>🚩 Report a content issue</button>}
@@ -1206,6 +1263,62 @@ function ChildDash({child,isParentView,onSession,onGames,onBadges,onParentView,o
   );
 }
 
+
+
+function MasteryTest({child,subject,topic,level,onPass,onFail}) {
+  const PASS=8,TOTAL=10;
+  const [qs,setQs]=useState(null);const [idx,setIdx]=useState(0);const [correct,setCorrect]=useState(0);
+  const [sel,setSel]=useState(null);const [ans,setAns]=useState(false);const [done,setDone]=useState(false);
+  useEffect(()=>{
+    claude(`Generate ${TOTAL} mastery test questions for "${topic?.name}" in ${subject}.
+Child: age ${child.age}, ${child.yearGroup||"Year 3"}, ${child.country||"UK"} curriculum, Level ${level}.
+Test full understanding. Mix easy medium hard. Need ${PASS}/${TOTAL} to pass.
+Return ONLY JSON: {"questions":[{"q":"...","options":["A) ...","B) ...","C) ...","D) ..."],"correct":"A","explanation":"..."}]}`,
+    "Mastery test.").then(d=>{if(d?.questions?.length)setQs(d.questions);});
+  },[]);
+  const answer=(opt)=>{
+    if(ans||!qs)return;setSel(opt);setAns(true);
+    if(opt.charAt(0)===qs[idx]?.correct)setCorrect(c=>c+1);
+    setTimeout(()=>{if(idx+1>=TOTAL)setDone(true);else{setSel(null);setAns(false);setIdx(i=>i+1);}},1000);
+  };
+  const passed=correct>=PASS;
+  if(!qs)return(<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.9)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",zIndex:200,gap:16}}><div style={{fontSize:48}}>🎯</div><p style={{fontSize:20,fontWeight:900,color:"#fff"}}>Loading Mastery Test...</p></div>);
+  if(done)return(
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.92)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:200,padding:24}}>
+      <div style={{background:"#fff",borderRadius:28,padding:32,maxWidth:400,width:"100%",textAlign:"center"}}>
+        <div style={{fontSize:72,marginBottom:12}}>{passed?"🏆":"💪"}</div>
+        <h2 style={{fontSize:26,fontWeight:900,color:passed?C.green:C.amber,marginBottom:8}}>{passed?"Level Up!":"Keep Practising!"}</h2>
+        <div style={{background:passed?"#DCFCE7":"#FEF3C7",borderRadius:16,padding:"14px 20px",marginBottom:16}}>
+          <p style={{fontSize:34,fontWeight:900,color:passed?C.green:"#D97706"}}>{correct}/{TOTAL}</p>
+          <p style={{fontSize:14,fontWeight:700,color:passed?"#166534":"#92400E"}}>{passed?`Amazing! Moving to Level ${(level||1)+1}!`:`Need ${PASS}/10 to pass. Keep practising — you can do it!`}</p>
+        </div>
+        <button onClick={()=>passed?onPass(correct,TOTAL):onFail(correct,TOTAL)} style={{width:"100%",padding:"16px",borderRadius:16,fontSize:17,fontWeight:900,cursor:"pointer",fontFamily:"'Nunito',sans-serif",background:passed?"linear-gradient(135deg,#16A34A,#22C55E)":"linear-gradient(135deg,#F59E0B,#D97706)",color:"#fff",border:"none"}}>
+          {passed?`Level ${(level||1)+1} →`:"Practise More →"}
+        </button>
+      </div>
+    </div>
+  );
+  const q=qs[idx];const cols=["#E53E3E","#3182CE","#D69E2E","#38A169"];
+  return(
+    <div style={{position:"fixed",inset:0,background:"rgba(15,15,26,0.97)",zIndex:200,overflow:"auto",padding:20}}>
+      <div style={{maxWidth:480,margin:"0 auto",paddingTop:20}}>
+        <div style={{textAlign:"center",marginBottom:16}}>
+          <div style={{display:"inline-flex",alignItems:"center",gap:8,background:"linear-gradient(135deg,#F59E0B,#EF4444)",borderRadius:50,padding:"8px 20px",marginBottom:8}}>
+            <span style={{fontSize:18}}>🎯</span><p style={{fontSize:14,fontWeight:900,color:"#fff"}}>MASTERY TEST · Level {level}</p>
+          </div>
+          <div style={{display:"flex",gap:3,justifyContent:"center",marginBottom:4}}>
+            {Array.from({length:TOTAL}).map((_,i)=><div key={i} style={{width:20,height:5,borderRadius:3,background:i<idx?"#22C55E":i===idx?"#FCD34D":"rgba(255,255,255,0.2)"}}/>)}
+          </div>
+          <p style={{fontSize:11,color:"rgba(255,255,255,0.5)"}}>Need {PASS}/10 to advance · {correct} correct so far</p>
+        </div>
+        <div style={{background:"rgba(255,255,255,0.07)",borderRadius:20,padding:"20px 16px",marginBottom:14,border:"1px solid rgba(255,255,255,0.1)"}}><p style={{fontSize:16,fontWeight:800,color:"#fff",lineHeight:1.6,textAlign:"center"}}>{q?.q}</p></div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
+          {q?.options?.map((opt,i)=>{const ok=ans&&opt===q.correct,bad=ans&&sel===opt&&!ok,dim=ans&&!ok&&sel!==opt;return(<button key={i} onClick={()=>answer(opt)} disabled={!!ans} style={{padding:"16px 12px",borderRadius:16,fontSize:13,fontWeight:900,cursor:ans?"default":"pointer",fontFamily:"'Nunito',sans-serif",border:"none",background:ok?"#22C55E":bad?"#EF4444":dim?"rgba(255,255,255,0.05)":`linear-gradient(135deg,${cols[i]},${cols[i]}BB)`,color:dim?"rgba(255,255,255,0.2)":"#fff",opacity:dim?0.4:1}}>{ok?"✅ ":bad?"❌ ":""}{opt.replace(/^[A-D]\)\s*/,"")}</button>);})}</div>
+        {ans&&q?.explanation&&<div style={{padding:"10px 14px",borderRadius:12,background:"rgba(99,102,241,0.2)"}}><p style={{fontSize:12,fontWeight:700,color:"#A5B4FC",lineHeight:1.6}}>💡 {q.explanation}</p></div>}
+      </div>
+    </div>
+  );
+}
 
 function Session({child,startSubject,startTopic,onComplete,onUpdate,onExit,a11y={}}) {
   const QUESTIONS_PER_LEVEL = 50; // 50 questions before mastery test
@@ -1518,6 +1631,7 @@ function SessionDone({child,stats,onDone,a11y={}}) {
 // ── 10. Badges Screen ─────────────────────────────────────────────────────
 function BadgesScreen({child,onBack}) {
   const earned=child.badges||[];
+  const [tooltip,setTooltip]=useState(null);
   return (
     <Screen>
       <div style={{paddingTop:20}}>
@@ -2565,6 +2679,8 @@ const GAMES = [
   { id:"localHero",       name:"Local Hero Quest",   emoji:"🏘️", subjects:["History","Social Studies"], topics:["local_history","living_memory","community"], desc:"Discover the history hidden in your local area!", minAge:6, levelDesc:["What has changed in our town or village?","Identify old and new buildings from photographs","Research how local area developed using maps","Use local archives and census records as evidence","Connect local history to national and world events"] },
   { id:"safetyShield",    name:"Safety Shield",      emoji:"🛡️", subjects:["Computing","Computer Studies"], topics:["esafety","digital_citizen","digital_cit_ca"], desc:"Build your safety shield — master online safety!", minAge:5, levelDesc:["What is personal information? What stays private?","Recognise cyberbullying — how to respond and report","Reliable vs unreliable information online","Passwords, privacy settings and staying secure","Digital footprint, rights, and responsible use"] },
   { id:"creativeStudio",  name:"Creative Studio",    emoji:"🎨", subjects:["Computing","Computer Studies"], topics:["creative","impacts","digital_cit_ca"], desc:"Design digital art, music and animations — creative computing!", minAge:7, levelDesc:["Create simple digital drawings and patterns","Animate a sprite or character step by step","Record, edit and improve a digital sound clip","Design a multi-page digital presentation","Create and publish an original multimedia project"] },
+  { id:"spellingRun",    name:"Spelling Sprint",   emoji:"✏️", subjects:["English","English Language Arts","Language"], topics:["spelling","phonics","foundational"], desc:"Type the correct spelling as fast as you can!", minAge:5, levelDesc:["CVC words and basic phonics","Year 1-2 common exception words","Year 3-4 statutory spelling list","Year 5-6 statutory spelling list","Etymology and advanced spelling patterns","Prefixes and suffixes from Latin/Greek","Homophones and near-homophones","Silent letters and double letters","Subject-specific vocabulary","Advanced morphological spelling patterns"] },
+  { id:"mathSprint",     name:"Maths Sprint",       emoji:"⚡", subjects:["Maths","Math","Mathematics"], topics:["addition","multiplication","number_place","statistics"], desc:"Type the answer to maths questions as fast as you can!", minAge:5, levelDesc:["Addition and subtraction within 20","Times tables: 2s 5s 10s","All times tables to 12×12","Mental division and inverse operations","Mixed operations with decimals","Fraction arithmetic","Percentage calculations","Algebra: find the unknown","Multi-step mental maths","Speed maths: GL Assessment style"] },
   { id:"memoryComputer",  name:"Computer Memory",    emoji:"💾", subjects:["Computing","Computer Studies"], topics:["networks","networks_us","networks_ca"], desc:"Match hardware to its function — memory game style!", minAge:7, levelDesc:["Match basic hardware: keyboard, screen, mouse","Match components to their functions: CPU, RAM","Match network devices to their roles","Match internet terms to their meanings","Match cybersecurity terms to their descriptions"] },
 ];
 
@@ -2716,7 +2832,7 @@ function useLivesGame(fetchFn, initialLevel=1) {
 }
 
 // ── SHOOTER ENGINE ────────────────────────────────────────────────────────
-function ShooterEngine({child,name,emoji,subject,color="#4F46E5",bg="#EEF2FF",fetchFn,initialLevel=1}) {
+function ShooterEngine({child,name,emoji,subject,color="#4F46E5",bg="#EEF2FF",fetchFn,initialLevel=1,onComplete=()=>{},onQuit=()=>{}}) {
   const game=useLivesGame(fetchFn,initialLevel);
   const [shipX,setShipX]=useState(50);
   const [targets,setTargets]=useState([]);
@@ -2732,7 +2848,7 @@ function ShooterEngine({child,name,emoji,subject,color="#4F46E5",bg="#EEF2FF",fe
     sr.current.targets=opts.map((opt,i)=>({
       id:++idr.current,opt,correct:opt===game.q.correct||opt.charAt(0)===game.q.correct,
       x:8+i*(80/Math.max(opts.length-1,1)),y:15+Math.random()*25,
-      vx:(Math.random()-0.5)*0.5,vy:0.08+game.lvl*0.03,alive:true
+      vx:(Math.random()-0.5)*0.1,vy:0.02+game.lvl*0.008,alive:true
     }));
     setTargets([...sr.current.targets]);
     setBullets([]);sr.current.bullets=[];
@@ -2761,16 +2877,16 @@ function ShooterEngine({child,name,emoji,subject,color="#4F46E5",bg="#EEF2FF",fe
       const missed=s.targets.find(t=>t.alive&&t.correct&&t.y>90);
       if(missed){s.targets=s.targets.map(t=>t.id===missed.id?{...t,alive:false}:t);game.answer(false);}
       setTargets([...s.targets]);setBullets([...s.bullets]);setExps([...s.exps]);
-    },60);
+    },100);
     return()=>clearInterval(loop);
   },[game.done,game.qIdx,game.q]);
 
   const moveShip=dir=>{sr.current.shipX=Math.max(5,Math.min(92,sr.current.shipX+dir*10));setShipX(sr.current.shipX);};
   const fire=()=>{const b={id:++idr.current,x:sr.current.shipX,y:80};sr.current.bullets=[...sr.current.bullets,b];setBullets(p=>[...p,b]);};
 
-  if(game.loadErr)return <GameError name={name} onRetry={()=>window.location.reload()}/>;
+  if(game.loadErr)return <GameError name={name} onRetry={()=>onQuit()}/>;
   if(game.loading&&!game.q)return <GameLoad name={name} emoji={emoji} tutor={child.tutor}/>;
-  if(game.done)return <GameEnd name={name} emoji={emoji} score={game.score} max={game.score+3-game.lives} child={child} xp={game.score*12} level={game.lvl} onRetry={()=>window.location.reload()} onDone={()=>onComplete({score:game.score,max:game.score+3-game.lives,xp:game.score*12,total:game.qIdx,correct:game.score,levelReached:game.lvl})}/>;
+  if(game.done)return <GameEnd name={name} emoji={emoji} score={game.score} max={game.score+3-game.lives} child={child} xp={game.score*12} level={game.lvl} onRetry={()=>onQuit()} onDone={()=>onComplete({score:game.score,max:game.score+3-game.lives,xp:game.score*12,total:game.qIdx,correct:game.score,levelReached:game.lvl})}/>;
   return(
     <GameShell name={name} emoji={emoji} subject={subject} score={game.score} maxScore={null} round={game.qIdx+1} total={null} streak={game.streak} onQuit={()=>game.setDone(true)} lives={game.lives} level={game.lvl}>
       <div style={{textAlign:"center",marginBottom:6}}><div style={{background:bg,borderRadius:12,padding:"6px 16px",display:"inline-block",border:`2px solid ${color}30`}}><span style={{fontSize:15,fontWeight:900,color}}>{game.q?.q||game.q?.question}</span></div></div>
@@ -2817,7 +2933,7 @@ function ShooterEngine({child,name,emoji,subject,color="#4F46E5",bg="#EEF2FF",fe
 }
 
 // ── CATCHER ENGINE ────────────────────────────────────────────────────────
-function CatcherEngine({child,name,emoji,subject,color="#4F46E5",bg="#EEF2FF",fetchFn,catcherChar="🧺",sceneBg,initialLevel=1}) {
+function CatcherEngine({child,name,emoji,subject,color="#4F46E5",bg="#EEF2FF",fetchFn,catcherChar="🧺",sceneBg,initialLevel=1,onComplete=()=>{},onQuit=()=>{}}) {
   const game=useLivesGame(fetchFn,initialLevel);
   const [basketX,setBasketX]=useState(50);
   const [items,setItems]=useState([]);
@@ -2828,41 +2944,37 @@ function CatcherEngine({child,name,emoji,subject,color="#4F46E5",bg="#EEF2FF",fe
   useEffect(()=>{
     if(!game.q||game.done)return;
     const opts=game.q.options||[];
-    const speed=0.7+game.lvl*0.1;
+    // Position items spread across the arena at fixed heights — no falling
     sr.current.items=opts.map((opt,i)=>({
       id:++idr.current,opt,correct:opt===game.q.correct||opt.charAt(0)===game.q.correct,
-      x:10+i*(78/Math.max(opts.length-1,1)),y:-12,
-      speed:speed+Math.random()*0.5,caught:false
+      x:10+i*(78/Math.max(opts.length-1,1)),
+      y:25+Math.floor(i/2)*22,  // two rows, comfortably spaced
+      baseY:25+Math.floor(i/2)*22,
+      caught:false
     }));
     setItems([...sr.current.items]);setCaught(null);
   },[game.qIdx,game.q]);
 
+  // Gentle float up and down — decorative only, no falling pressure
   useEffect(()=>{
     if(game.done||!game.q||caught!==null)return;
+    let t=0;
     const loop=setInterval(()=>{
-      sr.current.items=sr.current.items.map(it=>({...it,y:it.y+it.speed}));
-      const bx=sr.current.basketX;
-      const hit=sr.current.items.find(it=>!it.caught&&it.y>74&&it.y<88&&Math.abs(it.x-bx)<13);
-      if(hit){
-        sr.current.items=sr.current.items.map(it=>it.id===hit.id?{...it,caught:true}:it);
-        setCaught(hit);game.answer(hit.correct);
-        setTimeout(()=>setCaught(null),700);
-      }
-      const missed=sr.current.items.filter(it=>!it.caught&&it.y>105);
-      if(missed.some(it=>it.correct)){
-        sr.current.items=sr.current.items.filter(it=>!(it.y>105&&!it.caught));
-        game.answer(false);setTimeout(()=>setCaught(null),600);
-      }
+      t+=0.03;
+      sr.current.items=sr.current.items.map((it,i)=>({
+        ...it,
+        y:it.baseY+(Math.sin(t+i*1.2)*4)  // gentle bob up and down
+      }));
       setItems([...sr.current.items]);
-    },50);
+    },80);
     return()=>clearInterval(loop);
   },[game.done,game.qIdx,game.q,caught]);
 
   const move=dir=>{sr.current.basketX=Math.max(8,Math.min(90,sr.current.basketX+dir*10));setBasketX(sr.current.basketX);};
 
-  if(game.loadErr)return <GameError name={name} onRetry={()=>window.location.reload()}/>;
+  if(game.loadErr)return <GameError name={name} onRetry={()=>onQuit()}/>;
   if(game.loading&&!game.q)return <GameLoad name={name} emoji={emoji} tutor={child.tutor}/>;
-  if(game.done)return <GameEnd name={name} emoji={emoji} score={game.score} max={game.score+3-game.lives} child={child} xp={game.score*12} level={game.lvl} onRetry={()=>window.location.reload()} onDone={()=>onComplete({score:game.score,max:game.score+3-game.lives,xp:game.score*12,total:game.qIdx,correct:game.score,levelReached:game.lvl})}/>;
+  if(game.done)return <GameEnd name={name} emoji={emoji} score={game.score} max={game.score+3-game.lives} child={child} xp={game.score*12} level={game.lvl} onRetry={()=>onQuit()} onDone={()=>onComplete({score:game.score,max:game.score+3-game.lives,xp:game.score*12,total:game.qIdx,correct:game.score,levelReached:game.lvl})}/>;
   return(
     <GameShell name={name} emoji={emoji} subject={subject} score={game.score} maxScore={null} round={game.qIdx+1} total={null} streak={game.streak} onQuit={()=>game.setDone(true)} lives={game.lives} level={game.lvl}>
       <div style={{textAlign:"center",marginBottom:6}}><div style={{background:bg,borderRadius:12,padding:"6px 16px",display:"inline-block",border:`2px solid ${color}30`}}><span style={{fontSize:14,fontWeight:900,color}}>{game.q?.q||game.q?.question}</span></div></div>
@@ -2902,7 +3014,7 @@ function CatcherEngine({child,name,emoji,subject,color="#4F46E5",bg="#EEF2FF",fe
 }
 
 // ── RUNNER ENGINE ────────────────────────────────────────────────────────
-function RunnerEngine({child,name,emoji,subject,color="#4F46E5",fetchFn,runnerChar="🏃",sceneBg,initialLevel=1}) {
+function RunnerEngine({child,name,emoji,subject,color="#4F46E5",fetchFn,runnerChar="🏃",sceneBg,initialLevel=1,onComplete=()=>{},onQuit=()=>{}}) {
   const game=useLivesGame(fetchFn,initialLevel);
   const [runnerY,setRunnerY]=useState(70);
   const [jumping,setJumping]=useState(false);
@@ -2922,30 +3034,42 @@ function RunnerEngine({child,name,emoji,subject,color="#4F46E5",fetchFn,runnerCh
     setObs([...sr.current.obs]);setFlash(null);
   },[game.qIdx,game.q]);
 
+  const [runnerAnswered,setRunnerAnswered]=useState(false);
+  // Only move runner physics (jump arc) — obstacles stay still until answered
   useEffect(()=>{
-    if(game.done||!game.q)return;
+    if(game.done||!game.q||(!sr.current.jumping&&sr.current.runnerY>=GROUND))return;
     const loop=setInterval(()=>{
       const s=sr.current;
-      if(s.jumping||s.runnerY<GROUND){s.vel+=1.3;s.runnerY=Math.min(GROUND,s.runnerY+s.vel);if(s.runnerY>=GROUND){s.runnerY=GROUND;s.jumping=false;s.vel=0;}setRunnerY(s.runnerY);setJumping(s.runnerY<GROUND);}
-      s.obs=s.obs.map(o=>({...o,x:o.x-2.0}));
-      s.obs.forEach(o=>{
-        if(o.passed||o.hit)return;
-        if(o.x<28&&o.x>8&&s.runnerY>=GROUND-8){
-          if(o.correct){o.passed=true;game.answer(true);setFlash("✅");setTimeout(()=>setFlash(null),500);}
-          else{o.hit=true;game.answer(false);setFlash("❌");setTimeout(()=>setFlash(null),500);}
-        }
-        if(o.x<-5)o.passed=true;
-      });
-      setObs([...s.obs]);
+      if(s.jumping||s.runnerY<GROUND){
+        s.vel+=1.3;s.runnerY=Math.min(GROUND,s.runnerY+s.vel);
+        if(s.runnerY>=GROUND){s.runnerY=GROUND;s.jumping=false;s.vel=0;}
+        setRunnerY(s.runnerY);setJumping(s.runnerY<GROUND);
+      }
     },40);
     return()=>clearInterval(loop);
-  },[game.done,game.qIdx,game.q]);
+  },[sr.current.jumping,sr.current.runnerY]);
+
+  // Obstacles scroll in briefly to show them, then stop and wait
+  useEffect(()=>{
+    if(game.done||!game.q)return;
+    let ticks=0;
+    const loop=setInterval(()=>{
+      ticks++;
+      if(ticks>40){clearInterval(loop);return;} // stop after ~3s
+      const s=sr.current;
+      s.obs=s.obs.map(o=>({...o,x:o.x-1.2}));
+      // Stop each obstacle at position 35 (visible, readable)
+      s.obs=s.obs.map(o=>o.x<=35?{...o,x:35}:o);
+      setObs([...s.obs]);
+    },80);
+    return()=>clearInterval(loop);
+  },[game.qIdx,game.q]);
 
   const jump=()=>{if(sr.current.jumping||sr.current.runnerY<GROUND)return;sr.current.jumping=true;sr.current.vel=JV;setJumping(true);};
 
-  if(game.loadErr)return <GameError name={name} onRetry={()=>window.location.reload()}/>;
+  if(game.loadErr)return <GameError name={name} onRetry={()=>onQuit()}/>;
   if(game.loading&&!game.q)return <GameLoad name={name} emoji={emoji} tutor={child.tutor}/>;
-  if(game.done)return <GameEnd name={name} emoji={emoji} score={game.score} max={game.score+3-game.lives} child={child} xp={game.score*12} level={game.lvl} onRetry={()=>window.location.reload()} onDone={()=>onComplete({score:game.score,max:game.score+3-game.lives,xp:game.score*12,total:game.qIdx,correct:game.score,levelReached:game.lvl})}/>;
+  if(game.done)return <GameEnd name={name} emoji={emoji} score={game.score} max={game.score+3-game.lives} child={child} xp={game.score*12} level={game.lvl} onRetry={()=>onQuit()} onDone={()=>onComplete({score:game.score,max:game.score+3-game.lives,xp:game.score*12,total:game.qIdx,correct:game.score,levelReached:game.lvl})}/>;
   return(
     <GameShell name={name} emoji={emoji} subject={subject} score={game.score} maxScore={null} round={game.qIdx+1} total={null} streak={game.streak} onQuit={()=>game.setDone(true)} lives={game.lives} level={game.lvl}>
       <div style={{textAlign:"center",marginBottom:6}}><div style={{background:C.pLight,borderRadius:12,padding:"6px 16px",display:"inline-block"}}><span style={{fontSize:14,fontWeight:900,color}}>{game.q?.q||game.q?.question}</span></div></div>
@@ -2990,7 +3114,7 @@ function RunnerEngine({child,name,emoji,subject,color="#4F46E5",fetchFn,runnerCh
 }
 
 // ── SPACE EXPLORER ENGINE ─────────────────────────────────────────────────
-function SpaceExplorer({child,name,emoji,subject,color="#4F46E5",fetchFn,initialLevel=1}) {
+function SpaceExplorer({child,name,emoji,subject,color="#4F46E5",fetchFn,initialLevel=1,onComplete=()=>{},onQuit=()=>{}}) {
   const game=useLivesGame(fetchFn,initialLevel);
   const [sx,setSx]=useState(50);
   const [sy,setSy]=useState(70);
@@ -3003,10 +3127,11 @@ function SpaceExplorer({child,name,emoji,subject,color="#4F46E5",fetchFn,initial
   useEffect(()=>{
     if(!game.q||game.done)return;
     const opts=game.q.options||[];
-    const spots=[[50,18],[18,42],[78,28],[38,58],[68,52],[50,40]];
+    // Fixed clear positions — easy to see and click
+    const spots=[[50,15],[15,45],[82,45],[30,72],[70,72],[50,44]];
     sr.current.planets=opts.map((opt,i)=>({
       id:++idr.current,opt,correct:opt===game.q.correct||opt.charAt(0)===game.q.correct,
-      x:spots[i%6][0]+(-12+Math.random()*24),y:spots[i%6][1]+(-6+Math.random()*12),alive:true
+      x:spots[i%6][0],y:spots[i%6][1],alive:true
     }));
     setPlanets([...sr.current.planets]);setCollected(null);
   },[game.qIdx,game.q]);
@@ -3025,9 +3150,9 @@ function SpaceExplorer({child,name,emoji,subject,color="#4F46E5",fetchFn,initial
     }
   };
 
-  if(game.loadErr)return <GameError name={name} onRetry={()=>window.location.reload()}/>;
+  if(game.loadErr)return <GameError name={name} onRetry={()=>onQuit()}/>;
   if(game.loading&&!game.q)return <GameLoad name={name} emoji={emoji} tutor={child.tutor}/>;
-  if(game.done)return <GameEnd name={name} emoji={emoji} score={game.score} max={game.score+3-game.lives} child={child} xp={game.score*12} level={game.lvl} onRetry={()=>window.location.reload()} onDone={()=>onComplete({score:game.score,max:game.score+3-game.lives,xp:game.score*12,total:game.qIdx,correct:game.score,levelReached:game.lvl})}/>;
+  if(game.done)return <GameEnd name={name} emoji={emoji} score={game.score} max={game.score+3-game.lives} child={child} xp={game.score*12} level={game.lvl} onRetry={()=>onQuit()} onDone={()=>onComplete({score:game.score,max:game.score+3-game.lives,xp:game.score*12,total:game.qIdx,correct:game.score,levelReached:game.lvl})}/>;
   return(
     <GameShell name={name} emoji={emoji} subject={subject} score={game.score} maxScore={null} round={game.qIdx+1} total={null} streak={game.streak} onQuit={()=>game.setDone(true)} lives={game.lives} level={game.lvl}>
       <div style={{textAlign:"center",marginBottom:6}}><div style={{background:"#1E1B4B",borderRadius:12,padding:"6px 16px",display:"inline-block"}}><span style={{fontSize:14,fontWeight:900,color:"#FCD34D"}}>{game.q?.q||game.q?.question}</span></div></div>
@@ -3083,6 +3208,253 @@ function BreakCountdown() {
       <p style={{fontSize:24,fontWeight:900,color:C.primary,marginBottom:4}}>{m}:{s.toString().padStart(2,"0")}</p>
       <p style={{fontSize:12,color:C.muted,fontWeight:700,marginBottom:8}}>Break time — rest your eyes!</p>
       <div style={{height:6,borderRadius:3,background:C.border}}><div style={{height:"100%",width:`${pct}%`,background:C.primary,borderRadius:3,transition:"width 1s"}}/></div>
+    </div>
+  );
+}
+
+
+
+// ── Notifications System ─────────────────────────────────────────────────
+async function requestNotifications() {
+  if(!("Notification" in window)) return false;
+  if(Notification.permission==="granted") return true;
+  const perm = await Notification.requestPermission();
+  return perm==="granted";
+}
+
+function sendLocalNotification(title, body, icon="📚") {
+  if(Notification.permission!=="granted") return;
+  try {
+    new Notification(title, {body, icon:"https://adapth.vercel.app/favicon.svg"});
+  } catch(e) {}
+}
+
+// Schedule streak reminder — called when app loads
+function scheduleStreakReminder(child) {
+  if(!child||Notification.permission!=="granted") return;
+  const lastSession = (child.sessionHistory||[]).slice(-1)[0];
+  if(!lastSession) return;
+  const lastDate = new Date(lastSession.date);
+  const now = new Date();
+  const hoursSince = (now-lastDate)/3600000;
+  // If haven't learned today and it's after 4pm
+  if(hoursSince>16 && now.getHours()>=16 && lastDate.toDateString()!==now.toDateString()) {
+    sendLocalNotification(
+      `${child.name}, don't break your streak! 🔥`,
+      `You have a ${child.streak||0}-day streak. Learn something today to keep it going!`
+    );
+  }
+}
+
+function NotificationBell({child, onRequest}) {
+  const granted = typeof Notification!=="undefined"&&Notification.permission==="granted";
+  return(
+    <button onClick={onRequest} title={granted?"Notifications on":"Turn on reminders"}
+      style={{background:"none",border:"none",cursor:"pointer",fontSize:20,padding:"4px",position:"relative"}}>
+      {granted?"🔔":"🔕"}
+      {!granted&&<div style={{position:"absolute",top:0,right:0,width:8,height:8,borderRadius:"50%",background:C.red}}/>}
+    </button>
+  );
+}
+
+
+// ── Written Answer Game Engine ────────────────────────────────────────────
+// For games where typing is more appropriate than clicking (maths, spelling)
+function WriteEngine({child,name,emoji,subject,color="#4F46E5",bg="#EEF2FF",fetchFn,initialLevel=1,onComplete=()=>{},onQuit=()=>{}}) {
+  const game=useLivesGame(fetchFn,initialLevel);
+  const [input,setInput]=useState("");
+  const [result,setResult]=useState(null);
+  const inputRef=useRef(null);
+
+  useEffect(()=>{
+    setInput("");setResult(null);
+    setTimeout(()=>inputRef.current?.focus(),200);
+  },[game.qIdx]);
+
+  const submit=()=>{
+    if(!input.trim()||!game.q||result)return;
+    const q=game.q;
+    const ok=checkWrittenAnswer(input.trim(), q.answer||q.correct, q.accept||[]);
+    setResult(ok?"correct":"wrong");
+    game.answer(ok);
+    setTimeout(()=>{setResult(null);setInput("");},900);
+  };
+
+  if(game.loadErr)return <GameError name={name} onRetry={()=>onQuit()}/>;
+  if(game.loading&&!game.q)return <GameLoad name={name} emoji={emoji} tutor={child.tutor}/>;
+  if(game.done)return <GameEnd name={name} emoji={emoji} score={game.score} max={game.score+3-game.lives} child={child} xp={game.score*12} level={game.lvl} onRetry={()=>onQuit()} onDone={()=>onComplete({score:game.score,max:game.score+3-game.lives,xp:game.score*12,total:game.qIdx,correct:game.score,levelReached:game.lvl})}/>;
+
+  const q=game.q;
+  return(
+    <GameShell name={name} emoji={emoji} subject={subject} score={game.score} maxScore={null} round={game.qIdx+1} total={null} streak={game.streak} onQuit={()=>game.setDone(true)} lives={game.lives} level={game.lvl}>
+      <div style={{background:bg,borderRadius:20,padding:"20px 16px",marginBottom:16,textAlign:"center",border:`2px solid ${color}20`}}>
+        <div style={{fontSize:42,marginBottom:8}}>{emoji}</div>
+        <p style={{fontSize:22,fontWeight:900,color:color,lineHeight:1.5}}>{q?.question||q?.q}</p>
+        {q?.hint&&!result&&<p style={{fontSize:12,color:C.muted,fontWeight:600,marginTop:6,fontStyle:"italic"}}>💡 {q.hint}</p>}
+      </div>
+      {result&&(
+        <div style={{padding:"14px 16px",borderRadius:16,marginBottom:12,textAlign:"center",background:result==="correct"?"#DCFCE7":"#FEE2E2",border:`2px solid ${result==="correct"?C.green:C.red}`}}>
+          <p style={{fontSize:20,fontWeight:900,color:result==="correct"?C.green:C.red}}>{result==="correct"?"✅ Correct!":"❌ The answer was: "+(q?.answer||q?.correct)}</p>
+        </div>
+      )}
+      {!result&&<WrittenAnswer ref={inputRef} onSubmit={submit} placeholder="Type your answer..."/>}
+    </GameShell>
+  );
+}
+
+// ── Onboarding Tutorial ───────────────────────────────────────────────────
+const PARENT_STEPS = [
+  {emoji:"👋",title:"Welcome to ADAPT!",body:"The smarter way for your child to learn. Curriculum-aligned for UK, US and Canada. Let's get you set up in 30 seconds.",btn:"Let's go →"},
+  {emoji:"👨‍👩‍👧",title:"Add your children",body:"Each child gets their own profile with a username and password. They log in separately and everything is tracked individually.",btn:"Got it →"},
+  {emoji:"📚",title:"How learning works",body:"Children pick a subject and topic. They answer 50 questions per level, then take a mastery test. Pass with 8/10 to advance to the next level.",btn:"Nice →"},
+  {emoji:"🎮",title:"Mini Games",body:"65 curriculum-aligned games keep learning fun. Games link directly to what your child is studying and adjust to their level automatically.",btn:"Love it →"},
+  {emoji:"📊",title:"Your dashboard",body:"Track every child's progress — XP earned, topics mastered, streaks, badges and session history. You see everything.",btn:"Start now 🚀"},
+];
+
+const CHILD_STEPS = [
+  {emoji:"🎉",title:"Welcome!",body:"This is your learning adventure. You'll answer questions, play games and level up as you get better and better!",btn:"Let's go →"},
+  {emoji:"📚",title:"Pick a subject",body:"Choose from Maths, English, Science, History, Geography and Computing. Start with your favourite!",btn:"Cool →"},
+  {emoji:"❤️❤️❤️",title:"You have 3 lives",body:"In games, you get 3 hearts. Wrong answers lose a heart. Use them wisely! You can always play again.",btn:"Got it →"},
+  {emoji:"🔥",title:"Keep your streak!",body:"Learn every day to build your streak. The longer your streak, the more badges you earn. Can you get a 7-day streak?",btn:"I will →"},
+  {emoji:"🏆",title:"Level up!",body:"Answer 50 questions on a topic, then take the mastery test. Score 8 out of 10 to move to the next level. There are 10 levels!",btn:"Let's start! 🚀"},
+];
+
+
+// ── Family Leaderboard + Weekly Challenge ────────────────────────────────
+function FamilyLeaderboard({children, activeChildId, onClose}) {
+  const sorted=[...children].sort((a,b)=>(b.xp||0)-(a.xp||0));
+  const weekXP=(c)=>{
+    const w=new Date(); w.setDate(w.getDate()-7);
+    return (c.sessionHistory||[])
+      .filter(s=>new Date(s.date)>w)
+      .reduce((sum,s)=>sum+(s.xp||0),0);
+  };
+  return(
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.6)",zIndex:300,display:"flex",alignItems:"flex-end",justifyContent:"center",padding:16}}>
+      <div style={{background:"#fff",borderRadius:"24px 24px 0 0",width:"100%",maxWidth:480,padding:"24px 20px",maxHeight:"80vh",overflow:"auto"}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
+          <h2 style={{fontSize:22,fontWeight:900,color:C.text}}>🏆 Family Leaderboard</h2>
+          <button onClick={onClose} style={{background:C.border,borderRadius:8,padding:"4px 10px",border:"none",cursor:"pointer",fontSize:13,fontWeight:800,fontFamily:F}}>✕</button>
+        </div>
+        {/* This week tab */}
+        <p style={{fontSize:12,fontWeight:800,color:C.muted,textTransform:"uppercase",marginBottom:12}}>This Week's XP</p>
+        {sorted.map((c,i)=>{
+          const isMe=c.id===activeChildId;
+          const wx=weekXP(c);
+          const medals=["🥇","🥈","🥉"];
+          return(
+            <div key={c.id} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px",borderRadius:16,marginBottom:8,
+              background:isMe?"linear-gradient(135deg,#EEF2FF,#C7D2FE)":"#F8FAFC",
+              border:`2px solid ${isMe?C.primary:C.border}`}}>
+              <span style={{fontSize:24}}>{medals[i]||`${i+1}`}</span>
+              <span style={{fontSize:28}}>{c.avatar?["🦊","🐻","🐱","🐶","🐰","🐧","🦉","🦁","🐯","🐼","🐸","🐥","🦄","🐲","🐵","🐨","🐺","🐴","🐘","🦕"][["fox","bear","cat","dog","rabbit","penguin","owl","lion","tiger","panda","frog","duck","unicorn","dragon","monkey","koala","wolf","horse","elephant","dinosaur"].indexOf(c.avatar)]||"😊":"😊"}</span>
+              <div style={{flex:1}}>
+                <p style={{fontSize:15,fontWeight:900,color:C.text}}>{c.name}{isMe?" (you)":""}</p>
+                <p style={{fontSize:11,color:C.muted,fontWeight:700}}>Total: {(c.xp||0).toLocaleString()} XP · Streak: {c.streak||0} 🔥</p>
+              </div>
+              <div style={{textAlign:"right"}}>
+                <p style={{fontSize:18,fontWeight:900,color:isMe?C.primary:C.text}}>+{wx}</p>
+                <p style={{fontSize:9,color:C.muted,fontWeight:700}}>XP this week</p>
+              </div>
+            </div>
+          );
+        })}
+        <div style={{marginTop:16,padding:"14px",borderRadius:16,background:"linear-gradient(135deg,#FEF3C7,#FDE68A)",border:"2px solid #F59E0B"}}>
+          <p style={{fontSize:13,fontWeight:800,color:"#92400E",textAlign:"center"}}>🌟 Keep learning to climb the leaderboard!</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function WeeklyChallenge({child, allChildren, onClose}) {
+  const [qs,setQs]=useState(null);const [idx,setIdx]=useState(0);const [score,setScore]=useState(0);
+  const [sel,setSel]=useState(null);const [ans,setAns]=useState(false);const [done,setDone]=useState(false);
+  const thisWeek=new Date().toISOString().slice(0,10);
+  const alreadyDone=child.weeklyChallenge?.date===thisWeek;
+
+  useEffect(()=>{
+    if(alreadyDone){setDone(true);setScore(child.weeklyChallenge.score);return;}
+    claude(`Generate 5 fun mixed-subject questions suitable for age ${child.age} in ${child.country||"UK"} (${child.yearGroup||"Year 3"}).
+Mix of Maths, English and General Knowledge. Should be fun and achievable but require thought.
+Return ONLY JSON: {"questions":[{"q":"...","options":["A)...","B)...","C)...","D)..."],"correct":"A"}]}`,
+    "Weekly challenge questions.").then(d=>{if(d?.questions)setQs(d.questions);});
+  },[]);
+
+  const answer=(opt)=>{
+    if(ans)return;setSel(opt);setAns(true);
+    if(opt.charAt(0)===qs[idx]?.correct)setScore(s=>s+1);
+    setTimeout(()=>{setSel(null);setAns(false);if(idx+1>=5)setDone(true);else setIdx(i=>i+1);},900);
+  };
+
+  const pct=Math.round((score/5)*100);
+
+  return(
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.7)",zIndex:300,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
+      <div style={{background:"#fff",borderRadius:24,padding:"24px 20px",maxWidth:440,width:"100%",maxHeight:"90vh",overflow:"auto"}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+          <h2 style={{fontSize:20,fontWeight:900,color:C.text}}>⚡ Weekly Challenge</h2>
+          <button onClick={onClose} style={{background:C.border,borderRadius:8,padding:"4px 10px",border:"none",cursor:"pointer",fontSize:13,fontWeight:800,fontFamily:F}}>✕</button>
+        </div>
+        {done?(
+          <div style={{textAlign:"center"}}>
+            <div style={{fontSize:64,marginBottom:12}}>{score>=4?"🏆":score>=3?"⭐":"💪"}</div>
+            <h3 style={{fontSize:22,fontWeight:900,color:C.text,marginBottom:8}}>{alreadyDone?"Already completed!":"Challenge done!"}</h3>
+            <p style={{fontSize:16,fontWeight:700,color:C.muted,marginBottom:16}}>You scored {score}/5 this week</p>
+            <div style={{background:"#F0FDF4",borderRadius:16,padding:14,marginBottom:16}}>
+              <p style={{fontSize:13,fontWeight:700,color:C.green}}>📊 Family Scores</p>
+              {allChildren.map(c=>(
+                <div key={c.id} style={{display:"flex",justifyContent:"space-between",marginTop:8}}>
+                  <span style={{fontSize:13,fontWeight:700,color:C.text}}>{c.name}{c.id===child.id?" (you)":""}</span>
+                  <span style={{fontSize:13,fontWeight:900,color:C.primary}}>{c.weeklyChallenge?.date===thisWeek?`${c.weeklyChallenge.score}/5`:"Not done yet"}</span>
+                </div>
+              ))}
+            </div>
+            <Btn onClick={onClose} style={{width:"100%"}}>Close</Btn>
+          </div>
+        ):!qs?(
+          <div style={{textAlign:"center",padding:"40px 0"}}>
+            <div style={{fontSize:48,marginBottom:12}}>⚡</div>
+            <p style={{fontSize:16,fontWeight:700,color:C.muted}}>Loading this week's challenge...</p>
+          </div>
+        ):(
+          <div>
+            <div style={{background:"linear-gradient(135deg,#4338CA,#7C3AED)",borderRadius:16,padding:"12px 16px",marginBottom:16,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+              <p style={{fontSize:13,fontWeight:900,color:"#fff"}}>Question {idx+1} of 5</p>
+              <p style={{fontSize:13,fontWeight:700,color:"rgba(255,255,255,0.8)"}}>Score: {score}/{idx}</p>
+            </div>
+            <p style={{fontSize:16,fontWeight:800,color:C.text,marginBottom:16,lineHeight:1.6}}>{qs[idx]?.q}</p>
+            <Options options={qs[idx]?.options} correct={qs[idx]?.correct} selected={sel} answered={ans} onAnswer={answer}/>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function OnboardingModal({type, name, onDone}) {
+  const [step, setStep] = useState(0);
+  const steps = type === "parent" ? PARENT_STEPS : CHILD_STEPS;
+  const s = steps[step];
+  const isLast = step === steps.length - 1;
+
+  return (
+    <div style={{position:"fixed",inset:0,background:"rgba(15,15,26,0.92)",zIndex:500,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
+      <div style={{background:"#fff",borderRadius:28,padding:"32px 24px",maxWidth:400,width:"100%",textAlign:"center",boxShadow:"0 20px 60px rgba(0,0,0,0.4)"}}>
+        {/* Progress dots */}
+        <div style={{display:"flex",gap:6,justifyContent:"center",marginBottom:24}}>
+          {steps.map((_,i)=>(
+            <div key={i} style={{width:i===step?24:8,height:8,borderRadius:4,background:i===step?C.primary:C.border,transition:"all 0.3s"}}/>
+          ))}
+        </div>
+        <div style={{fontSize:64,marginBottom:16}}>{s.emoji}</div>
+        <h2 style={{fontSize:24,fontWeight:900,color:C.text,marginBottom:10}}>{s.title}</h2>
+        <p style={{fontSize:15,fontWeight:600,color:C.muted,lineHeight:1.7,marginBottom:28}}>{s.body}</p>
+        <Btn onClick={()=>isLast?onDone():setStep(i=>i+1)} style={{width:"100%",fontSize:16,padding:"16px"}}>
+          {s.btn}
+        </Btn>
+        {!isLast&&<button onClick={onDone} style={{marginTop:12,background:"none",border:"none",fontSize:13,color:C.muted,cursor:"pointer",fontFamily:F}}>Skip tutorial</button>}
+      </div>
     </div>
   );
 }
@@ -3197,22 +3569,39 @@ function GameEnd({name,emoji,score,max,child,xp,onDone,onRetry,level}) {
 }
 
 function NumberBlaster({child,mode,onComplete,onQuit,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 maths equations for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Mix +/-/×/÷. Each has correct answer + 3 wrong. Return ONLY JSON: {"questions":[{"q":"3 + 4 =","options":["7","5","6","8"],"correct":"7"}]}`,"Number blaster questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 maths equations for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Mix +/-/×/÷. Each has correct answer + 3 wrong. Return ONLY JSON: {"questions":[{"q":"3 + 4 =","options":["7","5","6","8"],"correct":"7"}]}`,"Number blaster questions."),[child]);
   const props={child,name:"Number Blaster",emoji:"🔢",subject:"Maths",color:"#4F46E5",bg:"#EEF2FF",fetchFn,initialLevel:level};
   return <ShooterEngine {...props} onComplete={onComplete} onQuit={onQuit}/>;
 }
 
+
+function SpellingRun({child,mode,onComplete,onQuit,level=1}) {
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 spelling words for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10.
+Each word: give a definition and use it in a sentence with a blank.
+Questions MUST be appropriate for ${child.yearGroup||"Year 3"} only. Return ONLY JSON: {"questions":[{"question":"Fill the blank: My ___ came to play. (a person you like)","answer":"friend","accept":["friend"],"hint":"fr_end"}]}`,
+  "Spelling run words."),[child]);
+  return <WriteEngine child={child} name="Spelling Sprint" emoji="✏️" subject="English" color="#0284C7" bg="#E0F2FE" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
+}
+
+function MathSprint({child,mode,onComplete,onQuit,level=1}) {
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 mental maths questions for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10.
+Child types the NUMBER answer. Short questions. Mix +/-/×/÷ appropriate for year group.
+Questions MUST be appropriate for ${child.yearGroup||"Year 3"} only. Return ONLY JSON: {"questions":[{"question":"8 × 7 =","answer":"56","accept":["56"]}]}`,
+  "Math sprint questions."),[child]);
+  return <WriteEngine child={child} name="Maths Sprint" emoji="⚡" subject="Maths" color="#4338CA" bg="#EEF2FF" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
+}
+
 function TimesTableRace({child,mode,onComplete,onQuit,level=1}) {
   const game=useLivesGame(
-    useCallback(async(lvl)=>claude(`Generate 15 times table questions for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short numeric options. Return ONLY JSON: {"questions":[{"q":"6 × 7 =","options":["A) 36","B) 42","C) 48","D) 40"],"correct":"B"}]}`,"Times table questions."),[child]),
+    useCallback(async(lvl)=>claude(`Generate 15 times table questions for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short numeric options. Return ONLY JSON: {"questions":[{"q":"6 × 7 =","options":["A) 36","B) 42","C) 48","D) 40"],"correct":"B"}]}`,"Times table questions."),[child]),
     level
   );
   const [input,setInput]=useState("");
-  const [timeLeft,setTimeLeft]=useState(Math.max(8,20-game.lvl));
+  const [timeLeft,setTimeLeft]=useState(Math.max(15,35-game.lvl));
   const [timerKey,setTimerKey]=useState(0);
   const inputRef=useRef(null);
 
-  useEffect(()=>{setTimeLeft(Math.max(8,20-game.lvl));setTimerKey(k=>k+1);setInput("");},[game.qIdx]);
+  useEffect(()=>{setTimeLeft(Math.max(15,35-game.lvl));setTimerKey(k=>k+1);setInput("");},[game.qIdx]);
   useEffect(()=>{
     if(game.done||timeLeft<=0)return;
     const t=setInterval(()=>setTimeLeft(s=>{if(s<=1){clearInterval(t);game.answer(false);return 0;}return s-1;}),1000);
@@ -3231,7 +3620,7 @@ function TimesTableRace({child,mode,onComplete,onQuit,level=1}) {
 
   if(game.loadErr)return <GameError name="Times Table Race" onRetry={()=>onQuit()}/>;
   if(game.loading&&!game.q)return <GameLoad name="Times Table Race" emoji="⏱️" tutor={child.tutor}/>;
-  if(game.done)return <GameEnd name="Times Table Race" emoji="⏱️" score={game.score} max={game.score+3-game.lives} child={child} xp={game.score*12} level={game.lvl} onRetry={()=>window.location.reload()} onDone={()=>onComplete({score:game.score,max:game.score+3-game.lives,xp:game.score*12,total:game.qIdx,correct:game.score,levelReached:game.lvl})}/>;
+  if(game.done)return <GameEnd name="Times Table Race" emoji="⏱️" score={game.score} max={game.score+3-game.lives} child={child} xp={game.score*12} level={game.lvl} onRetry={()=>onQuit()} onDone={()=>onComplete({score:game.score,max:game.score+3-game.lives,xp:game.score*12,total:game.qIdx,correct:game.score,levelReached:game.lvl})}/>;
 
   const danger=timeLeft<=3;
   return(
@@ -3255,19 +3644,19 @@ function TimesTableRace({child,mode,onComplete,onQuit,level=1}) {
 
 
 function FractionChef({child,mode,onComplete,onQuit,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 fractions questions for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options. Return ONLY JSON: {"questions":[{"q":"What is 1/2 of 20?","options":["A) 5","B) 8","C) 10","D) 15"],"correct":"C"}]}`,"Fraction chef questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 fractions questions for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options. Return ONLY JSON: {"questions":[{"q":"What is 1/2 of 20?","options":["A) 5","B) 8","C) 10","D) 15"],"correct":"C"}]}`,"Fraction chef questions."),[child]);
   return <CatcherEngine child={child} name="Fraction Chef" emoji="🍕" subject="Maths" color="#EF4444" bg="#FEF2F2" catcherChar="🍕" sceneBg="linear-gradient(180deg,#FEF2F2,#FEE2E2)" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
 }
 
 
 function WordScramble({child,mode,onComplete,onQuit,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 spelling, unscrambling words at curriculum Level for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Word Scramble questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 spelling, unscrambling words at curriculum Level for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Word Scramble questions."),[child]);
   return <CatcherEngine child={child} name="Word Scramble" emoji="🔤" subject="English" color="#0EA5E9" bg="#F0F9FF" catcherChar="🧺" sceneBg="linear-gradient(180deg,#EEF2FF,#BFDBFE)" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
 }
 
 function SpellingBee({child,mode,onComplete,onQuit,level=1}) {
   const game=useLivesGame(
-    useCallback(async(lvl)=>claude(`Generate 10 spelling words for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Return ONLY JSON: {"questions":[{"word":"friend","hint":"A person you play with","sentence":"My ___ came to my house"}]}`,"Spelling bee questions."),[child]),
+    useCallback(async(lvl)=>claude(`Generate 10 spelling words for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Return ONLY JSON: {"questions":[{"word":"friend","hint":"A person you play with","sentence":"My ___ came to my house"}]}`,"Spelling bee questions."),[child]),
     level
   );
   const [input,setInput]=useState("");
@@ -3286,7 +3675,7 @@ function SpellingBee({child,mode,onComplete,onQuit,level=1}) {
 
   if(game.loadErr)return <GameError name="Spelling Bee" onRetry={()=>onQuit()}/>;
   if(game.loading&&!game.q)return <GameLoad name="Spelling Bee" emoji="🐝" tutor={child.tutor}/>;
-  if(game.done)return <GameEnd name="Spelling Bee" emoji="🐝" score={game.score} max={game.score+3-game.lives} child={child} xp={game.score*12} level={game.lvl} onRetry={()=>window.location.reload()} onDone={()=>onComplete({score:game.score,max:game.score+3-game.lives,xp:game.score*12,total:game.qIdx,correct:game.score,levelReached:game.lvl})}/>;
+  if(game.done)return <GameEnd name="Spelling Bee" emoji="🐝" score={game.score} max={game.score+3-game.lives} child={child} xp={game.score*12} level={game.lvl} onRetry={()=>onQuit()} onDone={()=>onComplete({score:game.score,max:game.score+3-game.lives,xp:game.score*12,total:game.qIdx,correct:game.score,levelReached:game.lvl})}/>;
 
   return(
     <GameShell name="Spelling Bee" emoji="🐝" subject="English" score={game.score} maxScore={null} round={game.qIdx+1} total={null} streak={game.streak} onQuit={()=>game.setDone(true)} lives={game.lives} level={game.lvl}>
@@ -3310,37 +3699,37 @@ function SpellingBee({child,mode,onComplete,onQuit,level=1}) {
 
 
 function SentenceBuilder({child,mode,onComplete,onQuit,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 grammar, sentence structure, correct word order for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Sentence Builder questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 grammar, sentence structure, correct word order for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Sentence Builder questions."),[child]);
   return <ShooterEngine child={child} name="Sentence Builder" emoji="✏️" subject="English" color="#16A34A" bg="#F0FDF4" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
 }
 
 function ScienceSort({child,mode,onComplete,onQuit,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 classifying living things, sorting scientific categories for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Science Sort questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 classifying living things, sorting scientific categories for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Science Sort questions."),[child]);
   return <ShooterEngine child={child} name="Science Sort" emoji="🔬" subject="Science" color="#16A34A" bg="#F0FDF4" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
 }
 
 function StatesOfMatter({child,mode,onComplete,onQuit,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 solid liquid gas properties, states of matter changes for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"States of Matter questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 solid liquid gas properties, states of matter changes for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"States of Matter questions."),[child]);
   return <ShooterEngine child={child} name="States of Matter" emoji="💧" subject="Science" color="#0EA5E9" bg="#F0F9FF" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
 }
 
 function PlanetPatrol({child,mode,onComplete,onQuit,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 Earth and space science questions for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options. Return ONLY JSON: {"questions":[{"q":"Largest planet?","options":["Saturn","Jupiter","Mars","Earth"],"correct":"Jupiter"}]}`,"Planet patrol questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 Earth and space science questions for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options. Return ONLY JSON: {"questions":[{"q":"Largest planet?","options":["Saturn","Jupiter","Mars","Earth"],"correct":"Jupiter"}]}`,"Planet patrol questions."),[child]);
   return <SpaceExplorer child={child} name="Planet Patrol" emoji="🪐" subject="Science" color="#7C3AED" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
 }
 
 function AlgorithmSort({child,mode,onComplete,onQuit,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 computational thinking, algorithm sequencing, order of steps for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Algorithm Sort questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 computational thinking, algorithm sequencing, order of steps for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Algorithm Sort questions."),[child]);
   return <ShooterEngine child={child} name="Algorithm Sort" emoji="🔢" subject="Computing" color="#7C3AED" bg="#F5F3FF" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
 }
 
 function DebugDetective({child,mode,onComplete,onQuit,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 debugging programs, finding errors in code, fixing sequences for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Debug Detective questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 debugging programs, finding errors in code, fixing sequences for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Debug Detective questions."),[child]);
   return <ShooterEngine child={child} name="Debug Detective" emoji="🔍" subject="Computing" color="#374151" bg="#F9FAFB" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
 }
 
 function WordMatch({child,mode,onComplete,onQuit,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 vocabulary matching, word definitions, synonyms and antonyms for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Word Match questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 vocabulary matching, word definitions, synonyms and antonyms for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Word Match questions."),[child]);
   return <ShooterEngine child={child} name="Word Match" emoji="🌐" subject="English" color="#0EA5E9" bg="#F0F9FF" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
 }
 
@@ -3379,7 +3768,8 @@ function MathFishing({child,mode,onComplete,onQuit,level=1}) {
   useEffect(()=>{
     if(!q||done)return;
     const answers=[q.correct,...(q.wrong||[q.correct+1,q.correct-1,q.correct+2])].slice(0,4).sort(()=>Math.random()-0.5);
-    const newFish=answers.map((ans,i)=>({id:++idRef.current,ans,correct:ans===q.correct,x:10+i*22,y:35+Math.random()*40,vx:(Math.random()-0.5)*0.4,vy:(Math.random()-0.5)*0.3,wobble:Math.random()*Math.PI*2}));
+    const rows=[{y:32},{y:48},{y:60},{y:75}];
+    const newFish=answers.map((ans,i)=>({id:++idRef.current,ans,correct:ans===q.correct,x:15+i*22,y:rows[i%4].y,baseY:rows[i%4].y,vx:(Math.random()-0.5)*0.08,vy:0,wobble:Math.random()*Math.PI*2}));
     fishRef.current=newFish;setFish([...newFish]);setCaught(null);
   },[qIdx,q]);
 
@@ -3387,10 +3777,15 @@ function MathFishing({child,mode,onComplete,onQuit,level=1}) {
     if(!q||done||caught!==null)return;
     let t=0;
     const loop=setInterval(()=>{
-      t+=0.05;
-      fishRef.current=fishRef.current.map(f=>({...f,x:Math.max(2,Math.min(85,f.x+f.vx)),y:f.y+Math.sin(t+f.wobble)*0.3,vx:f.x<=2?Math.abs(f.vx):f.x>=85?-Math.abs(f.vx):f.vx}));
+      t+=0.02; // very slow
+      fishRef.current=fishRef.current.map(f=>({
+        ...f,
+        x:Math.max(4,Math.min(85,f.x+f.vx*0.15)), // almost stationary
+        y:f.baseY+(Math.sin(t*0.5+f.wobble)*2),   // tiny gentle bob
+        vx:f.x<=4?Math.abs(f.vx):f.x>=85?-Math.abs(f.vx):f.vx
+      }));
       setFish([...fishRef.current]);
-    },60);
+    },120);
     return()=>clearInterval(loop);
   },[q,done,caught,qIdx]);
 
@@ -3450,7 +3845,7 @@ function MathFishing({child,mode,onComplete,onQuit,level=1}) {
 
 function SpaceBlaster({child,mode,onComplete,onQuit,level=1}) {
   const game=useLivesGame(
-    useCallback(async(lvl)=>claude(`Generate 10 maths questions for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Each has a question and exactly 4 answer options (one correct). Return ONLY JSON: {"questions":[{"q":"5×4=","options":["12","15","20","18"],"correct":"20"}]}`,"Space blaster questions."),[child]),
+    useCallback(async(lvl)=>claude(`Generate 10 maths questions for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Each has a question and exactly 4 answer options (one correct). Return ONLY JSON: {"questions":[{"q":"5×4=","options":["12","15","20","18"],"correct":"20"}]}`,"Space blaster questions."),[child]),
     level
   );
   const [shipX,setShipX]=useState(50);
@@ -3464,7 +3859,7 @@ function SpaceBlaster({child,mode,onComplete,onQuit,level=1}) {
   useEffect(()=>{
     if(!game.q||game.done)return;
     const opts=game.q.options||[];
-    sr.current.aliens=opts.map((opt,i)=>({id:++idr.current,opt,correct:opt===game.q.correct,x:8+i*(80/Math.max(opts.length-1,1)),y:15+Math.random()*20,vx:(Math.random()-0.5)*0.9,vy:0.07+game.lvl*0.03,alive:true}));
+    sr.current.aliens=opts.map((opt,i)=>({id:++idr.current,opt,correct:opt===game.q.correct,x:8+i*(80/Math.max(opts.length-1,1)),y:15+Math.random()*20,vx:(Math.random()-0.5)*0.9,vy:0.015+game.lvl*0.006,alive:true}));
     setAliens([...sr.current.aliens]);setBullets([]);sr.current.bullets=[];
   },[game.qIdx,game.q]);
 
@@ -3481,7 +3876,7 @@ function SpaceBlaster({child,mode,onComplete,onQuit,level=1}) {
       const missed=s.aliens.find(t=>t.alive&&t.correct&&t.y>90);
       if(missed){s.aliens=s.aliens.map(t=>t.id===missed.id?{...t,alive:false}:t);game.answer(false);}
       setAliens([...s.aliens]);setBullets([...s.bullets]);setExps([...s.exps]);
-    },60);
+    },100);
     return()=>clearInterval(loop);
   },[game.done,game.qIdx,game.q]);
 
@@ -3490,7 +3885,7 @@ function SpaceBlaster({child,mode,onComplete,onQuit,level=1}) {
 
   if(game.loadErr)return <GameError name="Space Blaster" onRetry={()=>onQuit()}/>;
   if(game.loading&&!game.q)return <GameLoad name="Space Blaster" emoji="🚀" tutor={child.tutor}/>;
-  if(game.done)return <GameEnd name="Space Blaster" emoji="🚀" score={game.score} max={game.score+3-game.lives} child={child} xp={game.score*12} level={game.lvl} onRetry={()=>window.location.reload()} onDone={()=>onComplete({score:game.score,max:game.score+3-game.lives,xp:game.score*12,total:game.qIdx,correct:game.score,levelReached:game.lvl})}/>;
+  if(game.done)return <GameEnd name="Space Blaster" emoji="🚀" score={game.score} max={game.score+3-game.lives} child={child} xp={game.score*12} level={game.lvl} onRetry={()=>onQuit()} onDone={()=>onComplete({score:game.score,max:game.score+3-game.lives,xp:game.score*12,total:game.qIdx,correct:game.score,levelReached:game.lvl})}/>;
 
   return(
     <GameShell name="Space Blaster" emoji="🚀" subject="Maths" score={game.score} maxScore={null} round={game.qIdx+1} total={null} streak={game.streak} onQuit={()=>game.setDone(true)} lives={game.lives} level={game.lvl}>
@@ -3533,13 +3928,13 @@ function SpaceBlaster({child,mode,onComplete,onQuit,level=1}) {
 
 
 function GemHunter({child,mode,onComplete,onQuit,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 vocabulary, spelling at curriculum Level for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Gem Hunter questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 vocabulary, spelling at curriculum Level for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Gem Hunter questions."),[child]);
   return <CatcherEngine child={child} name="Gem Hunter" emoji="💎" subject="English" color="#4F46E5" bg="#EEF2FF" catcherChar="💎" sceneBg="linear-gradient(180deg,#78350F,#92400E)" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
 }
 
 function WordRunner({child,mode,onComplete,onQuit,level=1}) {
   const game=useLivesGame(
-    useCallback(async(lvl)=>claude(`Generate 10 grammar questions for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Instructions like "Catch the VERB!" — 4 word options, 1 correct. Return ONLY JSON: {"questions":[{"instruction":"Catch the VERB!","options":["run","happy","quickly","big"],"correct":"run"}]}`,"Word runner questions."),[child]),
+    useCallback(async(lvl)=>claude(`Generate 10 grammar questions for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Instructions like "Catch the VERB!" — 4 word options, 1 correct. Return ONLY JSON: {"questions":[{"instruction":"Catch the VERB!","options":["run","happy","quickly","big"],"correct":"run"}]}`,"Word runner questions."),[child]),
     level
   );
   const [falling,setFalling]=useState([]);
@@ -3549,21 +3944,24 @@ function WordRunner({child,mode,onComplete,onQuit,level=1}) {
   useEffect(()=>{
     if(!game.q||game.done||caught!==null)return;
     const shuffled=[...(game.q.options||[])].sort(()=>Math.random()-0.5);
-    sr.current=shuffled.map((w,i)=>({id:++idr.current,word:w,correct:w===game.q.correct,x:8+i*23,y:-15,speed:0.6+game.lvl*0.08+Math.random()*0.2}));
+    // Position words at fixed readable heights
+    const positions=[{x:8,y:22},{x:52,y:22},{x:8,y:52},{x:52,y:52},{x:30,y:37}];
+    sr.current=shuffled.map((w,i)=>({
+      id:++idr.current,word:w,correct:w===game.q.correct,
+      x:positions[i%5].x,y:positions[i%5].y,baseY:positions[i%5].y
+    }));
     setFalling([...sr.current]);
   },[game.qIdx,game.q]);
 
+  // Words gently float — no falling, no time pressure
   useEffect(()=>{
     if(game.done||caught!==null||!game.q)return;
+    let t=0;
     const loop=setInterval(()=>{
-      sr.current=sr.current.map(w=>({...w,y:w.y+w.speed}));
-      if(sr.current.length&&sr.current.every(w=>w.y>105)){
-        setCaught({missed:true});
-        game.answer(false);
-        setTimeout(()=>{setCaught(null);},600);
-      }
-      setFalling([...sr.current]);
-    },50);
+      t+=0.04;
+      // Gentle float animation, words stay in readable positions
+      setFalling(prev=>prev.map((w,i)=>({...w,y:w.baseY+(Math.sin(t+i*0.8)*3)})));
+    },80);
     return()=>clearInterval(loop);
   },[game.done,caught,game.qIdx,game.q]);
 
@@ -3576,7 +3974,7 @@ function WordRunner({child,mode,onComplete,onQuit,level=1}) {
 
   if(game.loadErr)return <GameError name="Word Runner" onRetry={()=>onQuit()}/>;
   if(game.loading&&!game.q)return <GameLoad name="Word Runner" emoji="🏃" tutor={child.tutor}/>;
-  if(game.done)return <GameEnd name="Word Runner" emoji="🏃" score={game.score} max={game.score+3-game.lives} child={child} xp={game.score*12} level={game.lvl} onRetry={()=>window.location.reload()} onDone={()=>onComplete({score:game.score,max:game.score+3-game.lives,xp:game.score*12,total:game.qIdx,correct:game.score,levelReached:game.lvl})}/>;
+  if(game.done)return <GameEnd name="Word Runner" emoji="🏃" score={game.score} max={game.score+3-game.lives} child={child} xp={game.score*12} level={game.lvl} onRetry={()=>onQuit()} onDone={()=>onComplete({score:game.score,max:game.score+3-game.lives,xp:game.score*12,total:game.qIdx,correct:game.score,levelReached:game.lvl})}/>;
 
   const colors=["#6366F1","#EC4899","#F59E0B","#10B981"];
   return(
@@ -3604,18 +4002,18 @@ function WordRunner({child,mode,onComplete,onQuit,level=1}) {
 
 
 function VolcanoEscape({child,mode,onComplete,onQuit,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 science questions with volcano escape theme for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Volcano Escape questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 science questions with volcano escape theme for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Volcano Escape questions."),[child]);
   return <RunnerEngine child={child} name="Volcano Escape" emoji="🌋" subject="Science" color="#EF4444" bg="#FEF2F2" runnerChar="🧗" sceneBg="linear-gradient(180deg,#FEF2F2,#FCA5A5 50%,#7F1D1D)" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
 }
 
 function TreasureMap({child,mode,onComplete,onQuit,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 history and geography treasure hunt questions for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Treasure Hunt questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 history and geography treasure hunt questions for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Treasure Hunt questions."),[child]);
   return <RunnerEngine child={child} name="Treasure Hunt" emoji="🗺️" subject="History" color="#D97706" bg="#FFFBEB" runnerChar="🏴‍☠️" sceneBg="linear-gradient(180deg,#FFFBEB,#FDE68A 50%,#0369A1)" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
 }
 
 function GrandPrix({child,mode,onComplete,onQuit,level=1}) {
   const game=useLivesGame(
-    useCallback(async(lvl)=>claude(`Generate 10 measurement questions for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options. Return ONLY JSON: {"questions":[{"q":"cm in 1m?","options":["A) 10","B) 100","C) 1000","D) 50"],"correct":"B"}]}`,"Grand prix questions."),[child]),
+    useCallback(async(lvl)=>claude(`Generate 10 measurement questions for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options. Return ONLY JSON: {"questions":[{"q":"cm in 1m?","options":["A) 10","B) 100","C) 1000","D) 50"],"correct":"B"}]}`,"Grand prix questions."),[child]),
     level
   );
   const [pos,setPos]=useState(8);
@@ -3633,13 +4031,13 @@ function GrandPrix({child,mode,onComplete,onQuit,level=1}) {
 
   if(game.loadErr)return <GameError name="Grand Prix Racing" onRetry={()=>onQuit()}/>;
   if(game.loading&&!game.q)return <GameLoad name="Grand Prix Racing" emoji="🏎️" tutor={child.tutor}/>;
-  if(game.done)return <GameEnd name="Grand Prix Racing" emoji="🏎️" score={game.score} max={game.score+3-game.lives} child={child} xp={game.score*12} level={game.lvl} onRetry={()=>window.location.reload()} onDone={()=>onComplete({score:game.score,max:game.score+3-game.lives,xp:game.score*12,total:game.qIdx,correct:game.score,levelReached:game.lvl})}/>;
+  if(game.done)return <GameEnd name="Grand Prix Racing" emoji="🏎️" score={game.score} max={game.score+3-game.lives} child={child} xp={game.score*12} level={game.lvl} onRetry={()=>onQuit()} onDone={()=>onComplete({score:game.score,max:game.score+3-game.lives,xp:game.score*12,total:game.qIdx,correct:game.score,levelReached:game.lvl})}/>;
 
   return(
     <GameShell name="Grand Prix Racing" emoji="🏎️" subject="Maths" score={game.score} maxScore={null} round={game.qIdx+1} total={null} streak={game.streak} onQuit={()=>game.setDone(true)} lives={game.lives} level={game.lvl}>
       <div style={{background:"linear-gradient(180deg,#1F2937,#111827)",borderRadius:20,padding:"10px 12px",marginBottom:12,position:"relative",overflow:"hidden",height:140}}>
         <div style={{position:"absolute",top:"30%",left:0,right:0,height:"45%",background:"#374151"}}/>
-        {[...Array(8)].map((_,i)=><div key={i} style={{position:"absolute",top:"52%",left:`${(i*14+((game.qIdx*20)%14))}%`,width:"8%",height:3,background:"#FCD34D",borderRadius:2,opacity:0.7}}/>)}
+        {[...Array(8)].map((_,i)=><div key={i} style={{position:"absolute",top:"52%",left:`${(i*14+((game.qIdx*8)%14))}%`,width:"8%",height:3,background:"#FCD34D",borderRadius:2,opacity:0.7}}/>)}
         <div style={{position:"absolute",top:0,left:0,right:0,height:"30%",background:"#14532D"}}/>
         <div style={{position:"absolute",bottom:0,left:0,right:0,height:"22%",background:"#14532D"}}/>
         <div style={{position:"absolute",top:8,right:12,background:"rgba(0,0,0,0.7)",borderRadius:8,padding:"4px 10px",zIndex:4}}>
@@ -3659,108 +4057,108 @@ function GrandPrix({child,mode,onComplete,onQuit,level=1}) {
 
 
 function CandyShop({child,mode,onComplete,onQuit,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 money/financial maths questions for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Prices, change, totals. Short option answers. Return ONLY JSON: {"questions":[{"q":"3 sweets at 20p each?","options":["50p","60p","70p","80p"],"correct":"60p"}]}`,"Candy shop questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 money/financial maths questions for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Prices, change, totals. Short option answers. Return ONLY JSON: {"questions":[{"q":"3 sweets at 20p each?","options":["50p","60p","70p","80p"],"correct":"60p"}]}`,"Candy shop questions."),[child]);
   return <CatcherEngine child={child} name="Candy Shop" emoji="🍭" subject="Maths" color="#EC4899" bg="#FDF2F8" fetchFn={fetchFn} catcherChar="🛍️" sceneBg="linear-gradient(180deg,#FDF2F8,#FCE7F3)" initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
 }
 
 function BasketballMaths({child,mode,onComplete,onQuit,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 statistics, data, averages, charts for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Basketball Maths questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 statistics, data, averages, charts for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Basketball Maths questions."),[child]);
   return <CatcherEngine child={child} name="Basketball Maths" emoji="🏀" subject="Maths" color="#EA580C" bg="#FFF7ED" catcherChar="🏀" sceneBg="linear-gradient(180deg,#1E3A5F,#1E40AF)" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
 }
 
 function TrainGame({child,mode,onComplete,onQuit,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 number sequences, place value, patterns for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Number Train questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 number sequences, place value, patterns for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Number Train questions."),[child]);
   return <SpaceExplorer child={child} name="Number Train" emoji="🚂" subject="Maths" color="#374151" bg="#F9FAFB" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
 }
 
 function SupermarketMath({child,mode,onComplete,onQuit,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 money, prices, change, financial maths for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Supermarket Sweep questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 money, prices, change, financial maths for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Supermarket Sweep questions."),[child]);
   return <CatcherEngine child={child} name="Supermarket Sweep" emoji="🛒" subject="Maths" color="#16A34A" bg="#F0FDF4" catcherChar="🛒" sceneBg="linear-gradient(180deg,#F0FDF4,#DCFCE7)" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
 }
 
 function RocketMaths({child,mode,onComplete,onQuit,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 algebra questions for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options. Return ONLY JSON: {"questions":[{"q":"x + 5 = 12, x =","options":["5","6","7","8"],"correct":"7"}]}`,"Rocket maths questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 algebra questions for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options. Return ONLY JSON: {"questions":[{"q":"x + 5 = 12, x =","options":["5","6","7","8"],"correct":"7"}]}`,"Rocket maths questions."),[child]);
   return <SpaceExplorer child={child} name="Rocket Launch" emoji="🛸" subject="Maths" color="#7C3AED" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
 }
 
 function SpellBingo({child,mode,onComplete,onQuit,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 spelling at curriculum Level for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Spelling Bingo questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 spelling at curriculum Level for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Spelling Bingo questions."),[child]);
   return <CatcherEngine child={child} name="Spelling Bingo" emoji="🎱" subject="English" color="#EC4899" bg="#FDF2F8" catcherChar="🎰" sceneBg="linear-gradient(180deg,#FDF2F8,#FCE7F3)" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
 }
 
 function WordShake({child,mode,onComplete,onQuit,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 vocabulary, word building for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"WordShake questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 vocabulary, word building for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"WordShake questions."),[child]);
   return <SpaceExplorer child={child} name="WordShake" emoji="🎲" subject="English" color="#4F46E5" bg="#EEF2FF" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
 }
 
 function SpotDifference({child,mode,onComplete,onQuit,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 reading comprehension for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Spot the Difference questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 reading comprehension for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Spot the Difference questions."),[child]);
   return <SpaceExplorer child={child} name="Spot the Difference" emoji="🔍" subject="English" color="#DC2626" bg="#FEF2F2" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
 }
 
 function PuzzleWords({child,mode,onComplete,onQuit,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 vocabulary, crossword clues for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Word Puzzle questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 vocabulary, crossword clues for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Word Puzzle questions."),[child]);
   return <SpaceExplorer child={child} name="Word Puzzle" emoji="🧩" subject="English" color="#374151" bg="#F9FAFB" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
 }
 
 function SchoolRun({child,mode,onComplete,onQuit,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 English grammar/writing questions for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options. Return ONLY JSON: {"questions":[{"q":"Best word: She ___ to school.","options":["runned","ran","ranned","runned"],"correct":"ran"}]}`,"School run questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 English grammar/writing questions for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options. Return ONLY JSON: {"questions":[{"q":"Best word: She ___ to school.","options":["runned","ran","ranned","runned"],"correct":"ran"}]}`,"School run questions."),[child]);
   return <RunnerEngine child={child} name="School Run" emoji="🏃" subject="English" color="#0EA5E9" fetchFn={fetchFn} runnerChar="🏃" sceneBg="linear-gradient(180deg,#BAE6FD,#7DD3FC 50%,#4ADE80 50%)" initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
 }
 
 function MemoryWords({child,mode,onComplete,onQuit,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 vocabulary/reading questions for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options. Return ONLY JSON: {"questions":[{"q":"What does 'habitat' mean?","options":["A) Food","B) Home of animal","C) Weather","D) Plant"],"correct":"B"}]}`,"Memory words questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 vocabulary/reading questions for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options. Return ONLY JSON: {"questions":[{"q":"What does 'habitat' mean?","options":["A) Food","B) Home of animal","C) Weather","D) Plant"],"correct":"B"}]}`,"Memory words questions."),[child]);
   return <SpaceExplorer child={child} name="Memory Match" emoji="🧠" subject="English" color="#0EA5E9" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
 }
 
 
 function DinosaurGame({child,mode,onComplete,onQuit,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 dinosaurs, fossils, evolution, prehistoric life for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Dino Dig questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 dinosaurs, fossils, evolution, prehistoric life for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Dino Dig questions."),[child]);
   return <CatcherEngine child={child} name="Dino Dig" emoji="🦕" subject="Science" color="#D97706" bg="#FFFBEB" catcherChar="⛏️" sceneBg="linear-gradient(180deg,#FFFBEB,#FEF3C7)" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
 }
 
 function JungleExplorer({child,mode,onComplete,onQuit,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 jungle living things, habitats, food chains for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Jungle Explorer questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 jungle living things, habitats, food chains for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Jungle Explorer questions."),[child]);
   return <CatcherEngine child={child} name="Jungle Explorer" emoji="🌴" subject="Science" color="#16A34A" bg="#F0FDF4" catcherChar="🔭" sceneBg="linear-gradient(180deg,#F0FDF4,#DCFCE7)" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
 }
 
 function OceanGame({child,mode,onComplete,onQuit,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 ocean creatures, marine habitats, food chains for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Ocean Adventure questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 ocean creatures, marine habitats, food chains for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Ocean Adventure questions."),[child]);
   return <CatcherEngine child={child} name="Ocean Adventure" emoji="🌊" subject="Science" color="#0369A1" bg="#F0F9FF" catcherChar="🤿" sceneBg="linear-gradient(180deg,#BAE6FD,#0EA5E9 60%,#0369A1)" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
 }
 
 function BubbleBuster({child,mode,onComplete,onQuit,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 materials science questions for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Properties, states, changes. Short options. Return ONLY JSON: {"questions":[{"q":"Which is waterproof?","options":["Paper","Rubber","Wood","Cotton"],"correct":"Rubber"}]}`,"Bubble buster questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 materials science questions for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Properties, states, changes. Short options. Return ONLY JSON: {"questions":[{"q":"Which is waterproof?","options":["Paper","Rubber","Wood","Cotton"],"correct":"Rubber"}]}`,"Bubble buster questions."),[child]);
   return <ShooterEngine child={child} name="Bubble Buster" emoji="🫧" subject="Science" color="#0EA5E9" bg="#F0F9FF" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
 }
 
 function ColourScience({child,mode,onComplete,onQuit,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 light and colour science questions for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short option answers. Return ONLY JSON: {"questions":[{"q":"Red + Blue light =","options":["Green","Purple","Orange","Yellow"],"correct":"Purple"}]}`,"Colour science questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 light and colour science questions for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short option answers. Return ONLY JSON: {"questions":[{"q":"Red + Blue light =","options":["Green","Purple","Orange","Yellow"],"correct":"Purple"}]}`,"Colour science questions."),[child]);
   return <CatcherEngine child={child} name="Colour Lab" emoji="🎨" subject="Science" color="#7C3AED" bg="#F5F3FF" fetchFn={fetchFn} catcherChar="🎨" sceneBg="linear-gradient(180deg,#FDF4FF,#FAE8FF)" initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
 }
 
 function AstronautGame({child,mode,onComplete,onQuit,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 Earth and space science questions for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options. Return ONLY JSON: {"questions":[{"q":"Earth orbits sun in?","options":["24hrs","28 days","365 days","100 yrs"],"correct":"365 days"}]}`,"Astronaut training questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 Earth and space science questions for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options. Return ONLY JSON: {"questions":[{"q":"Earth orbits sun in?","options":["24hrs","28 days","365 days","100 yrs"],"correct":"365 days"}]}`,"Astronaut training questions."),[child]);
   return <SpaceExplorer child={child} name="Astronaut Training" emoji="👨‍🚀" subject="Science" color="#1E40AF" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
 }
 
 function PyramidsGame({child,mode,onComplete,onQuit,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 ancient civilisations Egypt Greece Rome for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Pyramid Builder questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 ancient civilisations Egypt Greece Rome for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Pyramid Builder questions."),[child]);
   return <RunnerEngine child={child} name="Pyramid Builder" emoji="🏛️" subject="History" color="#D97706" bg="#FFFBEB" runnerChar="🏃" sceneBg="linear-gradient(180deg,#FEF3C7,#FDE68A 50%,#D97706)" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
 }
 
 function InspectorGame({child,mode,onComplete,onQuit,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 historical sources, chronology, cause and effect for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"History Inspector questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 historical sources, chronology, cause and effect for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"History Inspector questions."),[child]);
   return <RunnerEngine child={child} name="History Inspector" emoji="🕵️" subject="History" color="#374151" bg="#F9FAFB" runnerChar="🕵️" sceneBg="linear-gradient(180deg,#F9FAFB,#E5E7EB 50%,#9CA3AF)" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
 }
 
 function HideSeekHistory({child,mode,onComplete,onQuit,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 significant historical figures from national history for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"History Hide & Seek questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 significant historical figures from national history for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"History Hide & Seek questions."),[child]);
   return <SpaceExplorer child={child} name="History Hide & Seek" emoji="🫣" subject="History" color="#4F46E5" bg="#EEF2FF" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
 }
 
 function TenableGame({child,mode,onComplete,onQuit,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 world history facts and categories for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Tenable Challenge questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 world history facts and categories for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Tenable Challenge questions."),[child]);
   return <SpaceExplorer child={child} name="Tenable Challenge" emoji="📋" subject="History" color="#1E40AF" bg="#EFF6FF" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
 }
 
@@ -3787,7 +4185,7 @@ function FootballHistory({child,mode,onComplete,onQuit,level=1}) {
 
   if(game.loadErr)return <GameError name="Penalty Shootout" onRetry={()=>onQuit()}/>;
   if(game.loading&&!game.q)return <GameLoad name="Penalty Shootout" emoji="⚽" tutor={child.tutor}/>;
-  if(game.done)return <GameEnd name="Penalty Shootout" emoji="⚽" score={game.score} max={game.score+3-game.lives} child={child} xp={game.score*12} level={game.lvl} onRetry={()=>window.location.reload()} onDone={()=>onComplete({score:game.score,max:game.score+3-game.lives,xp:game.score*12,total:game.qIdx,correct:game.score,levelReached:game.lvl})}/>;
+  if(game.done)return <GameEnd name="Penalty Shootout" emoji="⚽" score={game.score} max={game.score+3-game.lives} child={child} xp={game.score*12} level={game.lvl} onRetry={()=>onQuit()} onDone={()=>onComplete({score:game.score,max:game.score+3-game.lives,xp:game.score*12,total:game.qIdx,correct:game.score,levelReached:game.lvl})}/>;
 
   return(
     <GameShell name="Penalty Shootout" emoji="⚽" subject="History" score={game.score} maxScore={null} round={game.qIdx+1} total={null} streak={game.streak} onQuit={()=>game.setDone(true)} lives={game.lives} level={game.lvl}>
@@ -3799,7 +4197,7 @@ function FootballHistory({child,mode,onComplete,onQuit,level=1}) {
           {[...Array(4)].map((_,i)=><line key={"h"+i} x1="0" y1={i*26} x2="200" y2={i*26} stroke="rgba(255,255,255,0.15)" strokeWidth="1"/>)}
         </svg>
         <div style={{position:"absolute",bottom:"18%",left:"50%",transform:"translateX(-50%)",width:5,height:5,borderRadius:"50%",background:"white"}}/>
-        <div style={{position:"absolute",left:`${ballPos.x}%`,top:`${ballPos.y}%`,transform:"translateX(-50%)",fontSize:20,zIndex:3,transition:"all 0.5s cubic-bezier(0.25,0.46,0.45,0.94)"}}>⚽</div>
+        <div style={{position:"absolute",left:`${ballPos.x}%`,top:`${ballPos.y}%`,transform:"translateX(-50%)",fontSize:20,zIndex:3,transition:"all 0.9s cubic-bezier(0.25,0.46,0.45,0.94)"}}>⚽</div>
         <div style={{position:"absolute",top:"8%",left:"50%",transform:"translateX(-50%)",fontSize:22,zIndex:2}}>🧤</div>
         {shotResult&&<div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,0.5)",borderRadius:20,zIndex:5,fontSize:22,fontWeight:900,color:shotResult.includes("GOAL")?"#FCD34D":"#EF4444"}}>{shotResult}</div>}
       </div>
@@ -3811,88 +4209,88 @@ function FootballHistory({child,mode,onComplete,onQuit,level=1}) {
 
 
 function WorldMapGame({child,mode,onComplete,onQuit,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 world geography, countries, capitals, continents for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"World Map Quest questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 world geography, countries, capitals, continents for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"World Map Quest questions."),[child]);
   return <RunnerEngine child={child} name="World Map Quest" emoji="🌍" subject="Geography" color="#0369A1" bg="#F0F9FF" runnerChar="🌍" sceneBg="linear-gradient(180deg,#F0F9FF,#BAE6FD 50%,#0EA5E9)" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
 }
 
 function GeographyGuesser({child,mode,onComplete,onQuit,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 identifying places from clues for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Geography Guesser questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 identifying places from clues for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Geography Guesser questions."),[child]);
   return <RunnerEngine child={child} name="Geography Guesser" emoji="📍" subject="Geography" color="#16A34A" bg="#F0FDF4" runnerChar="🗺️" sceneBg="linear-gradient(180deg,#F0FDF4,#DCFCE7 50%,#16A34A)" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
 }
 
 function SkiingGeo({child,mode,onComplete,onQuit,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 physical geography questions for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options. Return ONLY JSON: {"questions":[{"q":"Rock worn by rivers?","options":["Deposition","Erosion","Flooding","Sinking"],"correct":"Erosion"}]}`,"Ski slope questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 physical geography questions for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options. Return ONLY JSON: {"questions":[{"q":"Rock worn by rivers?","options":["Deposition","Erosion","Flooding","Sinking"],"correct":"Erosion"}]}`,"Ski slope questions."),[child]);
   return <RunnerEngine child={child} name="Ski Slope Race" emoji="⛷️" subject="Geography" color="#3B82F6" fetchFn={fetchFn} runnerChar="⛷️" sceneBg="linear-gradient(180deg,#EFF6FF,#DBEAFE 50%,#fff 50%)" initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
 }
 
 function SkateboardGeo({child,mode,onComplete,onQuit,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 human geography questions for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options. Return ONLY JSON: {"questions":[{"q":"People move city to country?","options":["Urbanisation","Ruralisation","Migration","Emigration"],"correct":"Ruralisation"}]}`,"Skatepark questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 human geography questions for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options. Return ONLY JSON: {"questions":[{"q":"People move city to country?","options":["Urbanisation","Ruralisation","Migration","Emigration"],"correct":"Ruralisation"}]}`,"Skatepark questions."),[child]);
   return <RunnerEngine child={child} name="Skatepark City" emoji="🛹" subject="Geography" color="#6366F1" fetchFn={fetchFn} runnerChar="🛹" sceneBg="linear-gradient(180deg,#1F2937,#374151 50%,#4B5563 50%)" initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
 }
 
 function PirateGeo({child,mode,onComplete,onQuit,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 map skills, compass, navigation for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Pirate Voyage questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 map skills, compass, navigation for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Pirate Voyage questions."),[child]);
   return <RunnerEngine child={child} name="Pirate Voyage" emoji="🏴‍☠️" subject="Geography" color="#1E40AF" bg="#EFF6FF" runnerChar="⛵" sceneBg="linear-gradient(180deg,#BAE6FD,#0EA5E9 50%,#0369A1)" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
 }
 
 function BusGame({child,mode,onComplete,onQuit,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 environmental geography questions for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options. Return ONLY JSON: {"questions":[{"q":"Energy from the sun?","options":["Wind","Solar","Tidal","Nuclear"],"correct":"Solar"}]}`,"Eco bus questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 environmental geography questions for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options. Return ONLY JSON: {"questions":[{"q":"Energy from the sun?","options":["Wind","Solar","Tidal","Nuclear"],"correct":"Solar"}]}`,"Eco bus questions."),[child]);
   return <RunnerEngine child={child} name="Eco Bus Driver" emoji="🚌" subject="Geography" color="#16A34A" fetchFn={fetchFn} runnerChar="🚌" sceneBg="linear-gradient(180deg,#F0FDF4,#DCFCE7 50%,#86EFAC 50%)" initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
 }
 
 function CodeGame({child,mode,onComplete,onQuit,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 binary, data, computing concepts for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Code Breaker questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 binary, data, computing concepts for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Code Breaker questions."),[child]);
   return <SpaceExplorer child={child} name="Code Breaker" emoji="🔐" subject="Computing" color="#16A34A" bg="#F0FDF4" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
 }
 
 function FlippingFood({child,mode,onComplete,onQuit,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 algorithms, sequences, computational thinking for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Recipe Robot questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 algorithms, sequences, computational thinking for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Recipe Robot questions."),[child]);
   return <SpaceExplorer child={child} name="Recipe Robot" emoji="🍳" subject="Computing" color="#F59E0B" bg="#FFFBEB" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
 }
 
 function MemoryComputer({child,mode,onComplete,onQuit,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 computing terms, networks, hardware for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Computer Memory questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 computing terms, networks, hardware for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Computer Memory questions."),[child]);
   return <SpaceExplorer child={child} name="Computer Memory" emoji="💾" subject="Computing" color="#4F46E5" bg="#EEF2FF" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
 }
 
 function ShapeShooter({child,mode,onComplete,onQuit,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 geometry questions for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Shapes, angles, symmetry. Options as short labels. Return ONLY JSON: {"questions":[{"q":"Sides of a hexagon?","options":["4","5","6","7"],"correct":"6"}]}`,"Shape shooter questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 geometry questions for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Shapes, angles, symmetry. Options as short labels. Return ONLY JSON: {"questions":[{"q":"Sides of a hexagon?","options":["4","5","6","7"],"correct":"6"}]}`,"Shape shooter questions."),[child]);
   return <ShooterEngine child={child} name="Shape Shooter" emoji="📐" subject="Maths" color="#7C3AED" bg="#F5F3FF" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
 }
 
 function CoordinateQuest({child,mode,onComplete,onQuit,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 coordinates, position, translation for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Coordinate Quest questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 coordinates, position, translation for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Coordinate Quest questions."),[child]);
   return <SpaceExplorer child={child} name="Coordinate Quest" emoji="🧭" subject="Maths" color="#4F46E5" bg="#EEF2FF" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
 }
 
 function RatioRecipe({child,mode,onComplete,onQuit,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 ratio, proportion, scaling for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Ratio Kitchen questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 ratio, proportion, scaling for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Ratio Kitchen questions."),[child]);
   return <SpaceExplorer child={child} name="Ratio Kitchen" emoji="⚖️" subject="Maths" color="#F59E0B" bg="#FFFBEB" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
 }
 
 function PoetrySlam({child,mode,onComplete,onQuit,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 poetry, rhyme, poetic devices for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Poetry Slam questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 poetry, rhyme, poetic devices for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Poetry Slam questions."),[child]);
   return <SpaceExplorer child={child} name="Poetry Slam" emoji="🎤" subject="English" color="#7C3AED" bg="#F5F3FF" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
 }
 
 function MediaDetective({child,mode,onComplete,onQuit,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 media literacy, fact vs opinion for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Media Detective questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 media literacy, fact vs opinion for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Media Detective questions."),[child]);
   return <SpaceExplorer child={child} name="Media Detective" emoji="📱" subject="English" color="#0EA5E9" bg="#F0F9FF" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
 }
 
 function SeasonsGame({child,mode,onComplete,onQuit,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 seasons and weather science questions for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short option answers. Return ONLY JSON: {"questions":[{"q":"Leaves fall in?","options":["Spring","Summer","Autumn","Winter"],"correct":"Autumn"}]}`,"Seasons game questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 seasons and weather science questions for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short option answers. Return ONLY JSON: {"questions":[{"q":"Leaves fall in?","options":["Spring","Summer","Autumn","Winter"],"correct":"Autumn"}]}`,"Seasons game questions."),[child]);
   return <CatcherEngine child={child} name="Seasons Explorer" emoji="🌤️" subject="Science" color="#F59E0B" bg="#FFFBEB" fetchFn={fetchFn} catcherChar="☂️" sceneBg="linear-gradient(180deg,#FEF9C3,#FEF3C7)" initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
 }
 
 function SoundWaves({child,mode,onComplete,onQuit,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 sound, vibrations, pitch, volume for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Sound Waves questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 sound, vibrations, pitch, volume for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Sound Waves questions."),[child]);
   return <SpaceExplorer child={child} name="Sound Waves" emoji="🎵" subject="Science" color="#1E40AF" bg="#EFF6FF" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
 }
 
 function CircuitBuilder({child,mode,onComplete,onQuit,level=1}) {
   const game=useLivesGame(
-    useCallback(async(lvl)=>claude(`Generate 10 electricity and circuits science questions for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options. Return ONLY JSON: {"questions":[{"q":"Which conducts electricity?","options":["A) Plastic","B) Wood","C) Copper","D) Rubber"],"correct":"C"}]}`,"Circuit builder questions."),[child]),
+    useCallback(async(lvl)=>claude(`Generate 10 electricity and circuits science questions for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options. Return ONLY JSON: {"questions":[{"q":"Which conducts electricity?","options":["A) Plastic","B) Wood","C) Copper","D) Rubber"],"correct":"C"}]}`,"Circuit builder questions."),[child]),
     level
   );
   const [sel,setSel]=useState(null);const [ans,setAns]=useState(false);
@@ -3908,7 +4306,7 @@ function CircuitBuilder({child,mode,onComplete,onQuit,level=1}) {
 
   if(game.loadErr)return <GameError name="Circuit Builder" onRetry={()=>onQuit()}/>;
   if(game.loading&&!game.q)return <GameLoad name="Circuit Builder" emoji="⚡" tutor={child.tutor}/>;
-  if(game.done)return <GameEnd name="Circuit Builder" emoji="⚡" score={game.score} max={game.score+3-game.lives} child={child} xp={game.score*12} level={game.lvl} onRetry={()=>window.location.reload()} onDone={()=>onComplete({score:game.score,max:game.score+3-game.lives,xp:game.score*12,total:game.qIdx,correct:game.score,levelReached:game.lvl})}/>;
+  if(game.done)return <GameEnd name="Circuit Builder" emoji="⚡" score={game.score} max={game.score+3-game.lives} child={child} xp={game.score*12} level={game.lvl} onRetry={()=>onQuit()} onDone={()=>onComplete({score:game.score,max:game.score+3-game.lives,xp:game.score*12,total:game.qIdx,correct:game.score,levelReached:game.lvl})}/>;
 
   return(
     <GameShell name="Circuit Builder" emoji="⚡" subject="Science" score={game.score} maxScore={null} round={game.qIdx+1} total={null} streak={game.streak} onQuit={()=>game.setDone(true)} lives={game.lives} level={game.lvl}>
@@ -3934,7 +4332,7 @@ function CircuitBuilder({child,mode,onComplete,onQuit,level=1}) {
 
 
 function ChemistryLab({child,mode,onComplete,onQuit,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 materials, reversible and irreversible changes for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Chemistry Lab questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 materials, reversible and irreversible changes for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Chemistry Lab questions."),[child]);
   return <SpaceExplorer child={child} name="Chemistry Lab" emoji="🧫" subject="Science" color="#7C3AED" bg="#F5F3FF" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
 }
 
@@ -3945,17 +4343,17 @@ function TimeMachine({child,mode,onComplete,onQuit,level=1}) {
 }
 
 function LocalHero({child,mode,onComplete,onQuit,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 local and community history for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Local Hero Quest questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 local and community history for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Local Hero Quest questions."),[child]);
   return <SpaceExplorer child={child} name="Local Hero Quest" emoji="🏘️" subject="History" color="#16A34A" bg="#F0FDF4" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
 }
 
 function SafetyShield({child,mode,onComplete,onQuit,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 e-safety questions for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Online safety, privacy, cyberbullying. Short options. Return ONLY JSON: {"questions":[{"q":"Keep private online?","options":["Address","Name","Opinion","Hobby"],"correct":"Address"}]}`,"Safety shield questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 e-safety questions for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Online safety, privacy, cyberbullying. Short options. Return ONLY JSON: {"questions":[{"q":"Keep private online?","options":["Address","Name","Opinion","Hobby"],"correct":"Address"}]}`,"Safety shield questions."),[child]);
   return <ShooterEngine child={child} name="Safety Shield" emoji="🛡️" subject="Computing" color="#1E40AF" bg="#EFF6FF" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
 }
 
 function CreativeStudio({child,mode,onComplete,onQuit,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 creative computing, digital content for age ${child.age}, ${child.country||"UK"} curriculum, Level ${lvl}. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Creative Studio questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 creative computing, digital content for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Creative Studio questions."),[child]);
   return <SpaceExplorer child={child} name="Creative Studio" emoji="🎨" subject="Computing" color="#EC4899" bg="#FDF2F8" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit}/>;
 }
 
@@ -4095,7 +4493,7 @@ function GamePlayer({child,gameId,mode,onComplete,onQuit}) {
   };
 
   const props={child,mode,onComplete:handleComplete,onQuit,level:gameLevel};
-  const map={numberBlaster:<NumberBlaster {...props}/>,timesTableRace:<TimesTableRace {...props}/>,fractionChef:<FractionChef {...props}/>,wordScramble:<WordScramble {...props}/>,spellingBee:<SpellingBee {...props}/>,sentenceBuilder:<SentenceBuilder {...props}/>,scienceSort:<ScienceSort {...props}/>,statesOfMatter:<StatesOfMatter {...props}/>,planetPatrol:<PlanetPatrol {...props}/>,algorithmSort:<AlgorithmSort {...props}/>,debugDetective:<DebugDetective {...props}/>,wordMatch:<WordMatch {...props}/>,mathFishing:<MathFishing {...props}/>,spaceBlaster:<SpaceBlaster {...props}/>,gemHunter:<GemHunter {...props}/>,wordRunner:<WordRunner {...props}/>,volcanoEscape:<VolcanoEscape {...props}/>,treasureMap:<TreasureMap {...props}/>,grandPrix:<GrandPrix {...props}/>,candyShop:<CandyShop {...props}/>,basketballMaths:<BasketballMaths {...props}/>,trainGame:<TrainGame {...props}/>,supermarketMath:<SupermarketMath {...props}/>,rocketMaths:<RocketMaths {...props}/>,spellBingo:<SpellBingo {...props}/>,wordShake:<WordShake {...props}/>,spotDifference:<SpotDifference {...props}/>,puzzleWords:<PuzzleWords {...props}/>,schoolRun:<SchoolRun {...props}/>,memoryWords:<MemoryWords {...props}/>,dinosaurGame:<DinosaurGame {...props}/>,jungleExplorer:<JungleExplorer {...props}/>,oceanGame:<OceanGame {...props}/>,bubbleBuster:<BubbleBuster {...props}/>,colourScience:<ColourScience {...props}/>,astronautGame:<AstronautGame {...props}/>,pyramidsGame:<PyramidsGame {...props}/>,inspectorGame:<InspectorGame {...props}/>,hideSeekHistory:<HideSeekHistory {...props}/>,tenableGame:<TenableGame {...props}/>,footballHistory:<FootballHistory {...props}/>,worldMapGame:<WorldMapGame {...props}/>,geographyGuesser:<GeographyGuesser {...props}/>,skiingGeo:<SkiingGeo {...props}/>,skateboardGeo:<SkateboardGeo {...props}/>,pirateGeo:<PirateGeo {...props}/>,busGame:<BusGame {...props}/>,codeGame:<CodeGame {...props}/>,flippingFood:<FlippingFood {...props}/>,memoryComputer:<MemoryComputer {...props}/>,shapeShooter:<ShapeShooter {...props}/>,coordinateQuest:<CoordinateQuest {...props}/>,ratioRecipe:<RatioRecipe {...props}/>,poetrySlam:<PoetrySlam {...props}/>,mediaDetective:<MediaDetective {...props}/>,seasonsGame:<SeasonsGame {...props}/>,soundWaves:<SoundWaves {...props}/>,circuitBuilder:<CircuitBuilder {...props}/>,chemistryLab:<ChemistryLab {...props}/>,timeMachine:<TimeMachine {...props}/>,localHero:<LocalHero {...props}/>,safetyShield:<SafetyShield {...props}/>,creativeStudio:<CreativeStudio {...props}/>,timelineSort:<AlgorithmSort {...props}/>,historyMatch:<ScienceSort {...props}/>,mapQuiz:<ScienceSort {...props}/>};
+  const map={numberBlaster:<NumberBlaster {...props}/>,timesTableRace:<TimesTableRace {...props}/>,fractionChef:<FractionChef {...props}/>,wordScramble:<WordScramble {...props}/>,spellingBee:<SpellingBee {...props}/>,sentenceBuilder:<SentenceBuilder {...props}/>,scienceSort:<ScienceSort {...props}/>,statesOfMatter:<StatesOfMatter {...props}/>,planetPatrol:<PlanetPatrol {...props}/>,algorithmSort:<AlgorithmSort {...props}/>,debugDetective:<DebugDetective {...props}/>,wordMatch:<WordMatch {...props}/>,mathFishing:<MathFishing {...props}/>,spaceBlaster:<SpaceBlaster {...props}/>,gemHunter:<GemHunter {...props}/>,wordRunner:<WordRunner {...props}/>,volcanoEscape:<VolcanoEscape {...props}/>,treasureMap:<TreasureMap {...props}/>,grandPrix:<GrandPrix {...props}/>,candyShop:<CandyShop {...props}/>,basketballMaths:<BasketballMaths {...props}/>,trainGame:<TrainGame {...props}/>,supermarketMath:<SupermarketMath {...props}/>,rocketMaths:<RocketMaths {...props}/>,spellBingo:<SpellBingo {...props}/>,wordShake:<WordShake {...props}/>,spotDifference:<SpotDifference {...props}/>,puzzleWords:<PuzzleWords {...props}/>,schoolRun:<SchoolRun {...props}/>,memoryWords:<MemoryWords {...props}/>,dinosaurGame:<DinosaurGame {...props}/>,jungleExplorer:<JungleExplorer {...props}/>,oceanGame:<OceanGame {...props}/>,bubbleBuster:<BubbleBuster {...props}/>,colourScience:<ColourScience {...props}/>,astronautGame:<AstronautGame {...props}/>,pyramidsGame:<PyramidsGame {...props}/>,inspectorGame:<InspectorGame {...props}/>,hideSeekHistory:<HideSeekHistory {...props}/>,tenableGame:<TenableGame {...props}/>,footballHistory:<FootballHistory {...props}/>,worldMapGame:<WorldMapGame {...props}/>,geographyGuesser:<GeographyGuesser {...props}/>,skiingGeo:<SkiingGeo {...props}/>,skateboardGeo:<SkateboardGeo {...props}/>,pirateGeo:<PirateGeo {...props}/>,busGame:<BusGame {...props}/>,codeGame:<CodeGame {...props}/>,flippingFood:<FlippingFood {...props}/>,memoryComputer:<MemoryComputer {...props}/>,spellingRun:<SpellingRun {...props}/>,mathSprint:<MathSprint {...props}/>,shapeShooter:<ShapeShooter {...props}/>,coordinateQuest:<CoordinateQuest {...props}/>,ratioRecipe:<RatioRecipe {...props}/>,poetrySlam:<PoetrySlam {...props}/>,mediaDetective:<MediaDetective {...props}/>,seasonsGame:<SeasonsGame {...props}/>,soundWaves:<SoundWaves {...props}/>,circuitBuilder:<CircuitBuilder {...props}/>,chemistryLab:<ChemistryLab {...props}/>,timeMachine:<TimeMachine {...props}/>,localHero:<LocalHero {...props}/>,safetyShield:<SafetyShield {...props}/>,creativeStudio:<CreativeStudio {...props}/>,timelineSort:<AlgorithmSort {...props}/>,historyMatch:<ScienceSort {...props}/>,mapQuiz:<ScienceSort {...props}/>};
   return map[gameId]||<div style={{padding:40,textAlign:"center"}}><p>Game not found</p></div>;
 }
 
@@ -4150,7 +4548,7 @@ function ChildLogin({children, onSelect, onParent}) { // onSelect goes to progre
 
 
 // ── Topic Picker ──────────────────────────────────────────────────────────
-function TopicPicker({child,subject,onStart,onBack}) {
+function TopicPicker({child,subject,onStart,onBack,onLearn}) {
   const sc = SUB[subject];
   const topics = CURRICULUM[subject] || [];
   const tLevels = child.topicLevels?.[subject] || {};
@@ -4175,7 +4573,7 @@ function TopicPicker({child,subject,onStart,onBack}) {
             const lvlDescs = getTopicLevels(topic);
             const topicWithLevels = {...topic, levels: lvlDescs};
             return (
-              <Card key={topic.id} onClick={()=>onStart(topicWithLevels)} style={{padding:"18px 18px",border:`2px solid ${sc.color}25`,background:`linear-gradient(135deg,${sc.light},white)`,cursor:"pointer"}}>
+              <Card key={topic.id} style={{padding:"18px 18px",border:`2px solid ${sc.color}25`,background:`linear-gradient(135deg,${sc.light},white)`}}>
                 <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:10}}>
                   <div style={{width:46,height:46,borderRadius:12,background:sc.light,border:`2px solid ${sc.color}30`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0}}>{topic.emoji}</div>
                   <div style={{flex:1}}>
@@ -4189,8 +4587,8 @@ function TopicPicker({child,subject,onStart,onBack}) {
                 </div>
                 {(()=>{
                   const key=`${subject}_${topic.id}_lv${lvl}`;
-                  const topicLvl=(child.topicLevels?.[subject]?.[t.id]||1);
-                  const qKey=`${subject}_${t.id}_lv${topicLvl}`;
+                  const topicLvl=(child.topicLevels?.[subject]?.[topic.id]||1);
+                  const qKey=`${subject}_${topic.id}_lv${topicLvl}`;
                   const qCount=(child.topicQCounts||{})[qKey]||0;
                   const testResult=(child.topicTestResults||{})[key];
                   const qPct=Math.min(100,Math.round((qCount/50)*100));
@@ -4202,10 +4600,24 @@ function TopicPicker({child,subject,onStart,onBack}) {
                         </span>
                         <span style={{fontSize:10,fontWeight:700,color:C.muted}}>{qPct}%</span>
                       </div>
-                      <PBar value={qPct} max={100} color={testResult==="pass"?C.green:qCount>=50?C.primary:sc.color} h={5}/>
+                      <PBar value={qPct} max={100} color={testResult?.passed?C.green:qCount>=50?C.primary:sc.color} h={5}/>
                     </div>
                   );
                 })()}
+                <div style={{display:"flex",gap:8,marginTop:12}}>
+                  {child.level?.[subject]>=1&&<button onClick={()=>onLearn&&onLearn(topicWithLevels)}
+                    style={{flex:1,padding:"8px",borderRadius:10,fontSize:12,fontWeight:800,cursor:"pointer",
+                      fontFamily:"'Nunito',sans-serif",background:"#fff",border:`2px solid ${sc.color}`,color:sc.color}}>
+                    📚 Learn
+                  </button>}
+                  <button onClick={()=>onStart(topicWithLevels)}
+                    style={{flex:2,padding:"8px",borderRadius:10,fontSize:13,fontWeight:900,cursor:"pointer",
+                      fontFamily:"'Nunito',sans-serif",
+                      background:`linear-gradient(135deg,${sc.color},${sc.color}CC)`,
+                      color:"#fff",border:"none",boxShadow:`0 3px 10px ${sc.color}40`}}>
+                    ▶ Start
+                  </button>
+                </div>
               </Card>
             );
           })}
@@ -6124,3 +6536,324 @@ export default function App() {
     </>
   );
 }
+// ── Learn Mode — Animated Curriculum Book ───────────────────────────────
+function LearnMode({child, subject, topic, onDone, onBack}) {
+  const sc=SUB[subject]||{color:C.primary,grad:`linear-gradient(135deg,${C.primary},#6366F1)`,light:C.pLight};
+  const [lesson,setLesson]=useState(null);
+  const [slideIdx,setSlideIdx]=useState(-1); // -1 = cover page
+  const [loading,setLoading]=useState(true);
+  const [err,setErr]=useState(false);
+  const [animIn,setAnimIn]=useState(true);
+
+  useEffect(()=>{
+    const t=setTimeout(()=>{setErr(true);setLoading(false);},18000);
+    // Structured curriculum anchoring — same core content for all children at same level
+    const topicLevel = child.topicLevels?.[subject]?.[topic?.id] || 1;
+    const levelObjective = topic?.levels?.[topicLevel-1] || topic?.desc || "core curriculum content";
+    const prevObjective = topicLevel > 1 ? (topic?.levels?.[topicLevel-2] || "foundational basics") : "no prior knowledge";
+    const nextObjective = topic?.levels?.[topicLevel] || "advanced extension";
+    const country = child.country || "UK";
+    const curriculum = country === "US" ? "Common Core" : country === "CA" ? "Ontario" : "National Curriculum";
+    const terminology = country === "US" ? "American English (math, color, center, organize)" : country === "CA" ? "Canadian English (maths, colour, centre)" : "British English (maths, colour, centre)";
+
+    claude(
+      `You are writing a curriculum lesson. The TEACHING CONTENT must be IDENTICAL for all children at this exact level — only vary the presentation style and specific examples.
+
+LESSON SPECIFICATION (FIXED — do not deviate):
+- Country: ${country} (${curriculum})
+- Subject: ${subject}
+- Topic: ${topic?.name || subject}
+- Year group: ${child.yearGroup || "Year 3"}
+- Child age: ${child.age}
+- Level: ${topicLevel} of 10
+- Use: ${terminology}
+
+WHAT TO TEACH (MANDATORY — every lesson at this level must cover these exact points):
+"${levelObjective}"
+
+PREREQUISITE KNOWLEDGE (what they already know):
+"${prevObjective}"
+
+COMING NEXT (don't teach this yet):
+"${nextObjective}"
+
+LESSON STRUCTURE (follow exactly):
+1. Title: engaging, specific to "${levelObjective}"
+2. Hook question: makes child curious about this specific content
+3. Exactly 5 slides — each must cover a distinct aspect of "${levelObjective}":
+   - Slide 1: introduce the core concept clearly
+   - Slide 2: explain how it works with the key rule or method
+   - Slide 3: show a step-by-step worked example
+   - Slide 4: common misconceptions or tricky parts to watch out for
+   - Slide 5: real-world connection — where they'll use this
+4. Memory trick: a rhyme, acronym or visual trick specific to this content
+5. Check question: tests understanding of "${levelObjective}" specifically
+
+PRESENTATION RULES:
+- Simple vocabulary suitable for age ${child.age}
+- Every example must be relatable to a ${child.age}-year-old in ${country}
+- Use lots of emojis to make it visual and engaging
+- Keep each slide body to 2-3 sentences maximum
+- The fun fact must be genuinely surprising and relevant to the topic
+
+Return ONLY valid JSON — no text before or after:
+{
+  "title": "specific engaging title about ${levelObjective}",
+  "hookQuestion": "question that makes child curious about THIS specific content",
+  "slides": [
+    {
+      "emoji": "most relevant emoji",
+      "heading": "max 6 words",
+      "body": "2-3 clear sentences",
+      "example": "real-world example a ${child.age}-year-old in ${country} would know",
+      "funFact": "surprising fact directly about this content"
+    }
+  ],
+  "memoryTrick": "memorable rhyme, acronym or trick for THIS content",
+  "checkQ": {
+    "q": "tests understanding of the core concept",
+    "options": ["A) ...", "B) ...", "C) ...", "D) ..."],
+    "correct": "A",
+    "explanation": "links back to what was taught in the lesson"
+  }
+}`,
+      "Generate structured curriculum lesson."
+    ).then(d=>{
+      clearTimeout(t);
+      if(d?.slides?.length){setLesson(d);setLoading(false);}
+      else{setErr(true);setLoading(false);}
+    });
+  },[]);
+
+  const goTo=(idx)=>{
+    setAnimIn(false);
+    setTimeout(()=>{setSlideIdx(idx);setAnimIn(true);},200);
+  };
+
+  if(loading) return(
+    <Screen>
+      <div style={{paddingTop:80,textAlign:"center"}}>
+        <div style={{fontSize:60,marginBottom:20,animation:"floatY 2s ease-in-out infinite"}}>{sc.emoji||"📚"}</div>
+        <h2 style={{fontSize:22,fontWeight:900,color:C.text,marginBottom:8}}>Building your lesson...</h2>
+        <p style={{fontSize:14,color:C.muted,fontWeight:600,marginBottom:24}}>{topic?.name||subject}</p>
+        <div style={{width:200,height:6,borderRadius:3,background:C.border,margin:"0 auto",overflow:"hidden"}}>
+          <div style={{height:"100%",background:sc.grad,borderRadius:3,animation:"loading 2s ease-in-out infinite",width:"60%"}}/>
+        </div>
+        <p style={{fontSize:12,color:C.muted,marginTop:16}}>Getting your personalised lesson ready ✨</p>
+      </div>
+    </Screen>
+  );
+
+  if(err) return(
+    <Screen>
+      <div style={{paddingTop:60,textAlign:"center"}}>
+        <div style={{fontSize:56,marginBottom:16}}>😕</div>
+        <h2 style={{fontSize:20,fontWeight:900,color:C.text,marginBottom:8}}>Couldn't load lesson</h2>
+        <p style={{fontSize:14,color:C.muted,marginBottom:24}}>Check your connection and try again</p>
+        <Btn onClick={onBack} style={{width:"100%"}}>Go Back</Btn>
+      </div>
+    </Screen>
+  );
+
+  const totalSlides=lesson.slides.length; // 5 slides + check
+  const isCover=slideIdx===-1;
+  const isCheck=slideIdx===totalSlides;
+  const isDone=slideIdx===totalSlides+1;
+  const slide=(!isCover&&!isCheck&&!isDone)?lesson.slides[slideIdx]:null;
+  const progress=isCover?0:isCheck||isDone?100:Math.round(((slideIdx+1)/totalSlides)*100);
+
+  // ── Cover page ────────────────────────────────────────────────────────
+  if(isCover) return(
+    <Screen>
+      <div style={{paddingTop:16}}>
+        <BackBtn onClick={onBack}/>
+        <div style={{
+          background:sc.grad||`linear-gradient(135deg,${sc.color},${sc.color}CC)`,
+          borderRadius:28,padding:"32px 24px",marginTop:8,marginBottom:20,
+          textAlign:"center",position:"relative",overflow:"hidden",
+          boxShadow:`0 12px 40px ${sc.color}50`
+        }}>
+          {/* Decorative circles */}
+          <div style={{position:"absolute",top:-20,right:-20,width:100,height:100,borderRadius:"50%",background:"rgba(255,255,255,0.1)"}}/>
+          <div style={{position:"absolute",bottom:-30,left:-20,width:140,height:140,borderRadius:"50%",background:"rgba(255,255,255,0.07)"}}/>
+          <div style={{fontSize:72,marginBottom:16,position:"relative"}}>{sc.emoji||"📚"}</div>
+          <p style={{fontSize:12,fontWeight:800,color:"rgba(255,255,255,0.7)",letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:8}}>
+            {subject} · {child.yearGroup||"Year 3"}
+          </p>
+          <h1 style={{fontSize:26,fontWeight:900,color:"#fff",lineHeight:1.3,marginBottom:16,position:"relative"}}>
+            {lesson.title}
+          </h1>
+          <div style={{background:"rgba(255,255,255,0.2)",borderRadius:16,padding:"14px 16px",position:"relative"}}>
+            <p style={{fontSize:15,fontWeight:700,color:"#fff",fontStyle:"italic",lineHeight:1.6}}>
+              🤔 {lesson.hookQuestion}
+            </p>
+          </div>
+        </div>
+        {/* What you'll learn */}
+        <div style={{background:"#fff",borderRadius:20,padding:"16px 18px",marginBottom:20,boxShadow:"0 2px 16px rgba(67,56,202,0.08)"}}>
+          <p style={{fontSize:13,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:12}}>In this lesson you'll learn</p>
+          {lesson.slides.slice(0,5).map((s,i)=>(
+            <div key={i} style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
+              <div style={{width:32,height:32,borderRadius:10,background:sc.light||C.pLight,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,flexShrink:0}}>{s.emoji}</div>
+              <p style={{fontSize:14,fontWeight:700,color:C.text}}>{s.heading}</p>
+            </div>
+          ))}
+        </div>
+        <Btn onClick={()=>goTo(0)} style={{width:"100%",fontSize:17,padding:"16px"}}>
+          Let's Start Learning! 🚀
+        </Btn>
+      </div>
+    </Screen>
+  );
+
+  // ── Quick check question ──────────────────────────────────────────────
+  if(isCheck){
+    const [checkSel,setCheckSel]=useState(null);
+    const [checkAns,setCheckAns]=useState(false);
+    const checkQ=lesson.checkQ;
+    const correct=checkSel?.charAt(0)===checkQ?.correct;
+    return(
+      <Screen>
+        <div style={{paddingTop:16}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
+            <button onClick={()=>goTo(totalSlides-1)} style={{background:"none",border:"none",cursor:"pointer",fontSize:14,fontWeight:700,color:C.muted,fontFamily:F}}>← Back</button>
+            <p style={{fontSize:13,fontWeight:800,color:sc.color}}>Quick Check! 🎯</p>
+            <div style={{width:40}}/>
+          </div>
+          <div style={{background:sc.grad,borderRadius:24,padding:"24px 20px",marginBottom:20,textAlign:"center",boxShadow:`0 8px 28px ${sc.color}40`}}>
+            <div style={{fontSize:48,marginBottom:12}}>🎯</div>
+            <p style={{fontSize:12,fontWeight:800,color:"rgba(255,255,255,0.75)",textTransform:"uppercase",marginBottom:8}}>Quick Check</p>
+            <p style={{fontSize:18,fontWeight:800,color:"#fff",lineHeight:1.5}}>{checkQ?.q}</p>
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:16}}>
+            {checkQ?.options?.map((opt,i)=>{
+              const cols=["#E53E3E","#3182CE","#D69E2E","#38A169"];
+              const isSelected=checkSel===opt;
+              const isCorrect=checkAns&&opt===checkQ.correct;
+              const isWrong=checkAns&&isSelected&&opt!==checkQ.correct;
+              return(
+                <button key={i} onClick={()=>{if(!checkAns){setCheckSel(opt);setCheckAns(true);}}}
+                  style={{padding:"16px 12px",borderRadius:16,fontSize:14,fontWeight:900,
+                    cursor:checkAns?"default":"pointer",fontFamily:F,border:"none",
+                    background:isCorrect?"#22C55E":isWrong?"#EF4444":`linear-gradient(135deg,${cols[i]},${cols[i]}BB)`,
+                    color:"#fff",boxShadow:`0 4px 12px ${cols[i]}55`,
+                    opacity:checkAns&&!isCorrect&&!isSelected?0.4:1,
+                    transition:"all 0.2s"}}>
+                  {isCorrect?"✅ ":isWrong?"❌ ":""}{opt.replace(/^[A-D]\)\s*/,"")}
+                </button>
+              );
+            })}
+          </div>
+          {checkAns&&(
+            <div style={{background:correct?"#DCFCE7":"#FEF3C7",borderRadius:16,padding:"14px 16px",marginBottom:16,border:`2px solid ${correct?"#22C55E":"#F59E0B"}`}}>
+              <p style={{fontSize:16,fontWeight:900,color:correct?"#166534":"#92400E",marginBottom:4}}>
+                {correct?"🎉 Brilliant!":"💡 Good try!"}
+              </p>
+              <p style={{fontSize:13,fontWeight:600,color:correct?"#15803D":"#78350F",lineHeight:1.6}}>{checkQ?.explanation}</p>
+            </div>
+          )}
+          {checkAns&&(
+            <Btn onClick={()=>goTo(totalSlides+1)} style={{width:"100%",fontSize:16,padding:"16px"}}>
+              {correct?"I'm ready for questions! 🚀":"Keep learning and try again! 📚"}
+            </Btn>
+          )}
+        </div>
+      </Screen>
+    );
+  }
+
+  // ── Done ─────────────────────────────────────────────────────────────
+  if(isDone) return(
+    <Screen>
+      <div style={{paddingTop:40,textAlign:"center"}}>
+        <div style={{fontSize:72,marginBottom:12,animation:"bounceY 1s ease-in-out infinite"}}>🎓</div>
+        <h2 style={{fontSize:28,fontWeight:900,color:C.text,marginBottom:8}}>Lesson Complete!</h2>
+        <p style={{fontSize:15,fontWeight:700,color:C.muted,marginBottom:24}}>You've learned about {topic?.name||subject}</p>
+        {/* Memory trick */}
+        <div style={{background:"linear-gradient(135deg,#FEF3C7,#FDE68A)",borderRadius:20,padding:"20px",marginBottom:24,textAlign:"left",border:"2px solid #F59E0B",boxShadow:"0 4px 16px rgba(245,158,11,0.3)"}}>
+          <p style={{fontSize:12,fontWeight:800,color:"#92400E",textTransform:"uppercase",marginBottom:8}}>🧠 Remember This!</p>
+          <p style={{fontSize:16,fontWeight:700,color:"#78350F",lineHeight:1.7,fontStyle:"italic"}}>"{lesson.memoryTrick}"</p>
+        </div>
+        <Btn onClick={onDone} style={{width:"100%",padding:"16px",fontSize:17,marginBottom:12}}>
+          Start Questions Now! 🚀
+        </Btn>
+        <Btn onClick={onBack} v="ghost" style={{width:"100%"}}>
+          Back to Topics
+        </Btn>
+      </div>
+    </Screen>
+  );
+
+  // ── Lesson slide ──────────────────────────────────────────────────────
+  return(
+    <Screen>
+      <div style={{paddingTop:16}}>
+        {/* Header with progress */}
+        <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:16}}>
+          <button onClick={()=>goTo(slideIdx>0?slideIdx-1:-1)} style={{background:"none",border:"none",cursor:"pointer",fontSize:18,color:C.muted,fontFamily:F,padding:"4px 8px"}}>←</button>
+          <div style={{flex:1}}>
+            <div style={{display:"flex",gap:3}}>
+              {lesson.slides.map((_,i)=>(
+                <div key={i} onClick={()=>goTo(i)} style={{
+                  flex:1,height:5,borderRadius:3,cursor:"pointer",
+                  background:i<slideIdx?sc.color:i===slideIdx?sc.color:C.border,
+                  opacity:i===slideIdx?1:i<slideIdx?0.7:0.3,
+                  transition:"all 0.3s"
+                }}/>
+              ))}
+            </div>
+            <p style={{fontSize:10,color:C.muted,fontWeight:600,marginTop:4}}>{topic?.name||subject} · Slide {slideIdx+1} of {totalSlides}</p>
+          </div>
+          <button onClick={()=>goTo(totalSlides)} style={{background:sc.light,borderRadius:8,padding:"4px 10px",border:"none",cursor:"pointer",fontSize:11,fontWeight:800,color:sc.color,fontFamily:F}}>Skip to Check →</button>
+        </div>
+
+        {/* Slide card */}
+        <div style={{opacity:animIn?1:0,transform:animIn?"translateY(0)":"translateY(12px)",transition:"all 0.2s ease"}}>
+          {/* Big emoji visual */}
+          <div style={{
+            background:sc.grad||`linear-gradient(135deg,${sc.color},${sc.color}CC)`,
+            borderRadius:24,padding:"28px 20px",marginBottom:16,textAlign:"center",
+            boxShadow:`0 8px 28px ${sc.color}40`,position:"relative",overflow:"hidden"
+          }}>
+            <div style={{position:"absolute",top:-15,right:-15,width:80,height:80,borderRadius:"50%",background:"rgba(255,255,255,0.1)"}}/>
+            <div style={{fontSize:72,marginBottom:12,lineHeight:1}}>{slide?.emoji}</div>
+            <h2 style={{fontSize:22,fontWeight:900,color:"#fff",lineHeight:1.3}}>{slide?.heading}</h2>
+          </div>
+
+          {/* Explanation */}
+          <div style={{background:"#fff",borderRadius:20,padding:"18px 20px",marginBottom:12,boxShadow:"0 2px 16px rgba(67,56,202,0.07)"}}>
+            <p style={{fontSize:16,fontWeight:700,color:C.text,lineHeight:1.8,marginBottom:0}}>{slide?.body}</p>
+          </div>
+
+          {/* Real world example */}
+          {slide?.example&&(
+            <div style={{background:sc.light||C.pLight,borderRadius:16,padding:"14px 16px",marginBottom:12,border:`1.5px solid ${sc.color}25`}}>
+              <p style={{fontSize:11,fontWeight:800,color:sc.color,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:6}}>💡 Real World Example</p>
+              <p style={{fontSize:14,fontWeight:600,color:C.text,lineHeight:1.7}}>{slide.example}</p>
+            </div>
+          )}
+
+          {/* Fun fact */}
+          {slide?.funFact&&(
+            <div style={{background:"linear-gradient(135deg,#FEF3C7,#FFFBEB)",borderRadius:16,padding:"12px 16px",marginBottom:16,border:"1.5px solid #F59E0B30"}}>
+              <p style={{fontSize:11,fontWeight:800,color:"#D97706",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:4}}>⭐ Did You Know?</p>
+              <p style={{fontSize:13,fontWeight:600,color:"#92400E",lineHeight:1.6}}>{slide.funFact}</p>
+            </div>
+          )}
+        </div>
+
+        {/* Navigation */}
+        <div style={{display:"flex",gap:10}}>
+          {slideIdx>0&&(
+            <Btn onClick={()=>goTo(slideIdx-1)} v="ghost" style={{flex:1}}>← Previous</Btn>
+          )}
+          <Btn onClick={()=>goTo(slideIdx+1)} style={{flex:2,padding:"16px",fontSize:15}}>
+            {slideIdx+1>=totalSlides?"Quick Check 🎯":"Next →"}
+          </Btn>
+        </div>
+      </div>
+    </Screen>
+  );
+}
+
+
