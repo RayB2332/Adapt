@@ -944,7 +944,7 @@ function Screen({children,pad=true}) {
         background:"radial-gradient(circle,rgba(251,191,36,0.16),transparent 70%)",animation:"floatY 12s ease-in-out 0.5s infinite"}}/>
       <div style={{position:"fixed",bottom:"8%",right:"14%",width:320,height:320,borderRadius:"50%",pointerEvents:"none",
         background:"radial-gradient(circle,rgba(167,139,250,0.26),transparent 68%)",animation:"floatY 8s ease-in-out 1.5s infinite"}}/>
-      <div style={{maxWidth:480,width:"100%",position:"relative"}}>{children}</div>
+      <div style={{maxWidth:"min(94vw, 720px)",width:"100%",position:"relative"}}>{children}</div>
     </div>
   );
 }
@@ -5002,7 +5002,7 @@ function orderStep(correct,placedCount,tapped){
 function OrderEngine({child,name,emoji,subject,kind,onComplete=()=>{},onQuit=()=>{},onRetry=null,level=1}){
   const A=useGameA11y();
   const littleOne=(child.age||8)<=6;
-  const fetchFn=useCallback(async(lvl)=>({questions:genSequenceQs(kind,lvl,10).map(q=>({...q,q:q.prompt,options:q.items,correct:"∅",_raw:true}))}),[kind]);
+  const fetchFn=useCallback(async(lvl)=>({questions:genSequenceQs(kind,lvl,10).map(q=>({...q,q:q.prompt,options:q.items,_raw:true}))}),[kind]);
   const game=useLivesGame(fetchFn,level,littleOne?5:3);
   const [placed,setPlaced]=useState([]);
   const [shakeItem,setShakeItem]=useState(null);
@@ -5662,7 +5662,7 @@ function BottomNav({active,onHome,onLearn,onGames,onBadges}) {
     {id:"badges",label:"Badges", emoji:"🏆", fn:onBadges},
   ];
   return(
-    <div style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:480,
+    <div style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:"min(94vw, 720px)",
       background:"rgba(255,255,255,0.92)",backdropFilter:"blur(14px)",borderTop:`1.5px solid ${C.border}`,
       display:"flex",justifyContent:"space-around",padding:"8px 8px calc(10px + env(safe-area-inset-bottom))",zIndex:50}}>
       {items.map(it=>(
