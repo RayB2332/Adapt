@@ -1536,6 +1536,32 @@ function ChildDash({child,isParentView,onSession,onGames,onBadges,onParentView,o
           </p>
         </div>
 
+        {/* ── Rewards — badges, streak, XP made visible and meaningful ── */}
+        <div style={{margin:"0 16px 16px",padding:"16px",borderRadius:22,background:"linear-gradient(160deg,#1E1B4B,#312E81)",
+          boxShadow:"0 8px 26px rgba(30,27,75,0.3)",position:"relative",overflow:"hidden"}}>
+          {[...Array(6)].map((_,i)=><div key={i} style={{position:"absolute",width:2,height:2,borderRadius:"50%",background:"#fff",opacity:0.3,pointerEvents:"none",top:`${(i*31+6)%85}%`,left:`${(i*41+4)%95}%`,animation:`twinkle ${1.7+i%3}s ease infinite`}}/>)}
+          <p style={{fontSize:11,fontWeight:900,color:"#FFD166",textTransform:"uppercase",letterSpacing:"0.12em",marginBottom:12,position:"relative"}}>🏆 Your Rewards</p>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:10,position:"relative"}}>
+            <button onClick={onBadges} style={{background:"rgba(255,255,255,0.08)",border:"1.5px solid rgba(255,209,102,0.3)",borderRadius:14,padding:"12px 6px",cursor:"pointer",textAlign:"center"}}>
+              <p style={{fontSize:20,fontWeight:900,color:"#FFD166"}}>{(child.badges||[]).length}</p>
+              <p style={{fontSize:9.5,fontWeight:800,color:"rgba(255,255,255,0.7)",textTransform:"uppercase"}}>Badges</p>
+            </button>
+            <div style={{background:"rgba(255,255,255,0.08)",border:"1.5px solid rgba(251,146,60,0.3)",borderRadius:14,padding:"12px 6px",textAlign:"center"}}>
+              <p style={{fontSize:20,fontWeight:900,color:"#FB923C"}}>🔥{child.streak||0}</p>
+              <p style={{fontSize:9.5,fontWeight:800,color:"rgba(255,255,255,0.7)",textTransform:"uppercase"}}>Day Streak</p>
+            </div>
+            <div style={{background:"rgba(255,255,255,0.08)",border:"1.5px solid rgba(129,140,248,0.3)",borderRadius:14,padding:"12px 6px",textAlign:"center"}}>
+              <p style={{fontSize:20,fontWeight:900,color:"#818CF8"}}>{child.xp||0}</p>
+              <p style={{fontSize:9.5,fontWeight:800,color:"rgba(255,255,255,0.7)",textTransform:"uppercase"}}>Total XP</p>
+            </div>
+          </div>
+          <p style={{fontSize:11,fontWeight:700,color:"rgba(255,255,255,0.65)",lineHeight:1.6,position:"relative"}}>
+            {child.streak>=3
+              ?`🛡️ Your streak is protected — miss a day and it's safe once a week.`
+              :`Badges unlock as you master topics. Your streak grows your buddy. XP moves you up the ranks below.`}
+          </p>
+        </div>
+
         {/* ── Stats row ── */}
         <div style={{padding:"0 16px",marginBottom:16}}>
           <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10}}>
@@ -2074,6 +2100,87 @@ function SessionDone({child,stats,onDone,a11y={}}) {
 }
 
 // ── 10. Badges Screen ─────────────────────────────────────────────────────
+// ── Family Leaderboard — real sibling data, no fakery ───────────────
+function LeaderboardScreen({children,activeChildId,onBack}){
+  const ranked=[...(children||[])].sort((a,b)=>(b.xp||0)-(a.xp||0));
+  const medal=(i)=>i===0?"🥇":i===1?"🥈":i===2?"🥉":`#${i+1}`;
+  return(
+    <Screen>
+      <div style={{paddingTop:20}}>
+        <BackBtn onClick={onBack}/>
+        <div style={{textAlign:"center",marginBottom:20}}>
+          <p style={{fontSize:40,marginBottom:4}}>🏆</p>
+          <h2 style={{fontSize:24,fontWeight:900,color:C.text}}>Family Leaderboard</h2>
+          <p style={{fontSize:13,fontWeight:700,color:C.muted}}>Ranked by total XP earned</p>
+        </div>
+        {ranked.length<2?(
+          <Card><p style={{fontSize:14,fontWeight:700,color:C.muted,textAlign:"center",padding:"20px 0"}}>Add a sibling to your family to start a leaderboard! 👨‍👩‍👧‍👦</p></Card>
+        ):ranked.map((c,i)=>{
+          const isMe=c.id===activeChildId;
+          const rank=getRank(c.xp||0);
+          return(
+            <div key={c.id} style={{display:"flex",alignItems:"center",gap:14,padding:"14px 16px",borderRadius:18,marginBottom:10,
+              background:isMe?"linear-gradient(135deg,#4338CA,#7C3AED)":"linear-gradient(170deg,#FFFFFF,#F8F7FF)",
+              border:isMe?"none":"1.5px solid rgba(129,140,248,0.25)",
+              boxShadow:isMe?"0 8px 24px rgba(67,56,202,0.35)":"0 4px 16px rgba(99,102,241,0.1)"}}>
+              <span style={{fontSize:i<3?26:16,fontWeight:900,minWidth:36,textAlign:"center",color:isMe?"#fff":C.text}}>{medal(i)}</span>
+              <div style={{width:42,height:42,borderRadius:"50%",background:isMe?"rgba(255,255,255,0.2)":C.pLight,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22}}>{(AVATARS||[]).find(a=>a.id===c.avatar)?.e||"🦊"}</div>
+              <div style={{flex:1,minWidth:0}}>
+                <p style={{fontSize:15,fontWeight:900,color:isMe?"#fff":C.text}}>{c.name}{isMe?" (You)":""}</p>
+                <p style={{fontSize:11,fontWeight:700,color:isMe?"rgba(255,255,255,0.8)":C.muted}}>{rank.emoji} {rank.name}</p>
+              </div>
+              <p style={{fontSize:17,fontWeight:900,color:isMe?"#fff":C.primary}}>{c.xp||0} <span style={{fontSize:10}}>XP</span></p>
+            </div>
+          );
+        })}
+      </div>
+    </Screen>
+  );
+}
+
+// ── Weekly Challenge — a real family goal from real session data ────
+function WeeklyChallengeScreen({children,activeChildId,onBack}){
+  const now=Date.now(),weekMs=7*86400000;
+  const weekly=(c)=>(c.sessionHistory||[]).filter(s=>now-new Date(s.date).getTime()<weekMs)
+    .reduce((sum,s)=>sum+(s.xp||0),0);
+  const GOAL=300;
+  const rows=(children||[]).map(c=>({...c,weekXP:weekly(c)})).sort((a,b)=>b.weekXP-a.weekXP);
+  const me=rows.find(c=>c.id===activeChildId);
+  const daysLeft=7-Math.floor((now-new Date(new Date().setHours(0,0,0,0)-((new Date().getDay()||7)-1)*86400000).getTime())/86400000);
+  return(
+    <Screen>
+      <div style={{paddingTop:20}}>
+        <BackBtn onClick={onBack}/>
+        <div style={{padding:"22px 20px",borderRadius:24,marginBottom:18,position:"relative",overflow:"hidden",
+          background:"linear-gradient(135deg,#7C3AED,#4338CA)",boxShadow:"0 10px 32px rgba(124,58,237,0.4)"}}>
+          {[...Array(8)].map((_,i)=><div key={i} style={{position:"absolute",width:2.5,height:2.5,borderRadius:"50%",background:"#fff",opacity:0.35,pointerEvents:"none",top:`${(i*29+8)%85}%`,left:`${(i*37+5)%94}%`,animation:`twinkle ${1.7+i%3}s ease infinite`}}/>)}
+          <p style={{fontSize:36,marginBottom:4,position:"relative"}}>⚡</p>
+          <h2 style={{fontSize:22,fontWeight:900,color:"#fff",position:"relative"}}>This Week's Challenge</h2>
+          <p style={{fontSize:13,fontWeight:700,color:"rgba(255,255,255,0.85)",position:"relative"}}>Earn {GOAL} XP as a family — {Math.max(0,daysLeft)} days left!</p>
+          {me&&(()=>{const pct=Math.min(100,Math.round((me.weekXP/GOAL)*100));return(
+            <div style={{marginTop:14,position:"relative"}}>
+              <div style={{height:12,borderRadius:6,background:"rgba(255,255,255,0.2)",overflow:"hidden"}}>
+                <div style={{height:"100%",width:`${pct}%`,borderRadius:6,background:"linear-gradient(90deg,#FFD166,#F0ABFC)",transition:"width 0.6s ease"}}/>
+              </div>
+              <p style={{fontSize:11,fontWeight:800,color:"rgba(255,255,255,0.85)",marginTop:6}}>{me.weekXP}/{GOAL} XP this week{pct>=100?" — Goal smashed! 🎉":""}</p>
+            </div>
+          );})()}
+        </div>
+        <p style={{fontSize:11,fontWeight:900,color:"#4338CA",textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:10}}>This Week's XP</p>
+        {rows.map((c,i)=>(
+          <div key={c.id} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 16px",borderRadius:16,marginBottom:8,
+            background:c.id===activeChildId?"linear-gradient(135deg,#4338CA,#7C3AED)":"linear-gradient(170deg,#FFFFFF,#F8F7FF)",
+            border:c.id===activeChildId?"none":"1.5px solid rgba(129,140,248,0.25)"}}>
+            <span style={{fontSize:18}}>{i===0&&c.weekXP>0?"👑":(AVATARS||[]).find(a=>a.id===c.avatar)?.e||"🦊"}</span>
+            <p style={{flex:1,fontSize:14,fontWeight:800,color:c.id===activeChildId?"#fff":C.text}}>{c.name}</p>
+            <p style={{fontSize:15,fontWeight:900,color:c.id===activeChildId?"#fff":C.primary}}>{c.weekXP} XP</p>
+          </div>
+        ))}
+      </div>
+    </Screen>
+  );
+}
+
 function BadgesScreen({child,onBack}) {
   const earned=child.badges||[];
   const [tooltip,setTooltip]=useState(null);
@@ -3874,7 +3981,7 @@ function MissionIntro({world,name,emoji,child,onGo,total=MISSION_LEN}) {
   };
   return(
     <div className={A.noMotion?"a11y-still":undefined}
-      style={{maxWidth:480,margin:"0 auto",minHeight:"100vh",fontFamily:F,background:world.sky,
+      style={{width:"100%",minHeight:"100vh",fontFamily:F,background:world.sky,
       display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:24,position:"relative",overflow:"hidden",
       filter:A.calmScheme?"saturate(0.78)":undefined}}>
       {!A.noMotion&&[...Array(30)].map((_,i)=><div key={i} style={{position:"absolute",borderRadius:"50%",
@@ -3932,7 +4039,7 @@ function GameLoad({name,emoji,tutor}) {
   const tips=["Read every answer before you pick!","Streaks of 5 level you up!","Wrong answers show you the right one — learn it!","Three stars means 10 or more correct!"];
   const tip=tips[Math.floor(Date.now()/4000)%tips.length];
   return(
-    <div style={{maxWidth:480,margin:"0 auto",minHeight:"100vh",fontFamily:F,
+    <div style={{width:"100%",minHeight:"100vh",fontFamily:F,
       background:"linear-gradient(180deg,#0D1230,#1B1464)",display:"flex",flexDirection:"column",
       alignItems:"center",justifyContent:"center",padding:24,position:"relative",overflow:"hidden"}}>
       {[...Array(24)].map((_,i)=><div key={i} style={{position:"absolute",borderRadius:"50%",width:2,height:2,
@@ -3953,7 +4060,7 @@ function GameLoad({name,emoji,tutor}) {
 // ── Error screen (was missing → crash) ─────────────────────────────
 function GameError({name,onRetry}) {
   return(
-    <div style={{maxWidth:480,margin:"0 auto",minHeight:"100vh",fontFamily:F,
+    <div style={{width:"100%",minHeight:"100vh",fontFamily:F,
       background:"linear-gradient(180deg,#0D1230,#1B1464)",display:"flex",flexDirection:"column",
       alignItems:"center",justifyContent:"center",padding:24}}>
       <div style={{fontSize:60,marginBottom:14,animation:"wiggle 1.4s ease infinite"}}>🛰️</div>
@@ -4011,7 +4118,7 @@ function GameEnd({name,emoji,score,max,child,xp,level,onRetry,onDone,sectors=0})
     :stars===2?"So close to 3 stars — one more go?":"Every run makes you stronger!";
   return(
     <div className={A.noMotion?"a11y-still":undefined}
-      style={{maxWidth:480,margin:"0 auto",minHeight:"100vh",fontFamily:F,
+      style={{width:"100%",minHeight:"100vh",fontFamily:F,
       background:"radial-gradient(ellipse at 50% 20%,#2D1B69,#0D1230 70%)",display:"flex",flexDirection:"column",
       alignItems:"center",justifyContent:"center",padding:24,position:"relative",overflow:"hidden",
       filter:A.calmScheme?"saturate(0.8)":undefined}}>
@@ -4093,7 +4200,7 @@ function GameShell({name,emoji,subject,score,maxScore,round,total,streak,onQuit,
   const world=({Maths:WORLDS.cosmic,English:WORLDS.grove,Science:WORLDS.starmap,History:WORLDS.turbo,
     Geography:WORLDS.turbo,Computing:WORLDS.starmap})[subject]||WORLDS.cosmic;
   return(
-    <div style={{maxWidth:480,margin:"0 auto",minHeight:"100vh",fontFamily:F,background:world.sky,position:"relative",overflow:"hidden"}}>
+    <div style={{width:"100%",minHeight:"100vh",fontFamily:F,background:world.sky,position:"relative",overflow:"hidden"}}>
       {[...Array(22)].map((_,i)=><div key={i} style={{position:"absolute",borderRadius:"50%",pointerEvents:"none",
         width:i%6===0?3:1.5,height:i%6===0?3:1.5,background:"#fff",opacity:0.18+(i%5)*0.08,
         top:`${(i*13+5)%60}%`,left:`${(i*17+3)%97}%`,animation:`twinkle ${1.6+i%4}s ease infinite`}}/>)}
@@ -4420,7 +4527,7 @@ function EngineCore({child,name,emoji,subject,world,scene,fetchFn,initialLevel=1
 
   return(
     <div className={A.noMotion?"a11y-still":undefined}
-      style={{maxWidth:480,margin:"0 auto",minHeight:"100vh",fontFamily:F,background:world.sky,
+      style={{width:"100%",minHeight:"100vh",fontFamily:F,background:world.sky,
       position:"relative",overflow:"hidden",animation:fx.hurt&&!A.noMotion?"screenShake 0.4s ease":"none"}}>
       {/* Calm scheme (anxiety/autism): soften the world's saturation */}
       <div style={A.calmScheme?{position:"absolute",inset:0,filter:"saturate(0.72) brightness(1.04)",pointerEvents:"none"}:{position:"absolute",inset:0,pointerEvents:"none"}}>
@@ -4803,7 +4910,7 @@ function MeteorEngine({child,name,emoji,subject,fetchFn,initialLevel=1,onComplet
 
   return(
     <div className={A.noMotion?"a11y-still":undefined}
-      style={{maxWidth:480,margin:"0 auto",minHeight:"100vh",fontFamily:F,background:WORLDS.meteor.sky,
+      style={{width:"100%",minHeight:"100vh",fontFamily:F,background:WORLDS.meteor.sky,
       position:"relative",overflow:"hidden",animation:fx.hurt&&!A.noMotion?"screenShake 0.4s ease":"none",
       filter:A.calmScheme?"saturate(0.78)":undefined}}>
       {!A.noMotion&&[...Array(30)].map((_,i)=><div key={i} style={{position:"absolute",borderRadius:"50%",
@@ -8462,6 +8569,9 @@ export default function App() {
         onWeeklyChallenge={()=>go("weekly_challenge")}
         children={children}
       />}
+
+      {screen==="leaderboard"&&activeChild&&<LeaderboardScreen children={children} activeChildId={activeChild.id} onBack={()=>go("child_dash")}/>}
+      {screen==="weekly_challenge"&&activeChild&&<WeeklyChallengeScreen children={children} activeChildId={activeChild.id} onBack={()=>go("child_dash")}/>}
 
       {screen==="game_hub"&&activeChild&&<GameHub
         child={activeChild}
