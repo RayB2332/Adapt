@@ -817,7 +817,8 @@ TOPIC LEVEL ${topicLevel}/10: "${levelObj}"
 
 RULES (no exceptions):
 1. Pitch question at exactly ${yearGroup} level — not above, not below
-2. Vocabulary suitable for age ${child.age} only
+2. READING LEVEL for age ${child.age}: ${child.age<=6?"very short sentences (max 8 words each), only common everyday words, no idioms":child.age<=8?"short sentences (max 12 words each), simple familiar words, no idioms":child.age<=10?"clear sentences (max 16 words each), plain language":"clear direct language"}
+2b. Total question text under ${child.age<=6?15:child.age<=8?22:30} words. Ask the question DIRECTLY — no chatty preamble like "Here's a tricky one!" before it.
 3. Examples from a ${child.age}-year-old's everyday life in ${country}
 4. ${lang} throughout
 ${easier?"5. Simplify — child struggling. Add a hint.":""}${harder?"5. Slightly more challenging — still within ${yearGroup}":""}
@@ -930,7 +931,7 @@ function Card({children,style={},onClick}) {
 
 function Screen({children,pad=true}) {
   return (
-    <div style={{minHeight:"100vh",background:"linear-gradient(150deg,#E0E7FF 0%,#FCE7F3 35%,#DBEAFE 65%,#EDE9FE 100%)",fontFamily:F,display:"flex",
+    <div style={{minHeight:"100vh",background:"linear-gradient(160deg,#C7D2FE 0%,#FBCFE8 28%,#BFDBFE 55%,#DDD6FE 80%,#FDE68A 115%)",fontFamily:F,display:"flex",
       justifyContent:"center",padding:pad?"20px 16px 60px":"0",animation:"fadeUp 0.3s ease",position:"relative",overflow:"hidden"}}>
       {/* Colour orbs — the page glows instead of sitting flat grey */}
       <div style={{position:"fixed",top:-120,right:-100,width:420,height:420,borderRadius:"50%",pointerEvents:"none",
@@ -1416,13 +1417,55 @@ function ChildDash({child,isParentView,onSession,onGames,onBadges,onParentView,o
             </div>
           </div>
         )}
-        {/* ── Tutor message ── */}
+        {/* ── Main CTA: starts the subject that needs the most work ── */}
         <div style={{padding:"0 16px",marginBottom:16}}>
-          <Bubble tutor={child.tutor} text={
-            (child.streak||0)>=7?`${child.name}, ${child.streak} days in a row — you're absolutely smashing it! 🔥`
-            :child.total>0?`Welcome back ${child.name}! Ready to keep learning? 🚀`
-            :`Welcome ${child.name}! Your first lesson is ready. Let's discover something amazing! 🎉`
-          }/>
+          <Btn onClick={()=>{
+            const subs=subjectsFor(child.country);
+            const rec=subs.reduce((a,s)=>(child.level?.[s]||1)<(child.level?.[a]||1)?s:a,subs[0]);
+            onSession(rec);
+          }} style={{width:"100%",padding:18,fontSize:18,boxShadow:"0 4px 20px rgba(79,70,229,0.35)"}}>
+            ✨ Start Today's Lesson
+          </Btn>
+        </div>
+
+        {/* ── Subjects + Games grid ── */}
+        <div style={{padding:"0 16px",marginBottom:8}}>
+          <p id="adapt-subjects" style={{fontSize:11,fontWeight:900,color:"#4338CA",textTransform:"uppercase",letterSpacing:"0.14em",marginBottom:12,scrollMarginTop:16,textShadow:"0 1px 0 rgba(255,255,255,0.6)"}}>✨ Your Subjects</p>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,marginBottom:12}}>
+            {getSubjects(child.country||"UK").map(s=>{
+              const sc=SUB[s]||{emoji:"📚",color:C.primary,light:C.pLight};
+              const lvl=child.level[s]||1;
+              const diff=getDifficultyLabel(lvl);
+              return (
+                <button key={s} onClick={()=>onSession(s)}
+                  style={{padding:"14px 8px",borderRadius:18,
+                    background:sc.grad||`linear-gradient(135deg,${sc.color},${sc.color}CC)`,
+                    border:"none",cursor:"pointer",fontFamily:F,textAlign:"center",
+                    transition:"all 0.2s",boxShadow:`0 4px 16px ${sc.color}40`,
+                    transform:"translateY(0)"}}>
+                  <span style={{fontSize:28,display:"block",marginBottom:6}}>{sc.emoji}</span>
+                  <p style={{fontSize:12,fontWeight:900,color:"#fff",marginBottom:2}}>{s}</p>
+                  <p style={{fontSize:10,fontWeight:800,color:"rgba(255,255,255,0.85)"}}>{diff.emoji} Lv.{lvl}</p>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Games row */}
+          <button onClick={onGames} style={{width:"100%",padding:"16px 20px",borderRadius:20,
+            background:"linear-gradient(135deg,#1E1B4B 0%,#4338CA 50%,#7C3AED 100%)",
+            border:"none",cursor:"pointer",fontFamily:F,
+            display:"flex",alignItems:"center",justifyContent:"center",gap:12,marginBottom:16,
+            boxShadow:"0 6px 24px rgba(67,56,202,0.5)",position:"relative",overflow:"hidden"}}>
+            <div style={{position:"absolute",top:-10,right:-10,width:60,height:60,borderRadius:"50%",background:"rgba(255,255,255,0.08)"}}/>
+            <div style={{position:"absolute",bottom:-15,left:20,width:80,height:80,borderRadius:"50%",background:"rgba(255,255,255,0.05)"}}/>
+            <span style={{fontSize:26}}>🎮</span>
+            <div style={{textAlign:"left"}}>
+              <p style={{fontSize:16,fontWeight:900,color:"#fff",letterSpacing:"0.01em"}}>Mini Games</p>
+              <p style={{fontSize:11,color:"rgba(255,255,255,0.7)"}}>65 curriculum-aligned games</p>
+            </div>
+            <span style={{marginLeft:"auto",fontSize:20,color:"rgba(255,255,255,0.6)"}}>›</span>
+          </button>
         </div>
 
         {/* ── Your Learning Buddy — ADAPT's heart: it grows from mastery ── */}
@@ -1491,57 +1534,6 @@ function ChildDash({child,isParentView,onSession,onGames,onBadges,onParentView,o
           <p style={{fontSize:11,fontWeight:800,color:quests.rewarded?"#B45309":C.muted,textAlign:"center",marginTop:4}}>
             {quests.rewarded?"🎉 Star Snack served — your buddy loved it! +60 XP":`Complete all 3 to earn your buddy's Star Snack · +60 XP`}
           </p>
-        </div>
-
-        {/* ── Main CTA: starts the subject that needs the most work ── */}
-        <div style={{padding:"0 16px",marginBottom:16}}>
-          <Btn onClick={()=>{
-            const subs=subjectsFor(child.country);
-            const rec=subs.reduce((a,s)=>(child.level?.[s]||1)<(child.level?.[a]||1)?s:a,subs[0]);
-            onSession(rec);
-          }} style={{width:"100%",padding:18,fontSize:18,boxShadow:"0 4px 20px rgba(79,70,229,0.35)"}}>
-            ✨ Start Today's Lesson
-          </Btn>
-        </div>
-
-        {/* ── Subjects + Games grid ── */}
-        <div style={{padding:"0 16px",marginBottom:8}}>
-          <p id="adapt-subjects" style={{fontSize:11,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:12,scrollMarginTop:16}}>Your Subjects</p>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,marginBottom:12}}>
-            {getSubjects(child.country||"UK").map(s=>{
-              const sc=SUB[s]||{emoji:"📚",color:C.primary,light:C.pLight};
-              const lvl=child.level[s]||1;
-              const diff=getDifficultyLabel(lvl);
-              return (
-                <button key={s} onClick={()=>onSession(s)}
-                  style={{padding:"14px 8px",borderRadius:18,
-                    background:sc.grad||`linear-gradient(135deg,${sc.color},${sc.color}CC)`,
-                    border:"none",cursor:"pointer",fontFamily:F,textAlign:"center",
-                    transition:"all 0.2s",boxShadow:`0 4px 16px ${sc.color}40`,
-                    transform:"translateY(0)"}}>
-                  <span style={{fontSize:28,display:"block",marginBottom:6}}>{sc.emoji}</span>
-                  <p style={{fontSize:12,fontWeight:900,color:"#fff",marginBottom:2}}>{s}</p>
-                  <p style={{fontSize:10,fontWeight:800,color:"rgba(255,255,255,0.85)"}}>{diff.emoji} Lv.{lvl}</p>
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Games row */}
-          <button onClick={onGames} style={{width:"100%",padding:"16px 20px",borderRadius:20,
-            background:"linear-gradient(135deg,#1E1B4B 0%,#4338CA 50%,#7C3AED 100%)",
-            border:"none",cursor:"pointer",fontFamily:F,
-            display:"flex",alignItems:"center",justifyContent:"center",gap:12,marginBottom:16,
-            boxShadow:"0 6px 24px rgba(67,56,202,0.5)",position:"relative",overflow:"hidden"}}>
-            <div style={{position:"absolute",top:-10,right:-10,width:60,height:60,borderRadius:"50%",background:"rgba(255,255,255,0.08)"}}/>
-            <div style={{position:"absolute",bottom:-15,left:20,width:80,height:80,borderRadius:"50%",background:"rgba(255,255,255,0.05)"}}/>
-            <span style={{fontSize:26}}>🎮</span>
-            <div style={{textAlign:"left"}}>
-              <p style={{fontSize:16,fontWeight:900,color:"#fff",letterSpacing:"0.01em"}}>Mini Games</p>
-              <p style={{fontSize:11,color:"rgba(255,255,255,0.7)"}}>65 curriculum-aligned games</p>
-            </div>
-            <span style={{marginLeft:"auto",fontSize:20,color:"rgba(255,255,255,0.6)"}}>›</span>
-          </button>
         </div>
 
         {/* ── Stats row ── */}
@@ -1862,6 +1854,13 @@ function Session({child,startSubject,startTopic,onComplete,onUpdate,onExit,a11y=
             })()}
               {topic&&<button onClick={openPrimer} style={{background:C.pLight,border:`1.5px solid ${C.primary}`,borderRadius:8,padding:"6px 10px",cursor:"pointer",fontSize:12,fontWeight:800,color:C.primary,fontFamily:F}}>📖 How to</button>}
               <button onClick={()=>setPaused(true)} style={{background:C.aLight,border:`1.5px solid ${C.amber}`,borderRadius:8,padding:"6px 10px",cursor:"pointer",fontSize:12,fontWeight:800,color:C.amber,fontFamily:F}}>⏸ Break</button>
+              <button aria-label="Save and exit lesson" onClick={()=>{
+                if(sT>0){
+                  const session={acc:Math.round(sC/sT*100),date:new Date().toISOString(),xp:sXP};
+                  onUpdate({streak:child.streak,xp:(child.xp||0)+sXP,sessionHistory:[...(child.sessionHistory||[]),session].slice(-30)},true);
+                }
+                onExit();
+              }} style={{background:C.rLight,border:`1.5px solid #FCA5A5`,borderRadius:8,width:31,height:31,cursor:"pointer",fontSize:13,fontWeight:900,color:C.red,fontFamily:F}}>✕</button>
             </div>
           </div>
         </div>
@@ -6415,7 +6414,7 @@ function GameHub({child,onPlay,onBack,onHome,onLevelUp}) {
             {/* ── Jump back in — one tap to the last games played ── */}
             {(child.recentGames||[]).length>0&&(
               <div style={{marginBottom:14}}>
-                <p style={{fontSize:11,fontWeight:900,color:C.muted,textTransform:"uppercase",letterSpacing:"0.12em",marginBottom:8}}>⚡ Jump back in</p>
+                <p style={{fontSize:11,fontWeight:900,color:"#4338CA",textTransform:"uppercase",letterSpacing:"0.12em",marginBottom:8,textShadow:"0 1px 0 rgba(255,255,255,0.6)"}}>⚡ Jump back in</p>
                 <div style={{display:"flex",gap:8}}>
                   {(child.recentGames||[]).map(id=>{
                     const g=GAMES.find(x=>x.id===id);
@@ -8471,7 +8470,9 @@ export default function App() {
         onHome={()=>go("child_dash")}
       />}
 
-      {screen==="game_play"&&activeChild&&gameId&&<GamePlayer
+      {screen==="game_play"&&activeChild&&gameId&&<div style={{position:"fixed",inset:0,zIndex:50,overflowY:"auto",
+        background:"radial-gradient(1200px 700px at 70% -10%, rgba(124,58,237,0.35), transparent 60%), radial-gradient(1000px 600px at 10% 110%, rgba(236,72,153,0.25), transparent 60%), linear-gradient(180deg,#0B0B2A 0%,#141240 55%,#1E1B4B 100%)"}}>
+        <GamePlayer
         child={activeChild}
         gameId={gameId}
         mode={activeChild.controls?.modeLock||activeChild.mode}
@@ -8518,7 +8519,7 @@ export default function App() {
           go("game_hub");
         }}
         onQuit={()=>go("game_hub")}
-      />}
+      /></div>}
 
       {screen==="topic_pick"&&activeChild&&sessSub&&<TopicPicker
         child={activeChild}
