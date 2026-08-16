@@ -698,8 +698,14 @@ async function claudeLesson(system, msg) {
       const clean = t.replace(/```json\n?/g,"").replace(/```\n?/g,"").trim();
       const s=clean.indexOf("{"), e=clean.lastIndexOf("}");
       if(s===-1||e===-1){await new Promise(res=>setTimeout(res,1000));continue;}
+      const stripMd=(o)=>{ // model sometimes embeds ``` or ** — never show them to a child
+        if(typeof o==="string")return o.replace(/```[a-z]*\n?/g,"").replace(/\*\*/g,"").replace(/^#+\s*/gm,"");
+        if(Array.isArray(o))return o.map(stripMd);
+        if(o&&typeof o==="object"){const r={};for(const k in o)r[k]=stripMd(o[k]);return r;}
+        return o;
+      };
       try {
-        const parsed = JSON.parse(clean.slice(s,e+1));
+        const parsed = stripMd(JSON.parse(clean.slice(s,e+1)));
         // Validate it has the required fields
         if(parsed?.slides?.length>=3) return parsed;
         if(attempt<2) continue;
@@ -709,7 +715,7 @@ async function claudeLesson(system, msg) {
           const fixed=clean.slice(s,e+1)
             .replace(/,\s*}/g,"}").replace(/,\s*]/g,"]")
             .replace(/\n/g," ").replace(/\t/g," ");
-          const parsed = JSON.parse(fixed);
+          const parsed = stripMd(JSON.parse(fixed));
           if(parsed?.slides?.length>=3||attempt===2) return parsed;
         } catch(e2){if(attempt<2)continue;}
       }
@@ -1418,7 +1424,7 @@ function ChildDash({child,isParentView,onSession,onGames,onBadges,onParentView,o
               background:"linear-gradient(150deg,#1E1B4B,#312E81 70%,#4338CA)",
               border:evolved?"2px solid #FFD166":"2px solid rgba(255,255,255,0.1)",
               boxShadow:evolved?"0 6px 28px rgba(255,209,102,0.35)":"0 6px 20px rgba(30,27,75,0.3)"}}>
-              {[...Array(8)].map((_,i)=><div key={i} style={{position:"absolute",width:2,height:2,borderRadius:"50%",
+              {[...Array(8)].map((_,i)=><div key={i} style={{position:"absolute",width:2,height:2,borderRadius:"50%",pointerEvents:"none",
                 background:"#fff",opacity:0.3,top:`${(i*23+8)%85}%`,left:`${(i*31+5)%95}%`,animation:`twinkle ${1.8+i%3}s ease infinite`}}/>)}
               {evolved&&<div style={{position:"absolute",top:10,right:12,background:"#FFD166",borderRadius:999,padding:"3px 10px"}}>
                 <p style={{fontSize:10,fontWeight:900,color:"#78350F"}}>✨ EVOLVED!</p></div>}
@@ -3322,11 +3328,17 @@ function genMathQs(kind,lvl=1,count=15){
 
 // ── QUALITY GUARD: a malformed AI question must never reach a child ─
 function sanitizeQs(qs){
-  return (qs||[]).filter(q=>q&&(q.q||q.question)
-    &&Array.isArray(q.options)&&q.options.length>=2&&q.options.length<=6
-    &&q.options.every(o=>typeof o==="string"&&o.length>0&&o.length<80)
-    &&q.correct
-    &&q.options.some(o=>o===q.correct||String(o).charAt(0)===q.correct));
+  return (qs||[]).filter(q=>{
+    if(!q)return false;
+    const text=String(q.q||q.question||"").trim();
+    if(!text)return false;
+    // Reject anything that looks like leaked JSON/code rather than a question
+    if(text.startsWith("{")||text.startsWith("[")||text.includes('"options"')||text.includes("```"))return false;
+    return Array.isArray(q.options)&&q.options.length>=2&&q.options.length<=6
+      &&q.options.every(o=>typeof o==="string"&&o.length>0&&o.length<80&&!o.includes("{")&&!o.includes("}"))
+      &&q.correct
+      &&q.options.some(o=>o===q.correct||String(o).charAt(0)===q.correct);
+  });
 }
 
 // ── QUESTION BANK CACHE — AI generates once, every child reuses ────
@@ -4295,7 +4307,7 @@ function EngineCore({child,name,emoji,subject,world,scene,fetchFn,initialLevel=1
       style={{maxWidth:480,margin:"0 auto",minHeight:"100vh",fontFamily:F,background:world.sky,
       position:"relative",overflow:"hidden",animation:fx.hurt&&!A.noMotion?"screenShake 0.4s ease":"none"}}>
       {/* Calm scheme (anxiety/autism): soften the world's saturation */}
-      <div style={A.calmScheme?{position:"absolute",inset:0,filter:"saturate(0.72) brightness(1.04)"}:{position:"absolute",inset:0}}>
+      <div style={A.calmScheme?{position:"absolute",inset:0,filter:"saturate(0.72) brightness(1.04)",pointerEvents:"none"}:{position:"absolute",inset:0,pointerEvents:"none"}}>
         {scene({boost:fx.boost&&!A.noMotion,hurt:fx.hurt,streak:game.streak,score:game.score,qIdx:game.qIdx,sector:game.sector})}
       </div>
       {/* Streak fire: screen edges glow warmer the longer the run (static, flash-free) */}
@@ -5722,7 +5734,7 @@ function MathFishing({child,mode,onComplete,onQuit,onRetry,level=1}) {
             <div style={{textAlign:"center",fontSize:18,transform:`scaleX(${f.vx>0?1:-1})`}}>🐟</div>
           </div>
         ))}
-        {caught&&<div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,0.3)",borderRadius:20,zIndex:5,fontSize:48}}>{caught.correct?"🎣✅":"💨❌"}</div>}
+        {caught&&<div style={{position:"absolute",inset:0,pointerEvents:"none",display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,0.3)",borderRadius:20,zIndex:5,fontSize:48}}>{caught.correct?"🎣✅":"💨❌"}</div>}
       </div>
     </GameShell>
   );
@@ -5786,7 +5798,7 @@ function SpaceBlaster({child,mode,onComplete,onQuit,onRetry,level=1}) {
         ))}
         {bullets.map(b=><div key={b.id} style={{position:"absolute",left:`${b.x}%`,top:`${b.y}%`,width:3,height:10,background:"#FCD34D",borderRadius:2,transform:"translateX(-50%)",zIndex:2}}/>)}
         {exps.map(e=><div key={e.id} style={{position:"absolute",left:`${e.x}%`,top:`${e.y}%`,transform:"translateX(-50%)",fontSize:16,opacity:1-e.t/8,zIndex:3}}>💥</div>)}
-        {flash&&<div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,0.4)",fontSize:40,zIndex:5}}>{flash}</div>}
+        {flash&&<div style={{position:"absolute",inset:0,pointerEvents:"none",display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,0.4)",fontSize:40,zIndex:5}}>{flash}</div>}
         <div style={{position:"absolute",bottom:"4%",left:`${shipX}%`,transform:"translateX(-50%)",fontSize:24,zIndex:3,transition:"left 0.1s"}}>🚀</div>
       </div>
       <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:8}}>
@@ -5878,7 +5890,7 @@ function WordRunner({child,mode,onComplete,onQuit,onRetry,level=1}) {
             {w.word}
           </button>
         ))}
-        {caught&&<div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(255,255,255,0.7)",zIndex:5,fontSize:52}}>{caught.missed?"💨":caught.correct?"🎉":"❌"}</div>}
+        {caught&&<div style={{position:"absolute",inset:0,pointerEvents:"none",display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(255,255,255,0.7)",zIndex:5,fontSize:52}}>{caught.missed?"💨":caught.correct?"🎉":"❌"}</div>}
         <div style={{position:"absolute",bottom:5,left:"50%",transform:"translateX(-50%)",fontSize:26}}>🏃</div>
       </div>
       <p style={{textAlign:"center",fontSize:12,color:C.muted,fontWeight:600}}>Tap the correct falling word before it hits the ground!</p>
@@ -6085,7 +6097,7 @@ function FootballHistory({child,mode,onComplete,onQuit,onRetry,level=1}) {
         <div style={{position:"absolute",bottom:"18%",left:"50%",transform:"translateX(-50%)",width:5,height:5,borderRadius:"50%",background:"white"}}/>
         <div style={{position:"absolute",left:`${ballPos.x}%`,top:`${ballPos.y}%`,transform:"translateX(-50%)",fontSize:20,zIndex:3,transition:"all 0.9s cubic-bezier(0.25,0.46,0.45,0.94)"}}>⚽</div>
         <div style={{position:"absolute",top:"8%",left:"50%",transform:"translateX(-50%)",fontSize:22,zIndex:2}}>🧤</div>
-        {shotResult&&<div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,0.5)",borderRadius:20,zIndex:5,fontSize:22,fontWeight:900,color:shotResult.includes("GOAL")?"#FCD34D":"#EF4444"}}>{shotResult}</div>}
+        {shotResult&&<div style={{position:"absolute",inset:0,pointerEvents:"none",display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,0.5)",borderRadius:20,zIndex:5,fontSize:22,fontWeight:900,color:shotResult.includes("GOAL")?"#FCD34D":"#EF4444"}}>{shotResult}</div>}
       </div>
       <p style={{fontSize:16,fontWeight:800,color:C.text,marginBottom:14}}>{game.q?.q}</p>
       <Options options={game.q?.options} correct={game.q?.correct} selected={sel} answered={ans} onAnswer={answer}/>
