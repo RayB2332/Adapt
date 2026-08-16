@@ -8353,7 +8353,7 @@ export default function App() {
         onChangeAvatar={()=>go("child_avatar")}
         onLeaderboard={()=>go("leaderboard")}
         onWeeklyChallenge={()=>go("weekly_challenge")}
-        children={kids}
+        children={children}
       />}
 
       {screen==="game_hub"&&activeChild&&<GameHub
