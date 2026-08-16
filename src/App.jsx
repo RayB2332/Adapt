@@ -64,6 +64,9 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react";
     @keyframes gemPulse{0%{box-shadow:0 0 0 0 rgba(255,255,255,0.6)}70%{box-shadow:0 0 0 20px rgba(255,255,255,0)}100%{box-shadow:0 0 0 0 rgba(255,255,255,0)}}
     @keyframes floatIn{0%{opacity:0;transform:translateY(24px) scale(0.9)}100%{opacity:1;transform:translateY(0) scale(1)}}
     @keyframes scoreFloat{0%{opacity:1;transform:translateY(0) scale(1)}100%{opacity:0;transform:translateY(-60px) scale(1.4)}}
+    @keyframes streakBlast{0%{opacity:0;transform:translateX(-50%) scale(0.5) rotate(-8deg)}25%{opacity:1;transform:translateX(-50%) scale(1.15) rotate(3deg)}40%{transform:translateX(-50%) scale(1) rotate(0deg)}80%{opacity:1;transform:translateX(-50%) scale(1) translateY(-6px)}100%{opacity:0;transform:translateX(-50%) scale(0.9) translateY(-22px)}}
+    @keyframes frogHopArc{0%{transform:translateY(0) rotate(0deg) scale(1,1)}15%{transform:translateY(2px) scale(1.12,0.85)}55%{transform:translateY(-38px) rotate(-8deg) scale(0.95,1.05)}100%{transform:translateY(0) rotate(0deg) scale(1,1)}}
+    @keyframes frogShadowSquash{0%,100%{transform:scale(1,1);opacity:0.18}55%{transform:scale(0.35,0.6);opacity:0.06}}
     @keyframes slideInLeft{0%{opacity:0;transform:translateX(-20px)}100%{opacity:1;transform:translateX(0)}}
     @keyframes slideInRight{0%{opacity:0;transform:translateX(20px)}100%{opacity:1;transform:translateX(0)}}
     @keyframes zoomIn{0%{opacity:0;transform:scale(0.7)}100%{opacity:1;transform:scale(1)}}
@@ -819,9 +822,11 @@ RULES (no exceptions):
 1. Pitch question at exactly ${yearGroup} level — not above, not below
 2. READING LEVEL for age ${child.age}: ${child.age<=6?"very short sentences (max 8 words each), only common everyday words, no idioms":child.age<=8?"short sentences (max 12 words each), simple familiar words, no idioms":child.age<=10?"clear sentences (max 16 words each), plain language":"clear direct language"}
 2b. Total question text under ${child.age<=6?15:child.age<=8?22:30} words. Ask the question DIRECTLY — no chatty preamble like "Here's a tricky one!" before it.
-3. Examples from a ${child.age}-year-old's everyday life in ${country}
+3. Examples from a ${child.age}-year-old's everyday life in ${country} — toys, pets, snacks, playground, family, not abstract objects
 4. ${lang} throughout
-${easier?"5. Simplify — child struggling. Add a hint.":""}${harder?"5. Slightly more challenging — still within ${yearGroup}":""}
+5. TEACH LIKE A KIND TEACHER, NOT A TEXTBOOK: if you must use a subject word a ${child.age}-year-old might not know (e.g. "denominator", "century", "habitat"), explain it in the SAME sentence in brackets using a simpler word, e.g. "the denominator (the bottom number)"
+6. One idea per question — never stack two concepts in a single question
+${easier?"7. Simplify — child struggling. Add a hint.":""}${harder?"7. Slightly more challenging — still within ${yearGroup}":""}
 
 Do NOT repeat: ${askedQs.slice(-8).join(" | ")||"none yet"}
 Vary formats: multiple choice, true/false, fill-blank, word problems, spot-mistake
@@ -897,29 +902,39 @@ function checkBadges(child) {
 
 // ── UI PRIMITIVES ─────────────────────────────────────────────────────────
 function Btn({children,onClick,disabled,v="primary",style={}}) {
+  const AS=useAgeStyle();
+  const tier=useAgeTier();
   const vars={
     primary:{background:`linear-gradient(135deg,${C.primary},#6366F1)`,color:"#fff",border:"none",boxShadow:`0 4px 18px ${C.primary}55`},
     ghost:{background:"transparent",color:C.text,border:`2px solid ${C.border}`,boxShadow:"none"},
     danger:{background:C.red,color:"#fff",border:"none",boxShadow:`0 4px 14px ${C.red}33`},
     success:{background:C.green,color:"#fff",border:"none",boxShadow:`0 4px 14px ${C.green}33`},
   };
+  const [pressed,setPressed]=useState(false);
   return (
-    <button onClick={onClick} disabled={disabled}
-      style={{padding:"13px 22px",borderRadius:14,fontSize:15,fontWeight:800,fontFamily:F,
+    <button onClick={e=>{
+        if(disabled)return;
+        setPressed(true);setTimeout(()=>setPressed(false),160);
+        if(tier==="little")playSound('tap');
+        onClick&&onClick(e);
+      }} disabled={disabled}
+      style={{padding:AS.padPrimary,borderRadius:AS.radius,fontSize:AS.fontPrimary,fontWeight:tier==="big"?750:800,fontFamily:F,
         cursor:disabled?"not-allowed":"pointer",opacity:disabled?0.5:1,
         display:"inline-flex",alignItems:"center",justifyContent:"center",gap:8,
-        transition:"all 0.15s ease",...vars[v],...style}}
+        transform:pressed?`scale(${tier==="little"?0.93:0.96})`:"scale(1)",
+        transition:tier==="little"?"all 0.18s cubic-bezier(0.34,1.56,0.64,1)":"all 0.15s ease",...vars[v],...style}}
       onMouseOver={e=>{if(!disabled)e.currentTarget.style.transform="translateY(-2px)"}}
-      onMouseOut={e=>{e.currentTarget.style.transform=""}}>
+      onMouseOut={e=>{e.currentTarget.style.transform=pressed?"":""}}>
       {children}
     </button>
   );
 }
 
 function Card({children,style={},onClick}) {
+  const AS=useAgeStyle();
   return (
     <div onClick={onClick}
-      style={{background:"linear-gradient(170deg,#FFFFFF 0%,#F8F7FF 100%)",borderRadius:20,padding:"18px 20px",
+      style={{background:"linear-gradient(170deg,#FFFFFF 0%,#F8F7FF 100%)",borderRadius:AS.radiusCard,padding:"18px 20px",
         border:"1.5px solid rgba(129,140,248,0.25)",boxShadow:"0 8px 28px rgba(99,102,241,0.14)",
         cursor:onClick?"pointer":"default",transition:onClick?"all 0.15s":undefined,...style}}
       onMouseOver={e=>{if(onClick)e.currentTarget.style.transform="translateY(-2px)"}}
@@ -1310,6 +1325,9 @@ function Diagnostic({child,onDone}) {
 function ChildDash({child,isParentView,onSession,onGames,onBadges,onParentView,onMyStats,onSignOut,onChangeAvatar,onLeaderboard,onWeeklyChallenge,children}) {
   const tutor=TUTORS[child.tutor]||TUTORS.sparky;
   const tColor=tutor?.color||C.primary;
+  const AS=useAgeStyle();
+  const tier=useAgeTier();
+  const dashA11y=useGameA11y();
   const rank=getRank(child.xp||0);
   const quests=getQuestState(child);
   const questsDone=QUEST_DEFS.filter(d=>quests[d.id]>=d.target).length;
@@ -1350,16 +1368,16 @@ function ChildDash({child,isParentView,onSession,onGames,onBadges,onParentView,o
           {/* Top row: avatar + streak */}
           <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:16,position:"relative",zIndex:1}}>
             <div style={{display:"flex",alignItems:"center",gap:14}}>
-              {/* Big avatar */}
-              <div style={{width:68,height:68,borderRadius:"50%",background:"rgba(255,255,255,0.14)",
+              {/* Big avatar — scales up for little ones */}
+              <div style={{width:AS.tileMin>=104?78:68,height:AS.tileMin>=104?78:68,borderRadius:"50%",background:"rgba(255,255,255,0.14)",
                 border:`3px solid ${tColor}`,display:"flex",alignItems:"center",
-                justifyContent:"center",fontSize:36,boxShadow:`0 0 22px ${tColor}66, 0 4px 20px rgba(0,0,0,0.3)`,
+                justifyContent:"center",fontSize:AS.tileMin>=104?42:36,boxShadow:`0 0 22px ${tColor}66, 0 4px 20px rgba(0,0,0,0.3)`,
                 flexShrink:0}}>
                 {(AVATARS||[]).find(a=>a.id===child.avatar)?.e||"🦊"}
               </div>
               <div>
                 <p style={{fontSize:13,fontWeight:700,color:"rgba(255,255,255,0.75)",marginBottom:2}}>{greeting} 👋</p>
-                <h2 style={{fontSize:28,fontWeight:900,color:"#fff",letterSpacing:"-0.5px"}}>{child.name}</h2>
+                <h2 style={{fontSize:AS.tileMin>=104?32:AS.tileMin<=84?25:28,fontWeight:900,color:"#fff",letterSpacing:"-0.5px"}}>{child.name}</h2>
                 <p style={{fontSize:12,fontWeight:700,color:"rgba(255,255,255,0.7)",marginTop:2}}>{child.yearGroup||"Year 3"} · {child.country||"UK"}</p>
               </div>
             </div>
@@ -1473,8 +1491,14 @@ function ChildDash({child,isParentView,onSession,onGames,onBadges,onParentView,o
           const bp=buddyPoints(child);
           const bs=buddyStage(bp);
           const evolved=bs.idx>(child.buddyStageSeen||0);
+          const buddySize=AS.tileMin>=104?96:AS.tileMin<=84?70:82;
+          const growCopy=tier==="little"
+            ?"Grows when you beat tricky questions and keep learning!"
+            :tier==="big"
+              ?"Levels up as you master topics, clear tricky questions, and keep your streak alive."
+              :"Grows when you beat tricky questions, level up subjects and keep your streak";
           return(
-            <div style={{margin:"0 16px 16px",padding:"16px",borderRadius:22,position:"relative",overflow:"hidden",
+            <div style={{margin:"0 16px 16px",padding:tier==="big"?"14px 16px":"16px",borderRadius:AS.radiusCard,position:"relative",overflow:"hidden",
               background:"linear-gradient(150deg,#1E1B4B,#312E81 70%,#4338CA)",
               border:evolved?"2px solid #FFD166":"2px solid rgba(255,255,255,0.1)",
               boxShadow:evolved?"0 6px 28px rgba(255,209,102,0.35)":"0 6px 20px rgba(30,27,75,0.3)"}}>
@@ -1483,18 +1507,16 @@ function ChildDash({child,isParentView,onSession,onGames,onBadges,onParentView,o
               {evolved&&<div style={{position:"absolute",top:10,right:12,background:"#FFD166",borderRadius:999,padding:"3px 10px"}}>
                 <p style={{fontSize:10,fontWeight:900,color:"#78350F"}}>✨ EVOLVED!</p></div>}
               <div style={{display:"flex",alignItems:"center",gap:14,position:"relative"}}>
-                <BuddySprite stage={bs} size={82}/>
+                <div style={{animation:dashA11y.noMotion?"none":"floatY 3.2s ease-in-out infinite"}}><BuddySprite stage={bs} size={buddySize}/></div>
                 <div style={{flex:1,minWidth:0}}>
-                  <p style={{fontSize:15,fontWeight:900,color:"#fff"}}>{bs.name}</p>
-                  <p style={{fontSize:11.5,fontWeight:700,color:"rgba(255,255,255,0.72)",marginBottom:7,lineHeight:1.4}}>{bs.desc}</p>
+                  <p style={{fontSize:tier==="little"?17:15,fontWeight:900,color:"#fff"}}>{bs.name}</p>
+                  <p style={{fontSize:tier==="little"?12.5:11.5,fontWeight:700,color:"rgba(255,255,255,0.72)",marginBottom:7,lineHeight:1.4}}>{bs.desc}</p>
                   {bs.next?(<>
                     <div style={{height:7,borderRadius:4,background:"rgba(255,255,255,0.15)",overflow:"hidden",marginBottom:4}}>
                       <div style={{height:"100%",width:`${bs.pct}%`,borderRadius:4,transition:"width 0.8s ease",
                         background:"linear-gradient(90deg,#FFD166,#F0ABFC)"}}/>
                     </div>
-                    <p style={{fontSize:10,fontWeight:800,color:"rgba(255,255,255,0.6)"}}>
-                      Grows when you beat tricky questions, level up subjects and keep your streak
-                    </p>
+                    <p style={{fontSize:10,fontWeight:800,color:"rgba(255,255,255,0.6)"}}>{growCopy}</p>
                   </>):(
                     <p style={{fontSize:11,fontWeight:900,color:"#FFD166"}}>Fully grown — raised by your learning! 🏆</p>
                   )}
@@ -1537,28 +1559,28 @@ function ChildDash({child,isParentView,onSession,onGames,onBadges,onParentView,o
         </div>
 
         {/* ── Rewards — badges, streak, XP made visible and meaningful ── */}
-        <div style={{margin:"0 16px 16px",padding:"16px",borderRadius:22,background:"linear-gradient(160deg,#1E1B4B,#312E81)",
+        <div style={{margin:"0 16px 16px",padding:tier==="big"?"14px 16px":"16px",borderRadius:AS.radiusCard,background:"linear-gradient(160deg,#1E1B4B,#312E81)",
           boxShadow:"0 8px 26px rgba(30,27,75,0.3)",position:"relative",overflow:"hidden"}}>
           {[...Array(6)].map((_,i)=><div key={i} style={{position:"absolute",width:2,height:2,borderRadius:"50%",background:"#fff",opacity:0.3,pointerEvents:"none",top:`${(i*31+6)%85}%`,left:`${(i*41+4)%95}%`,animation:`twinkle ${1.7+i%3}s ease infinite`}}/>)}
           <p style={{fontSize:11,fontWeight:900,color:"#FFD166",textTransform:"uppercase",letterSpacing:"0.12em",marginBottom:12,position:"relative"}}>🏆 Your Rewards</p>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:10,position:"relative"}}>
-            <button onClick={onBadges} style={{background:"rgba(255,255,255,0.08)",border:"1.5px solid rgba(255,209,102,0.3)",borderRadius:14,padding:"12px 6px",cursor:"pointer",textAlign:"center"}}>
-              <p style={{fontSize:20,fontWeight:900,color:"#FFD166"}}>{(child.badges||[]).length}</p>
-              <p style={{fontSize:9.5,fontWeight:800,color:"rgba(255,255,255,0.7)",textTransform:"uppercase"}}>Badges</p>
+            <button onClick={onBadges} style={{background:"rgba(255,255,255,0.08)",border:"1.5px solid rgba(255,209,102,0.3)",borderRadius:14,padding:tier==="little"?"14px 6px":"12px 6px",cursor:"pointer",textAlign:"center"}}>
+              <p style={{fontSize:tier==="little"?24:20,fontWeight:900,color:"#FFD166"}}>{(child.badges||[]).length}</p>
+              <p style={{fontSize:tier==="little"?10.5:9.5,fontWeight:800,color:"rgba(255,255,255,0.7)",textTransform:"uppercase"}}>Badges</p>
             </button>
-            <div style={{background:"rgba(255,255,255,0.08)",border:"1.5px solid rgba(251,146,60,0.3)",borderRadius:14,padding:"12px 6px",textAlign:"center"}}>
-              <p style={{fontSize:20,fontWeight:900,color:"#FB923C"}}>🔥{child.streak||0}</p>
-              <p style={{fontSize:9.5,fontWeight:800,color:"rgba(255,255,255,0.7)",textTransform:"uppercase"}}>Day Streak</p>
+            <div style={{background:"rgba(255,255,255,0.08)",border:"1.5px solid rgba(251,146,60,0.3)",borderRadius:14,padding:tier==="little"?"14px 6px":"12px 6px",textAlign:"center"}}>
+              <p style={{fontSize:tier==="little"?24:20,fontWeight:900,color:"#FB923C"}}>🔥{child.streak||0}</p>
+              <p style={{fontSize:tier==="little"?10.5:9.5,fontWeight:800,color:"rgba(255,255,255,0.7)",textTransform:"uppercase"}}>Day Streak</p>
             </div>
-            <div style={{background:"rgba(255,255,255,0.08)",border:"1.5px solid rgba(129,140,248,0.3)",borderRadius:14,padding:"12px 6px",textAlign:"center"}}>
-              <p style={{fontSize:20,fontWeight:900,color:"#818CF8"}}>{child.xp||0}</p>
-              <p style={{fontSize:9.5,fontWeight:800,color:"rgba(255,255,255,0.7)",textTransform:"uppercase"}}>Total XP</p>
+            <div style={{background:"rgba(255,255,255,0.08)",border:"1.5px solid rgba(129,140,248,0.3)",borderRadius:14,padding:tier==="little"?"14px 6px":"12px 6px",textAlign:"center"}}>
+              <p style={{fontSize:tier==="little"?24:20,fontWeight:900,color:"#818CF8"}}>{child.xp||0}</p>
+              <p style={{fontSize:tier==="little"?10.5:9.5,fontWeight:800,color:"rgba(255,255,255,0.7)",textTransform:"uppercase"}}>Total XP</p>
             </div>
           </div>
           <p style={{fontSize:11,fontWeight:700,color:"rgba(255,255,255,0.65)",lineHeight:1.6,position:"relative"}}>
             {child.streak>=3
-              ?`🛡️ Your streak is protected — miss a day and it's safe once a week.`
-              :`Badges unlock as you master topics. Your streak grows your buddy. XP moves you up the ranks below.`}
+              ?(tier==="little"?`🛡️ A shield keeps your streak safe if you miss a day!`:`🛡️ Your streak is protected — miss a day and it's safe once a week.`)
+              :(tier==="little"?`Play games to earn badges and grow your buddy!`:tier==="big"?`Badges unlock as you master topics. Streaks grow your buddy. XP climbs the ranks below.`:`Badges unlock as you master topics. Your streak grows your buddy. XP moves you up the ranks below.`)}
           </p>
         </div>
 
@@ -1628,7 +1650,7 @@ function MasteryTest({child,subject,topic,level,onPass,onFail}) {
     claude(`Generate ${TOTAL} mastery test questions for "${topic?.name}" in ${subject}.
 Child: age ${child.age}, ${child.yearGroup||"Year 3"}, ${child.country||"UK"} curriculum, Level ${level}.
 Test full understanding. Mix easy medium hard. Need ${PASS}/${TOTAL} to pass.
-Return ONLY JSON: {"questions":[{"q":"...","options":["A) ...","B) ...","C) ...","D) ..."],"correct":"A","explanation":"..."}]}`,
+${a11yPromptRules(child)} Return ONLY JSON: {"questions":[{"q":"...","options":["A) ...","B) ...","C) ...","D) ..."],"correct":"A","explanation":"..."}]}`,
     "Mastery test.").then(d=>{if(d?.questions?.length)setQs(d.questions);});
   },[]);
   const answer=(opt)=>{
@@ -1711,9 +1733,9 @@ function Session({child,startSubject,startTopic,onComplete,onUpdate,onExit,a11y=
     }catch(e){}
     try{
       const p=await claude(
-        `Create a tiny "how to" primer for a child before practising. Child: ${child.yearGroup||"Year 3"}, ${child.country||"UK"} curriculum. Subject: ${subject}. Topic: ${topic.name}. Difficulty level ${primerLvl}/10. `+
+        `You are a kind, patient teacher explaining something to a real child face to face, not writing a textbook. Child: ${child.yearGroup||"Year 3"}, age ${child.age||8}, ${child.country||"UK"} curriculum. Subject: ${subject}. Topic: ${topic.name}. Difficulty level ${primerLvl}/10. `+
         a11yPromptRules(a11y)+
-        ` Return ONLY JSON: {"title":"How to: ...","steps":[{"h":"What it is","b":"1-2 kid-friendly sentences"},{"h":"Worked example","b":"One example solved step by step, each step on a new line"},{"h":"Your turn tip","b":"One encouraging strategy tip"}]}. Keep each body under 55 words, warm and simple.`,
+        ` RULES: use only everyday words a ${child.age||8}-year-old knows; if a subject word is needed, explain it in brackets in the same sentence; use a concrete real example with real numbers/objects (toys, snacks, pets) not abstract letters; keep sentences short. Return ONLY JSON: {"title":"How to: ...","steps":[{"h":"What it is","b":"1-2 short simple sentences, one real example"},{"h":"Worked example","b":"One concrete example with real numbers, solved one small step per line, plain words"},{"h":"Your turn tip","b":"One short encouraging strategy tip a child would actually say"}]}. Keep each body under 45 words, warm and simple, NEVER textbook-sounding.`,
         "Primer for a child.");
       if(p?.steps?.length){setPrimer(p);try{localStorage.setItem(primerKey,JSON.stringify(p));}catch(e){}}
       else setShowPrimer(false); // fetch failed — never block the child
@@ -1946,6 +1968,7 @@ function Session({child,startSubject,startTopic,onComplete,onUpdate,onExit,a11y=
                         {(child.mode==="audio"||a11y.alwaysAudio)&&!a11y.noAudio&&<button onClick={()=>speak(step?.b,child.tutor)} style={{marginLeft:"auto",background:"none",border:"none",cursor:"pointer",fontSize:16}}>🔊</button>}
                       </div>
                       <p style={{fontSize:a11y.largeText?17:15,fontWeight:600,color:"#334155",lineHeight:1.9,whiteSpace:"pre-line",fontFamily:a11y.dyslexiaFont?FDYS:F,letterSpacing:a11y.dyslexiaFont?"0.04em":undefined}}>{step?.b}</p>
+                      {primerStep===1&&<TeachVisual visual={pickTeachVisual(subject,topic?.id,step?.b)}/>}
                     </div>
                   )}
                 </div>
@@ -1993,6 +2016,7 @@ function Session({child,startSubject,startTopic,onComplete,onUpdate,onExit,a11y=
             <div style={{animation:"fadeUp 0.25s ease"}}>
               <span style={{display:"inline-block",marginBottom:14,padding:"3px 10px",borderRadius:20,fontSize:10,fontWeight:800,textTransform:"uppercase",letterSpacing:"0.1em",background:q.difficulty==="hard"?C.rLight:q.difficulty==="medium"?C.aLight:C.gLight,color:q.difficulty==="hard"?C.red:q.difficulty==="medium"?C.amber:C.green}}>{q.difficulty}</span>
               {mode==="visual"&&q.svg&&<div style={{margin:"0 0 16px",borderRadius:14,overflow:"hidden",background:"linear-gradient(135deg,#EEF2FF,#F0F9FF)",border:`2px solid ${C.border}`,display:"flex",flexDirection:"column",justifyContent:"center",alignItems:"center",padding:"16px 12px",minHeight:160}}><div style={{width:"100%",maxWidth:220,overflow:"hidden",borderRadius:8}} dangerouslySetInnerHTML={{__html:q.svg}}/></div>}
+              {!(mode==="visual"&&q.svg)&&<TeachVisual key={q.question} visual={pickTeachVisual(subject,topic?.id,q.question)}/>}
               <p style={{fontSize:a11y.largeText?22:19,fontWeight:700,color:C.text,lineHeight:1.8,marginBottom:20,fontFamily:a11y.dyslexiaFont?FDYS:F,letterSpacing:a11y.dyslexiaFont?"0.05em":undefined}}>{q.question}</p>
               {q.hint&&!ans&&<div style={{marginBottom:14,padding:"10px 14px",borderRadius:10,fontSize:13,fontWeight:600,color:"#92400E",background:"#FFFBEB",border:"1px solid #FDE68A"}}>💡 {q.hint}</div>}
               {mode==="audio"&&<button onClick={()=>speak(q.question,child.tutor)} style={{marginBottom:14,padding:"7px 14px",borderRadius:8,cursor:"pointer",border:`2px solid ${tutor.color}`,background:tutor.light,fontFamily:F,color:tutor.color,fontWeight:800,fontSize:13}}>🔊 Hear again</button>}
@@ -2183,7 +2207,6 @@ function WeeklyChallengeScreen({children,activeChildId,onBack}){
 
 function BadgesScreen({child,onBack}) {
   const earned=child.badges||[];
-  const [tooltip,setTooltip]=useState(null);
   return (
     <Screen>
       <div style={{paddingTop:20}}>
@@ -3507,6 +3530,123 @@ function haptic(type) {
 // 9-11: mastery, stars, streaks. All: a mission you can WIN.
 // ══════════════════════════════════════════════════════════════════
 
+// ── TEACHER'S PICTURE — a guaranteed, tappable visual for every lesson ──
+// AI-generated diagrams are unreliable (the model often skips them or draws
+// something confusing). This is a small deterministic "visual toolkit": it
+// looks at the subject/topic and question text and picks a concrete,
+// tappable picture — objects to count, a number line, a bar comparison,
+// a fraction circle, or place-value blocks — the way a teacher would
+// sketch on a whiteboard. Zero AI cost, zero failure mode, always ready.
+const _teachIcons=["🍎","🍊","⭐","🐶","🎈","🚗","🐟","🌸","🧩","🍪"];
+function pickTeachVisual(subject,topicId,questionText=""){
+  const q=(questionText||"").toLowerCase();
+  const nums=(questionText.match(/\d+/g)||[]).map(Number);
+  if(/fraction|half|quarter|third/i.test(topicId||"")||/fraction|half|quarter/.test(q))
+    return {kind:"fraction",parts:nums.find(n=>n>=2&&n<=8)||4,filled:nums.find(n=>n>=1&&n<nums[0])||1};
+  if(/place.?value|thousand|hundred|digit/i.test(topicId||"")||/place value|thousands|hundreds/.test(q))
+    return {kind:"place",value:nums[0]||124};
+  if(/count|number.?sense|addition|subtraction|multiplication/i.test(topicId||subject||"")&&nums.length&&nums[0]<=20)
+    return {kind:"count",n:Math.max(1,Math.min(20,nums[0]))};
+  if(nums.length>=2&&nums[0]<=20&&nums[1]<=20)
+    return {kind:"compare",a:nums[0],b:nums[1]};
+  if(/number.?line|sequence|order/i.test(topicId||"")||nums.length)
+    return {kind:"line",target:nums[0]||5,max:Math.max(10,(nums[0]||5)+5)};
+  return null; // nothing concrete to show — text/hint carries the teaching instead
+}
+function TeachVisual({visual,color="#6366F1"}){
+  const [tapped,setTapped]=useState([]);
+  if(!visual)return null;
+  const box={margin:"0 0 16px",borderRadius:16,background:"linear-gradient(135deg,#EEF2FF,#F5F3FF)",
+    border:"2px solid rgba(99,102,241,0.18)",padding:"16px 14px",display:"flex",flexDirection:"column",
+    alignItems:"center",justifyContent:"center",minHeight:120};
+  if(visual.kind==="count"){
+    const icon=_teachIcons[visual.n%_teachIcons.length];
+    return(
+      <div style={box}>
+        <p style={{fontSize:10,fontWeight:800,color:"#6366F1",marginBottom:8,textTransform:"uppercase",letterSpacing:"0.08em"}}>👆 Tap to count along!</p>
+        <div style={{display:"flex",flexWrap:"wrap",gap:8,justifyContent:"center",maxWidth:280}}>
+          {[...Array(visual.n)].map((_,i)=>(
+            <button key={i} onClick={()=>{setTapped(t=>t.includes(i)?t:[...t,i]);playSound('tap');}}
+              style={{fontSize:26,background:"none",border:"none",cursor:"pointer",padding:2,
+              transform:tapped.includes(i)?"scale(1.3)":"scale(1)",opacity:tapped.includes(i)?1:0.55,
+              transition:"all 0.2s cubic-bezier(0.34,1.56,0.64,1)"}}>{icon}</button>
+          ))}
+        </div>
+        {tapped.length>0&&<p style={{fontSize:13,fontWeight:900,color:"#6366F1",marginTop:8}}>{tapped.length} counted!</p>}
+      </div>
+    );
+  }
+  if(visual.kind==="compare"){
+    const max=Math.max(visual.a,visual.b,1);
+    return(
+      <div style={box}>
+        {[["A",visual.a,"#4D9DF7"],["B",visual.b,"#FB923C"]].map(([lbl,v,c])=>(
+          <div key={lbl} style={{display:"flex",alignItems:"center",gap:8,width:"100%",marginBottom:6}}>
+            <span style={{fontSize:11,fontWeight:900,color:c,width:14}}>{lbl}</span>
+            <div style={{flex:1,height:20,borderRadius:6,background:"rgba(0,0,0,0.05)",overflow:"hidden"}}>
+              <div style={{height:"100%",width:`${(v/max)*100}%`,background:c,borderRadius:6,transition:"width 0.6s ease"}}/>
+            </div>
+            <span style={{fontSize:13,fontWeight:900,color:c,width:26,textAlign:"right"}}>{v}</span>
+          </div>
+        ))}
+      </div>
+    );
+  }
+  if(visual.kind==="line"){
+    const pts=[...Array(visual.max+1).keys()];
+    return(
+      <div style={box}>
+        <p style={{fontSize:10,fontWeight:800,color:"#6366F1",marginBottom:10,textTransform:"uppercase",letterSpacing:"0.08em"}}>Number line</p>
+        <div style={{position:"relative",width:"100%",height:32}}>
+          <div style={{position:"absolute",top:14,left:0,right:0,height:3,borderRadius:2,background:"#C7D2FE"}}/>
+          {pts.map(v=>(
+            <div key={v} style={{position:"absolute",top:0,left:`${(v/visual.max)*100}%`,transform:"translateX(-50%)",textAlign:"center"}}>
+              <div style={{width:v===visual.target?12:6,height:v===visual.target?12:6,borderRadius:"50%",margin:"0 auto",
+                background:v===visual.target?"#6366F1":"#A5B4FC",boxShadow:v===visual.target?"0 0 10px rgba(99,102,241,0.6)":"none"}}/>
+              <p style={{fontSize:8,fontWeight:700,color:"#6366F1",marginTop:2}}>{v}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+  if(visual.kind==="fraction"){
+    const seg=360/visual.parts;
+    return(
+      <div style={box}>
+        <svg width="90" height="90" viewBox="0 0 100 100">
+          {[...Array(visual.parts)].map((_,i)=>{
+            const a0=(i*seg-90)*Math.PI/180,a1=((i+1)*seg-90)*Math.PI/180;
+            const x0=50+45*Math.cos(a0),y0=50+45*Math.sin(a0),x1=50+45*Math.cos(a1),y1=50+45*Math.sin(a1);
+            const large=seg>180?1:0;
+            return <path key={i} d={`M50,50 L${x0},${y0} A45,45 0 ${large} 1 ${x1},${y1} Z`}
+              fill={i<visual.filled?"#6366F1":"#E0E7FF"} stroke="#fff" strokeWidth="2"/>;
+          })}
+        </svg>
+        <p style={{fontSize:13,fontWeight:900,color:"#6366F1",marginTop:8}}>{visual.filled} out of {visual.parts} parts</p>
+      </div>
+    );
+  }
+  if(visual.kind==="place"){
+    const s=String(Math.abs(visual.value));
+    const labels=["Thousands","Hundreds","Tens","Ones"].slice(-s.length);
+    return(
+      <div style={box}>
+        <div style={{display:"flex",gap:8}}>
+          {[...s].map((d,i)=>(
+            <div key={i} style={{textAlign:"center"}}>
+              <div style={{width:44,height:44,borderRadius:10,background:"#6366F1",color:"#fff",display:"flex",
+                alignItems:"center",justifyContent:"center",fontSize:20,fontWeight:900}}>{d}</div>
+              <p style={{fontSize:8,fontWeight:800,color:"#6366F1",marginTop:4}}>{labels[i]}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+  return null;
+}
+
 // ── LOCAL QUESTION ENGINE — procedural maths, no AI, instant, free ──
 // Skill games don't need an LLM to ask "6 × 7". Generating locally means
 // zero loading screens, zero API cost, and offline tolerance.
@@ -3768,6 +3908,28 @@ function ScorePop({show,text="+XP"}) {
     animation:"scoreFloat 0.9s ease forwards",whiteSpace:"nowrap"}}>{text}</div>;
 }
 
+// ── Streak milestone — a bigger "you're on fire" moment than the small
+// header flame, fires once per threshold crossed (3/5/7/10/15) ────────
+function StreakPulse({streak,AS}) {
+  const [shown,setShown]=useState(0);
+  useEffect(()=>{
+    const thresholds=[3,5,7,10,15,20];
+    const hit=thresholds.find(t=>t===streak);
+    if(hit)setShown(hit);
+  },[streak]);
+  useEffect(()=>{if(shown){const t=setTimeout(()=>setShown(0),1100);return()=>clearTimeout(t);}},[shown]);
+  if(!shown)return null;
+  const scale=AS?.celebrate||1;
+  return(
+    <div style={{position:"fixed",top:"30%",left:"50%",transform:"translateX(-50%)",zIndex:210,pointerEvents:"none",
+      textAlign:"center",animation:"streakBlast 1.1s cubic-bezier(0.34,1.56,0.64,1) forwards"}}>
+      <p style={{fontSize:44*scale,filter:"drop-shadow(0 6px 16px rgba(251,146,60,0.7))"}}>🔥</p>
+      <p style={{fontSize:22*scale,fontWeight:900,color:"#FDBA45",fontFamily:F,letterSpacing:"0.04em",
+        textShadow:"0 3px 0 rgba(0,0,0,0.4), 0 0 30px rgba(253,186,69,0.7)",whiteSpace:"nowrap"}}>STREAK ×{shown}!</p>
+    </div>
+  );
+}
+
 // ── Mission journey — 12 stops, the child SEES the adventure ──────
 function MissionTrail({qIdx, score, accent, total=MISSION_LEN}) {
   const A=useGameA11y();
@@ -3819,13 +3981,15 @@ function HeartRow({lives,max=3}) {
 // ── Game chrome: header with hearts, streak flame, score gem ──────
 function GameHeader({name,emoji,score,lives,maxLives=3,level,onQuit,narrative,qIdx,streak=0,scoreLabel="SCORE"}) {
   const {best=0}=useGameCtx();
+  const AS=useAgeStyle();
+  const badgeSize=AS.tileMin>=104?46:AS.tileMin<=84?36:40;
   return(
     <div style={{padding:"10px 14px 6px",display:"flex",alignItems:"center",justifyContent:"space-between",position:"relative",zIndex:5}}>
       <div style={{display:"flex",alignItems:"center",gap:9,minWidth:0}}>
-        <div style={{width:40,height:40,borderRadius:13,background:"rgba(255,255,255,0.1)",border:"1.5px solid rgba(255,255,255,0.2)",
-          display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0,backdropFilter:"blur(6px)"}}>{emoji}</div>
+        <div style={{width:badgeSize,height:badgeSize,borderRadius:13,background:"rgba(255,255,255,0.1)",border:"1.5px solid rgba(255,255,255,0.2)",
+          display:"flex",alignItems:"center",justifyContent:"center",fontSize:badgeSize*0.55,flexShrink:0,backdropFilter:"blur(6px)"}}>{emoji}</div>
         <div style={{minWidth:0}}>
-          <p style={{fontSize:13,fontWeight:900,color:"#fff",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",maxWidth:118,fontFamily:F,textShadow:"0 1px 3px rgba(0,0,0,0.5)"}}>{name}</p>
+          <p style={{fontSize:AS.tileMin>=104?14.5:13,fontWeight:900,color:"#fff",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",maxWidth:118,fontFamily:F,textShadow:"0 1px 3px rgba(0,0,0,0.5)"}}>{name}</p>
           <div style={{display:"flex",alignItems:"center",gap:5}}>
             <HeartRow lives={lives} max={maxLives}/>
             {streak>=2&&<span style={{fontSize:11,fontWeight:900,color:"#FDBA45",fontFamily:F,
@@ -3871,13 +4035,16 @@ function AnimScore({value}) {
 // ── Question card — big type, character reacts ─────────────────────
 function QuestionCard({question,narrative,qIdx,lvl,mascot,mascotMood,total=MISSION_LEN,onSpeak,onFlag}) {
   const A=useGameA11y();
+  const AS=useAgeStyle();
+  const tier=useAgeTier();
   const long=(question||"").length>70;
   const fontFam=A.dyslexiaFont?FDYS:F;
-  const size=(long?17:21)+(A.largeText?3:0);
+  const tierBump=tier==="little"?4:tier==="big"?-1:0; // little ones read bigger text by default, no a11y flag needed
+  const size=(long?17:21)+(A.largeText?3:0)+tierBump;
   return(
     <div style={{padding:"8px 14px 0",position:"relative",zIndex:5}}>
       <div key={qIdx} style={{position:"relative",background:A.highContrast?"rgba(0,0,0,0.88)":"rgba(8,12,30,0.55)",backdropFilter:"blur(14px)",
-        borderRadius:22,padding:"16px 18px 15px",border:A.highContrast?"2.5px solid rgba(255,255,255,0.5)":"2px solid rgba(255,255,255,0.16)",
+        borderRadius:AS.radiusCard,padding:"16px 18px 15px",border:A.highContrast?"2.5px solid rgba(255,255,255,0.5)":"2px solid rgba(255,255,255,0.16)",
         boxShadow:"0 10px 34px rgba(0,0,0,0.45)",animation:A.noMotion?"none":"qSlideIn 0.4s cubic-bezier(0.34,1.4,0.64,1) both"}}>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
           <p style={{fontSize:10.5,fontWeight:900,color:"rgba(255,255,255,0.55)",textTransform:"uppercase",letterSpacing:"0.12em",fontFamily:F}}>
@@ -3893,7 +4060,7 @@ function QuestionCard({question,narrative,qIdx,lvl,mascot,mascotMood,total=MISSI
         {onSpeak&&<button onClick={onSpeak} aria-label="Read the question aloud"
           style={{marginTop:11,padding:"8px 16px",borderRadius:12,cursor:"pointer",fontFamily:F,
           border:"2px solid rgba(255,209,102,0.6)",background:"rgba(255,209,102,0.14)",
-          color:"#FFD166",fontWeight:900,fontSize:13}}>🔊 Read aloud</button>}
+          color:"#FFD166",fontWeight:900,fontSize:13,animation:tier==="little"&&!A.noMotion?"pulse 2.2s ease-in-out infinite":"none"}}>🔊 Read aloud</button>}
       </div>
     </div>
   );
@@ -3902,10 +4069,13 @@ function QuestionCard({question,narrative,qIdx,lvl,mascot,mascotMood,total=MISSI
 // ── Chunky toy-button answer grid ──────────────────────────────────
 function AnswerGrid({opts,states,locked,onTap,icons}) {
   const A=useGameA11y();
+  const AS=useAgeStyle();
+  const tier=useAgeTier();
   const oneCol=A.largeTapTargets;             // dyspraxia / visual impairment
   const fontFam=A.dyslexiaFont?FDYS:F;        // dyslexia
   const wrongBg=A.noRedFeedback?"#64748B":"#E5484D"; // anxiety: never harsh red
   const wrongShadow=A.noRedFeedback?"0 3px 0 #475569":"0 3px 0 #A32328";
+  const burstCount=Math.max(3,Math.round(6*AS.celebrate)); // little ones get a bigger celebration, big kids a cooler one
   return(
     <div style={{padding:"12px 14px 22px",display:"grid",gridTemplateColumns:oneCol?"1fr":"1fr 1fr",gap:oneCol?13:11,position:"relative",zIndex:5}}>
       {opts.map((opt,i)=>{
@@ -3913,19 +4083,19 @@ function AnswerGrid({opts,states,locked,onTap,icons}) {
         const st=states[opt]||"";
         const isOk=st==="correct",isBad=st==="wrong",isDim=st==="dim";
         const label=String(opt).replace(/^[A-F]\)\s*/,"");
-        const base=A.largeText?3:0;
+        const base=(A.largeText?3:0)+(tier==="little"?2:tier==="big"?-1:0);
         const fs=(label.length>16?13.5:label.length>9?15.5:19)+base;
         return(
           <button key={`${opt}-${i}`} onClick={()=>!locked&&onTap(opt)} disabled={locked}
             aria-label={`Answer ${LETTERS[i]}: ${label}`}
             style={{
-              minHeight:oneCol?78:A.largeText?110:96,borderRadius:20,border:"none",padding:"12px 12px 16px",
+              minHeight:oneCol?78:A.largeText?110:AS.tileMin,borderRadius:AS.radiusCard,border:"none",padding:"12px 12px 16px",
               cursor:locked?"default":"pointer",fontFamily:fontFam,position:"relative",
               background:isOk?"#2FBF71":isBad?wrongBg:isDim?"rgba(255,255,255,0.05)":t.top,
               boxShadow:isOk?`0 6px 0 #1D8A50, 0 0 34px rgba(47,191,113,0.75)`:
                         isBad?wrongShadow:
                         isDim?"none":`0 6px 0 ${t.base}, 0 10px 22px ${t.glow}`,
-              transform:isOk?"translateY(-4px) scale(1.04)":isBad?"translateY(3px)":isDim?"scale(0.97)":"translateY(0)",
+              transform:isOk?`translateY(-4px) scale(${1+0.04*AS.celebrate})`:isBad?"translateY(3px)":isDim?"scale(0.97)":"translateY(0)",
               opacity:isDim?0.22:1,
               transition:"all 0.18s cubic-bezier(0.34,1.56,0.64,1)",
               animation:A.noMotion?"none":isOk?"jellyPop 0.55s ease":isBad?"wrongShake 0.45s ease":`floatIn 0.4s ease ${i*0.07}s both`,
@@ -3934,10 +4104,10 @@ function AnswerGrid({opts,states,locked,onTap,icons}) {
             {A.iconFeedback&&isBad&&<div style={{position:"absolute",inset:0,borderRadius:20,pointerEvents:"none",
               background:"repeating-linear-gradient(45deg,transparent,transparent 9px,rgba(255,255,255,0.22) 9px,rgba(255,255,255,0.22) 13px)"}}/>}
             {A.iconFeedback&&isOk&&<div style={{position:"absolute",inset:5,borderRadius:16,pointerEvents:"none",border:"2.5px dashed rgba(255,255,255,0.9)"}}/>}
-            {isOk&&!A.noMotion&&[...Array(6)].map((_,k)=>(
+            {isOk&&!A.noMotion&&[...Array(burstCount)].map((_,k)=>(
               <span key={k} style={{position:"absolute",left:"50%",top:"50%",pointerEvents:"none",fontSize:13,
                 color:["#FFD166","#fff","#FDE68A"][k%3],
-                transform:`rotate(${k*60}deg) translateY(-8px)`,
+                transform:`rotate(${k*(360/burstCount)}deg) translateY(-8px)`,
                 animation:`particleFly 0.6s ease ${k*0.03}s forwards`}}>★</span>
             ))}
             {isOk&&!A.noMotion&&<div style={{position:"absolute",inset:-3,borderRadius:23,border:"3px solid rgba(255,255,255,0.85)",animation:"ringPulse 0.7s ease infinite",pointerEvents:"none"}}/>}
@@ -4079,6 +4249,8 @@ function GameError({name,onRetry}) {
 // ── Mission complete — stars, XP count-up, confetti ────────────────
 function GameEnd({name,emoji,score,max,child,xp,level,onRetry,onDone,sectors=0}) {
   const A=useGameA11y();
+  const AS=useAgeStyle();
+  const tier=useAgeTier();
   const {best=0}=useGameCtx();
   const isNewBest=score>best&&score>0;
   const total=Math.max(max,1);
@@ -4111,10 +4283,15 @@ function GameEnd({name,emoji,score,max,child,xp,level,onRetry,onDone,sectors=0})
   const showBreak=PLAY_TALLY.qs-PLAY_TALLY.shownAt>=80;
   useEffect(()=>{if(showBreak)PLAY_TALLY.shownAt=PLAY_TALLY.qs;},[]);
   const fontFam=A.dyslexiaFont?FDYS:F;
-  const headline=isNewBest?"NEW HIGH SCORE!":stars===3?"AMAZING RUN!":stars===2?"GREAT FLYING!":"GOOD TRY!";
+  // Headline tone shifts by age: littles get maximum excitement, big kids
+  // get a cooler "video game" tone that doesn't read as babyish to them.
+  const headline=isNewBest?(tier==="little"?"WOW! NEW HIGH SCORE!":tier==="big"?"NEW RECORD":"NEW HIGH SCORE!")
+    :stars===3?(tier==="little"?"AMAZING!! 🎉":tier==="big"?"FLAWLESS RUN":"AMAZING RUN!")
+    :stars===2?(tier==="little"?"GREAT JOB!":tier==="big"?"SOLID RUN":"GREAT FLYING!")
+    :(tier==="little"?"NICE TRY!":tier==="big"?"RUN COMPLETE":"GOOD TRY!");
   const sub=isNewBest?`${score} — a new record, ${child?.name||"champion"}! 🏆`
     :best>0?`Your record is ${best} — so close!`
-    :stars===3?`Perfect work, ${child?.name||"champion"}!`
+    :stars===3?(tier==="big"?`Nailed it, ${child?.name||"champion"}.`:`Perfect work, ${child?.name||"champion"}!`)
     :stars===2?"So close to 3 stars — one more go?":"Every run makes you stronger!";
   return(
     <div className={A.noMotion?"a11y-still":undefined}
@@ -4122,14 +4299,14 @@ function GameEnd({name,emoji,score,max,child,xp,level,onRetry,onDone,sectors=0})
       background:"radial-gradient(ellipse at 50% 20%,#2D1B69,#0D1230 70%)",display:"flex",flexDirection:"column",
       alignItems:"center",justifyContent:"center",padding:24,position:"relative",overflow:"hidden",
       filter:A.calmScheme?"saturate(0.8)":undefined}}>
-      {stars>=2&&!A.noMotion&&!A.reducedMotion&&<Confetti count={stars===3?60:30}/>}
+      {stars>=2&&!A.noMotion&&!A.reducedMotion&&<Confetti count={Math.round((stars===3?60:30)*AS.celebrate)}/>}
       {!A.noMotion&&[...Array(26)].map((_,i)=><div key={i} style={{position:"absolute",borderRadius:"50%",width:2,height:2,
         background:"#fff",opacity:0.3,top:`${(i*13+7)%95}%`,left:`${(i*17+3)%97}%`,animation:`twinkle ${1.5+i%4}s ease infinite`}}/>)}
-      <div style={{fontSize:64,marginBottom:6,animation:"badgePop 0.6s cubic-bezier(0.34,1.56,0.64,1) both",filter:"drop-shadow(0 10px 24px rgba(0,0,0,0.5))"}}>{emoji}</div>
+      <div style={{fontSize:tier==="little"?76:tier==="big"?56:64,marginBottom:6,animation:"badgePop 0.6s cubic-bezier(0.34,1.56,0.64,1) both",filter:"drop-shadow(0 10px 24px rgba(0,0,0,0.5))"}}>{emoji}</div>
       {/* Stars */}
       <div style={{display:"flex",gap:10,marginBottom:12,height:60,alignItems:"center"}}>
         {[1,2,3].map(i=>(
-          <span key={i} style={{fontSize:i===2?54:42,
+          <span key={i} style={{fontSize:(i===2?54:42)*(tier==="little"?1.12:tier==="big"?0.88:1),
             filter:i<=shownStars?"drop-shadow(0 0 16px rgba(255,209,102,0.9))":"grayscale(1) opacity(0.25)",
             animation:i<=shownStars?"starLand 0.5s cubic-bezier(0.34,1.56,0.64,1) both":"none",
             transform:i<=shownStars?"none":"scale(0.8)"}}>⭐</span>
@@ -4197,11 +4374,14 @@ function ShareScore({name,emoji,score,childName}){
 
 // ── GameShell — chrome for the standalone arcade games ─────────────
 function GameShell({name,emoji,subject,score,maxScore,round,total,streak,onQuit,lives,level,children}) {
+  const A=useGameA11y();
   const world=({Maths:WORLDS.cosmic,English:WORLDS.grove,Science:WORLDS.starmap,History:WORLDS.turbo,
     Geography:WORLDS.turbo,Computing:WORLDS.starmap})[subject]||WORLDS.cosmic;
   return(
-    <div style={{width:"100%",minHeight:"100vh",fontFamily:F,background:world.sky,position:"relative",overflow:"hidden"}}>
-      {[...Array(22)].map((_,i)=><div key={i} style={{position:"absolute",borderRadius:"50%",pointerEvents:"none",
+    <div className={A.noMotion?"a11y-still":undefined}
+      style={{width:"100%",minHeight:"100vh",fontFamily:F,background:world.sky,position:"relative",overflow:"hidden",
+      filter:A.calmScheme?"saturate(0.78)":undefined}}>
+      {!A.noMotion&&[...Array(22)].map((_,i)=><div key={i} style={{position:"absolute",borderRadius:"50%",pointerEvents:"none",
         width:i%6===0?3:1.5,height:i%6===0?3:1.5,background:"#fff",opacity:0.18+(i%5)*0.08,
         top:`${(i*13+5)%60}%`,left:`${(i*17+3)%97}%`,animation:`twinkle ${1.6+i%4}s ease infinite`}}/>)}
       {(streak||0)>=3&&<div style={{position:"absolute",inset:0,pointerEvents:"none",zIndex:2,
@@ -4426,6 +4606,7 @@ function pickHintTarget(q,states){
 function EngineCore({child,name,emoji,subject,world,scene,fetchFn,initialLevel=1,scoreLabel="SCORE",popText="+XP",
   onComplete=()=>{},onQuit=()=>{},onRetry=null,onQResult=null,noCache=false}) {
   const A=useGameA11y();
+  const AS=useAgeStyle();
   // Question bank: AI-generated batches are banked per (game, cohort, level)
   // so repeat plays start instantly. Personal decks (Tricky Ones) skip this.
   const cacheKey=`${name}|${child.yearGroup||""}|${child.country||""}`;
@@ -4550,6 +4731,7 @@ function EngineCore({child,name,emoji,subject,world,scene,fetchFn,initialLevel=1
       <EncourageBanner ok={fx.lastOk} visible={fx.cheer} qIdx={game.qIdx}/>
       {showOverlays&&<ParticleBurst active={fx.burst}/>}
       <ScorePop show={fx.pop} text={popText}/>
+      <StreakPulse streak={game.streak} AS={AS}/>
       <GameHeader name={name} emoji={emoji} score={game.score} lives={game.lives} maxLives={game.maxLives} level={game.lvl}
         onQuit={()=>game.setDone(true)} narrative={world} qIdx={game.qIdx} streak={game.streak} scoreLabel={scoreLabel}/>
       <div style={{position:"relative",zIndex:5}}><MissionTrail qIdx={game.qIdx} score={game.score} accent={world.accent} total={game.missionLen}/></div>
@@ -4757,7 +4939,11 @@ const METEOR_COLS=[{c:"#FF6B81",d:"#B23A50"},{c:"#4D9DF7",d:"#2A62A8"},{c:"#FFB0
 function meteorFallMs(lvl,streak,A,age=8){
   if(A.noTimers||A.noMotion)return Infinity;            // no time pressure
   let base=13000-lvl*550-streak*260;
-  if(age<=6)base+=3500;                                  // early years: gentler clock
+  // Three real tiers, not just "under/over 6": a 9-year-old and a 5-year-old
+  // both deserve a clock tuned to THEM, not lumped into "everyone else".
+  if(age<=6)base+=3500;       // little: generous reading + reaction time
+  else if(age<=9)base+=1000;  // mid: a little breathing room over the raw curve
+  else base-=400;             // big: a touch snappier — meets their reflexes
   if(A.largeTapTargets)base+=2500;                       // dyspraxia: slower
   return Math.max(6500,base);
 }
@@ -4812,6 +4998,7 @@ function MeteorField({opts,lanes,fall,states,locked,onTap,A}){
 }
 function MeteorEngine({child,name,emoji,subject,fetchFn,initialLevel=1,onComplete=()=>{},onQuit=()=>{},onRetry=null,noCache=false}){
   const A=useGameA11y();
+  const AS=useAgeStyle();
   const cacheKey=`${name}|${child.yearGroup||""}|${child.country||""}`;
   const effFetch=useCallback((lvl)=>noCache?fetchFn(lvl):cachedFetch(cacheKey,lvl,fetchFn),[fetchFn,noCache,cacheKey]);
   const littleOne=(child.age||8)<=6;
@@ -4923,6 +5110,7 @@ function MeteorEngine({child,name,emoji,subject,fetchFn,initialLevel=1,onComplet
       <EncourageBanner ok={fx.lastOk} visible={fx.cheer} qIdx={game.qIdx}/>
       {!A.noMotion&&<ParticleBurst active={fx.burst}/>}
       <ScorePop show={fx.pop} text="+ZAP"/>
+      <StreakPulse streak={game.streak} AS={AS}/>
       <GameHeader name={name} emoji={emoji} score={game.score} lives={game.lives} maxLives={game.maxLives} level={game.lvl}
         onQuit={()=>game.setDone(true)} narrative={WORLDS.meteor} qIdx={game.qIdx} streak={game.streak} scoreLabel="ZAPS"/>
       <div style={{position:"relative",zIndex:5}}><MissionTrail qIdx={game.qIdx} score={game.score} accent={WORLDS.meteor.accent} total={game.missionLen}/></div>
@@ -4963,7 +5151,7 @@ function MeteorMaths({child,mode,onComplete,onQuit,onRetry,level=1}) {
     fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit} onRetry={onRetry}/>;
 }
 function WordMeteors({child,mode,onComplete,onQuit,onRetry,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 15 "which word is spelled correctly?" questions for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Options are 4 spellings of the same word, one correct, max 12 chars. Return ONLY JSON: {"questions":[{"q":"Which is spelled correctly?","options":["A) freind","B) friend","C) frend","D) friende"],"correct":"B"}]}`,"Word meteor questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 15 "which word is spelled correctly?" questions for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Options are 4 spellings of the same word, one correct, max 12 chars. ${a11yPromptRules(child)} Return ONLY JSON: {"questions":[{"q":"Which is spelled correctly?","options":["A) freind","B) friend","C) frend","D) friende"],"correct":"B"}]}`,"Word meteor questions."),[child]);
   return <MeteorEngine child={child} name="Word Meteors" emoji="☄️" subject="English"
     fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit} onRetry={onRetry}/>;
 }
@@ -5074,7 +5262,7 @@ function OrderEngine({child,name,emoji,subject,kind,onComplete=()=>{},onQuit=()=
           </button>
         ))}
       </div>
-      {slipped&&<p style={{fontSize:12,fontWeight:800,color:"rgba(255,255,255,0.65)",textAlign:"center",marginTop:12,fontFamily:F}}>One slip — finish the bridge carefully!</p>}
+      {slipped&&<p style={{fontSize:A.largeText?14:12,fontWeight:800,color:"rgba(255,255,255,0.65)",textAlign:"center",marginTop:12,fontFamily:A.dyslexiaFont?FDYS:F}}>One slip — finish the bridge carefully!</p>}
     </GameShell>
   );
 }
@@ -5084,11 +5272,12 @@ function OrderEngine({child,name,emoji,subject,kind,onComplete=()=>{},onQuit=()=
 // Flip cards to find pairs (question↔answer). Working-memory play —
 // nothing like multiple choice, loved from age 4 up.
 // ══════════════════════════════════════════════════════════════════
-function genPairs(kind,lvl=1){
+function genPairs(kind,lvl=1,pairCount=6){
   const L=Math.max(1,Math.min(10,lvl));
+  const n=Math.max(3,Math.min(8,pairCount));
   if(kind==="tables"){
     const seen=new Set();const pairs=[];
-    while(pairs.length<6){
+    while(pairs.length<n){
       const a=_ri(2,Math.min(12,2+L)),b=_ri(2,Math.min(12,3+L));
       const key=`${a}×${b}`;
       if(seen.has(key)||seen.has(`${b}×${a}`))continue;
@@ -5097,7 +5286,7 @@ function genPairs(kind,lvl=1){
     return pairs;
   }
   const EMOJI_WORDS=[["dog","🐶"],["cat","🐱"],["sun","☀️"],["star","⭐"],["fish","🐟"],["tree","🌳"],["apple","🍎"],["moon","🌙"],["car","🚗"],["book","📚"],["frog","🐸"],["cake","🎂"],["ball","⚽"],["bee","🐝"],["boat","⛵"],["king","👑"]];
-  return _shuffle(EMOJI_WORDS).slice(0,6).map(([w,e])=>({a:w,b:e}));
+  return _shuffle(EMOJI_WORDS).slice(0,n).map(([w,e])=>({a:w,b:e}));
 }
 function buildBoard(pairs){
   const cards=[];
@@ -5119,8 +5308,13 @@ function matchFlip(state,card){
 function MatchEngine({child,name,emoji,subject,kind,onComplete=()=>{},onQuit=()=>{},onRetry=null,level=1}){
   const A=useGameA11y();
   const littleOne=(child.age||8)<=6;
+  // Board size is a genuine cognitive-load call (working memory), separate
+  // from curriculum difficulty — a 5-year-old and a confident 5-year-old
+  // both have a smaller working-memory span than an 11-year-old, regardless
+  // of what level they're placed at. 8-year-olds+ get the full challenge.
+  const pairCount=(child.age||8)<=6?4:(child.age||8)<=8?5:6;
   const [lvl]=useState(Math.max(1,level));
-  const [board,setBoard]=useState(()=>buildBoard(genPairs(kind,level)));
+  const [board,setBoard]=useState(()=>buildBoard(genPairs(kind,level,pairCount)));
   const [st,setSt]=useState({open:[],matched:[]});
   const [misses,setMisses]=useState(0);
   const [boards,setBoards]=useState(0);
@@ -5135,11 +5329,11 @@ function MatchEngine({child,name,emoji,subject,kind,onComplete=()=>{},onQuit=()=
     if(ns.hit){
       playSound('correct');haptic('correct');
       setScore(s=>s+1);setSt({open:[],matched:ns.matched});
-      if(ns.matched.length>=6){
+      if(ns.matched.length>=pairCount){
         playSound('levelup');
         setTimeout(()=>{
           setBoards(b=>b+1);
-          setBoard(buildBoard(genPairs(kind,lvl+boards+1)));
+          setBoard(buildBoard(genPairs(kind,lvl+boards+1,pairCount)));
           setSt({open:[],matched:[]});
         },800);
       }
@@ -5166,7 +5360,7 @@ function MatchEngine({child,name,emoji,subject,kind,onComplete=()=>{},onQuit=()=
     <GameShell name={name} emoji={emoji} subject={subject} score={score} maxScore={null}
       round={boards+1} total={null} streak={0} onQuit={()=>setDone(true)} lives={lives} level={lvl+boards}>
       <p style={{fontSize:13,fontWeight:900,color:"rgba(255,255,255,0.8)",textAlign:"center",marginBottom:12,fontFamily:F}}>
-        Find the pairs! Board {boards+1} · {6-st.matched.length} left
+        Find the pairs! Board {boards+1} · {pairCount-st.matched.length} left
       </p>
       <div style={{display:"grid",gridTemplateColumns:A.largeTapTargets?"repeat(3,1fr)":"repeat(4,1fr)",gap:9}}>
         {board.map(card=>{
@@ -5309,6 +5503,13 @@ function FrogJump({child,mode,onComplete=()=>{},onQuit=()=>{},onRetry,level=1}){
   const littleOne=(child.age||8)<=6;
   const [q,setQ]=useState(()=>genLineQ(level));
   const [frogAt,setFrogAt]=useState(0);
+  const [hopping,setHopping]=useState(false);
+  useEffect(()=>{
+    if(frogAt===0)return; // resting at start, no hop to animate
+    setHopping(true);
+    const t=setTimeout(()=>setHopping(false),480);
+    return()=>clearTimeout(t);
+  },[frogAt]);
   const [score,setScore]=useState(0);
   const [streak,setStreak]=useState(0);
   const [lives,setLives]=useState(littleOne?5:3);
@@ -5344,8 +5545,11 @@ function FrogJump({child,mode,onComplete=()=>{},onQuit=()=>{},onRetry,level=1}){
       <div style={{position:"relative",height:56,marginBottom:2}}>
         <div style={{position:"absolute",left:`calc(${pct(frogAt)} - 17px)`,bottom:0,fontSize:30,
           transition:"left 0.5s cubic-bezier(0.34,1.4,0.64,1)",
-          animation:result==="ok"&&!A.noMotion?"jellyPop 0.5s ease":result==="bad"&&!A.noMotion?"wrongShake 0.45s ease":A.noMotion?"none":"floatY 1.6s ease-in-out infinite",
+          animation:result==="ok"&&!A.noMotion?"jellyPop 0.5s ease":result==="bad"&&!A.noMotion?"wrongShake 0.45s ease":
+            hopping&&!A.noMotion?"frogHopArc 0.48s ease-out":A.noMotion?"none":"floatY 1.6s ease-in-out infinite",
           filter:result==="ok"?"drop-shadow(0 0 12px rgba(47,191,113,0.9))":result==="bad"?"drop-shadow(0 0 12px rgba(255,93,115,0.9))":"drop-shadow(0 4px 8px rgba(0,0,0,0.5))"}}>🐸</div>
+        {hopping&&!A.noMotion&&<div style={{position:"absolute",left:`calc(${pct(frogAt)} - 3px)`,bottom:2,width:6,height:3,borderRadius:"50%",
+          background:"rgba(0,0,0,0.18)",animation:"frogShadowSquash 0.48s ease-out"}}/>}
       </div>
       {/* The number line: tappable lily-pad ticks */}
       <div style={{position:"relative",padding:"0 2px"}}>
@@ -5355,7 +5559,7 @@ function FrogJump({child,mode,onComplete=()=>{},onQuit=()=>{},onRetry,level=1}){
             const isTarget=result&&v===q.target;
             return(
               <button key={v} onClick={()=>hop(v)} aria-label={`Jump to ${v}`}
-                style={{width:q.ticks.length>12?26:34,height:q.ticks.length>12?26:34,borderRadius:"50%",border:"none",cursor:"pointer",
+                style={{width:(q.ticks.length>12?26:34)+(A.largeTapTargets?10:0),height:(q.ticks.length>12?26:34)+(A.largeTapTargets?10:0),borderRadius:"50%",border:"none",cursor:"pointer",
                 fontFamily:F,fontSize:q.ticks.length>12?9.5:12,fontWeight:900,padding:0,
                 background:isTarget?"#2FBF71":v===frogAt&&result==="bad"?(A.noRedFeedback?"#64748B":"#E5484D"):"linear-gradient(180deg,#166534,#14532D)",
                 color:"#fff",boxShadow:isTarget?"0 0 14px rgba(47,191,113,0.8)":"0 3px 0 rgba(0,0,0,0.35)",
@@ -5563,7 +5767,7 @@ function RoboRescue({child,mode,onComplete=()=>{},onQuit=()=>{},onRetry,level=1}
   return(
     <GameShell name="Robo Rescue" emoji="🤖" subject="Computing" score={score} maxScore={null}
       round={li+1} total={null} streak={0} onQuit={()=>setDone(true)} lives={lives} level={Math.min(10,1+score)}>
-      <p style={{fontSize:13,fontWeight:900,color:"rgba(255,255,255,0.85)",textAlign:"center",marginBottom:12,fontFamily:F}}>
+      <p style={{fontSize:A.largeText?15:13,fontWeight:900,color:"rgba(255,255,255,0.85)",textAlign:"center",marginBottom:12,fontFamily:A.dyslexiaFont?FDYS:F,letterSpacing:A.dyslexiaFont?"0.04em":undefined}}>
         Write a program to reach the ⭐ — then press RUN!
       </p>
       {/* The grid world */}
@@ -5615,7 +5819,7 @@ function RoboRescue({child,mode,onComplete=()=>{},onQuit=()=>{},onRetry,level=1}
         boxShadow:running?"none":"0 6px 0 #14532D"}}>
         {running?"RUNNING…":msg==="crash"?"↻ DEBUG & RUN AGAIN":"▶ RUN PROGRAM"}
       </button>
-      {msg==="crash"&&<p style={{fontSize:12,fontWeight:800,color:"rgba(255,255,255,0.7)",textAlign:"center",marginTop:10,fontFamily:F}}>Crashed! Find the bug in your program — that's what real coders do.</p>}
+      {msg==="crash"&&<p style={{fontSize:A.largeText?14:12,fontWeight:800,color:"rgba(255,255,255,0.7)",textAlign:"center",marginTop:10,fontFamily:A.dyslexiaFont?FDYS:F}}>Crashed! Find the bug in your program — that's what real coders do.</p>}
     </GameShell>
   );
 }
@@ -5649,12 +5853,13 @@ function MathSprint({child,mode,onComplete,onQuit,onRetry,level=1}) {
   return <RunnerEngine child={child} name="Math Sprint" emoji="🏃" subject="Maths" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit} onRetry={onRetry}/>;
 }
 function SpellingRun({child,mode,onComplete,onQuit,onRetry,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 12 spelling questions ("Which spelling is correct?") for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Options max 14 chars. Return ONLY JSON: {"questions":[{"q":"Which spelling is correct?","options":["A) freind","B) friend","C) frend","D) friende"],"correct":"B"}]}`,"Spelling run questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 12 spelling questions ("Which spelling is correct?") for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Options max 14 chars. ${a11yPromptRules(child)} Return ONLY JSON: {"questions":[{"q":"Which spelling is correct?","options":["A) freind","B) friend","C) frend","D) friende"],"correct":"B"}]}`,"Spelling run questions."),[child]);
   return <RunnerEngine child={child} name="Spelling Run" emoji="🏃‍♀️" subject="English" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit} onRetry={onRetry}/>;
 }
 
 // ── Bottom navigation (referenced by ChildDash, previously undefined)
 function BottomNav({active,onHome,onLearn,onGames,onBadges}) {
+  const AS=useAgeStyle();
   const items=[
     {id:"home",  label:"Home",   emoji:"🏠", fn:onHome},
     {id:"learn", label:"Learn",  emoji:"📚", fn:onLearn},
@@ -5668,8 +5873,8 @@ function BottomNav({active,onHome,onLearn,onGames,onBadges}) {
       {items.map(it=>(
         <button key={it.id} onClick={it.fn} style={{background:"transparent",border:"none",cursor:"pointer",
           fontFamily:F,padding:"4px 14px",borderRadius:14,position:"relative"}}>
-          <p style={{fontSize:21,marginBottom:1,transform:active===it.id?"translateY(-2px) scale(1.12)":"none",transition:"transform 0.2s"}}>{it.emoji}</p>
-          <p style={{fontSize:10,fontWeight:900,color:active===it.id?C.primary:C.muted}}>{it.label}</p>
+          <p style={{fontSize:AS.navIcon,marginBottom:1,transform:active===it.id?"translateY(-2px) scale(1.12)":"none",transition:"transform 0.2s"}}>{it.emoji}</p>
+          <p style={{fontSize:AS.navLabel,fontWeight:900,color:active===it.id?C.primary:C.muted}}>{it.label}</p>
           {active===it.id&&<div style={{position:"absolute",bottom:-2,left:"50%",transform:"translateX(-50%)",width:18,height:3.5,borderRadius:2,background:C.primary}}/>}
         </button>
       ))}
@@ -5736,19 +5941,19 @@ function TimesTableRace({child,mode,onComplete,onQuit,onRetry,level=1}) {
 
 
 function FractionChef({child,mode,onComplete,onQuit,onRetry,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 fractions questions for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options. Return ONLY JSON: {"questions":[{"q":"What is 1/2 of 20?","options":["A) 5","B) 8","C) 10","D) 15"],"correct":"C"}]}`,"Fraction chef questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 fractions questions for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options. ${a11yPromptRules(child)} Return ONLY JSON: {"questions":[{"q":"What is 1/2 of 20?","options":["A) 5","B) 8","C) 10","D) 15"],"correct":"C"}]}`,"Fraction chef questions."),[child]);
   return <CatcherEngine child={child} name="Fraction Chef" emoji="🍕" subject="Maths" color="#EF4444" bg="#FEF2F2" catcherChar="🍕" sceneBg="linear-gradient(180deg,#FEF2F2,#FEE2E2)" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit} onRetry={onRetry}/>;
 }
 
 
 function WordScramble({child,mode,onComplete,onQuit,onRetry,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 spelling, unscrambling words at curriculum Level for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Word Scramble questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 spelling, unscrambling words at curriculum Level for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. ${a11yPromptRules(child)} Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Word Scramble questions."),[child]);
   return <CatcherEngine child={child} name="Word Scramble" emoji="🔤" subject="English" color="#0EA5E9" bg="#F0F9FF" catcherChar="🧺" sceneBg="linear-gradient(180deg,#EEF2FF,#BFDBFE)" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit} onRetry={onRetry}/>;
 }
 
 function SpellingBee({child,mode,onComplete,onQuit,onRetry,level=1}) {
   const game=useLivesGame(
-    useCallback(async(lvl)=>claude(`Generate 10 spelling words for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Return ONLY JSON: {"questions":[{"word":"friend","hint":"A person you play with","sentence":"My ___ came to my house"}]}`,"Spelling bee questions."),[child]),
+    useCallback(async(lvl)=>claude(`Generate 10 spelling words for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. ${a11yPromptRules(child)} Return ONLY JSON: {"questions":[{"word":"friend","hint":"A person you play with","sentence":"My ___ came to my house"}]}`,"Spelling bee questions."),[child]),
     level
   );
   const [input,setInput]=useState("");
@@ -5820,37 +6025,37 @@ function SpellingBee({child,mode,onComplete,onQuit,onRetry,level=1}) {
 
 
 function SentenceBuilder({child,mode,onComplete,onQuit,onRetry,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 grammar, sentence structure, correct word order for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Sentence Builder questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 grammar, sentence structure, correct word order for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. ${a11yPromptRules(child)} Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Sentence Builder questions."),[child]);
   return <ShooterEngine child={child} name="Sentence Builder" emoji="✏️" subject="English" color="#16A34A" bg="#F0FDF4" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit} onRetry={onRetry}/>;
 }
 
 function ScienceSort({child,mode,onComplete,onQuit,onRetry,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 classifying living things, sorting scientific categories for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Science Sort questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 classifying living things, sorting scientific categories for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. ${a11yPromptRules(child)} Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Science Sort questions."),[child]);
   return <ShooterEngine child={child} name="Science Sort" emoji="🔬" subject="Science" color="#16A34A" bg="#F0FDF4" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit} onRetry={onRetry}/>;
 }
 
 function StatesOfMatter({child,mode,onComplete,onQuit,onRetry,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 solid liquid gas properties, states of matter changes for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"States of Matter questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 solid liquid gas properties, states of matter changes for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. ${a11yPromptRules(child)} Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"States of Matter questions."),[child]);
   return <ShooterEngine child={child} name="States of Matter" emoji="💧" subject="Science" color="#0EA5E9" bg="#F0F9FF" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit} onRetry={onRetry}/>;
 }
 
 function PlanetPatrol({child,mode,onComplete,onQuit,onRetry,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 Earth and space science questions for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options. Return ONLY JSON: {"questions":[{"q":"Largest planet?","options":["Saturn","Jupiter","Mars","Earth"],"correct":"Jupiter"}]}`,"Planet patrol questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 Earth and space science questions for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options. ${a11yPromptRules(child)} Return ONLY JSON: {"questions":[{"q":"Largest planet?","options":["Saturn","Jupiter","Mars","Earth"],"correct":"Jupiter"}]}`,"Planet patrol questions."),[child]);
   return <SpaceExplorer child={child} name="Planet Patrol" emoji="🪐" subject="Science" color="#7C3AED" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit} onRetry={onRetry}/>;
 }
 
 function AlgorithmSort({child,mode,onComplete,onQuit,onRetry,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 computational thinking, algorithm sequencing, order of steps for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Algorithm Sort questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 computational thinking, algorithm sequencing, order of steps for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. ${a11yPromptRules(child)} Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Algorithm Sort questions."),[child]);
   return <ShooterEngine child={child} name="Algorithm Sort" emoji="🔢" subject="Computing" color="#7C3AED" bg="#F5F3FF" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit} onRetry={onRetry}/>;
 }
 
 function DebugDetective({child,mode,onComplete,onQuit,onRetry,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 debugging programs, finding errors in code, fixing sequences for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Debug Detective questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 debugging programs, finding errors in code, fixing sequences for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. ${a11yPromptRules(child)} Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Debug Detective questions."),[child]);
   return <ShooterEngine child={child} name="Debug Detective" emoji="🔍" subject="Computing" color="#374151" bg="#F9FAFB" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit} onRetry={onRetry}/>;
 }
 
 function WordMatch({child,mode,onComplete,onQuit,onRetry,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 vocabulary matching, word definitions, synonyms and antonyms for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Word Match questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 vocabulary matching, word definitions, synonyms and antonyms for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. ${a11yPromptRules(child)} Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Word Match questions."),[child]);
   return <ShooterEngine child={child} name="Word Match" emoji="🌐" subject="English" color="#0EA5E9" bg="#F0F9FF" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit} onRetry={onRetry}/>;
 }
 
@@ -5874,7 +6079,7 @@ function MathFishing({child,mode,onComplete,onQuit,onRetry,level=1}) {
     if(fetching.current)return;
     fetching.current=true;
     const t=setTimeout(()=>{setLoadErr(true);setLoading(false);},12000);
-    const d=await claude(`Generate 8 maths equations for age ${child.age}, ${child.country||"UK"} curriculum, Level ${l}. Each has correct answer and 3 wrong close answers. Return ONLY JSON: {"questions":[{"eq":"3+4=","correct":7,"wrong":[5,6,8]}]}`,"Fishing questions.");
+    const d=await claude(`Generate 8 maths equations for age ${child.age}, ${child.country||"UK"} curriculum, Level ${l}. Each has correct answer and 3 wrong close answers. ${a11yPromptRules(child)} Return ONLY JSON: {"questions":[{"eq":"3+4=","correct":7,"wrong":[5,6,8]}]}`,"Fishing questions.");
     clearTimeout(t);
     if(d?.questions?.length)setQs(prev=>[...prev,...d.questions]);
     else setLoadErr(true);
@@ -5966,7 +6171,7 @@ function MathFishing({child,mode,onComplete,onQuit,onRetry,level=1}) {
 
 function SpaceBlaster({child,mode,onComplete,onQuit,onRetry,level=1}) {
   const game=useLivesGame(
-    useCallback(async(lvl)=>claude(`Generate 10 maths questions for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Each has a question and exactly 4 answer options (one correct). Return ONLY JSON: {"questions":[{"q":"5×4=","options":["12","15","20","18"],"correct":"20"}]}`,"Space blaster questions."),[child]),
+    useCallback(async(lvl)=>claude(`Generate 10 maths questions for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Each has a question and exactly 4 answer options (one correct). ${a11yPromptRules(child)} Return ONLY JSON: {"questions":[{"q":"5×4=","options":["12","15","20","18"],"correct":"20"}]}`,"Space blaster questions."),[child]),
     level
   );
   const [shipX,setShipX]=useState(50);
@@ -6049,13 +6254,13 @@ function SpaceBlaster({child,mode,onComplete,onQuit,onRetry,level=1}) {
 
 
 function GemHunter({child,mode,onComplete,onQuit,onRetry,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 vocabulary, spelling at curriculum Level for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Gem Hunter questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 vocabulary, spelling at curriculum Level for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. ${a11yPromptRules(child)} Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Gem Hunter questions."),[child]);
   return <CatcherEngine child={child} name="Gem Hunter" emoji="💎" subject="English" color="#4F46E5" bg="#EEF2FF" catcherChar="💎" sceneBg="linear-gradient(180deg,#78350F,#92400E)" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit} onRetry={onRetry}/>;
 }
 
 function WordRunner({child,mode,onComplete,onQuit,onRetry,level=1}) {
   const game=useLivesGame(
-    useCallback(async(lvl)=>claude(`Generate 10 grammar questions for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Instructions like "Catch the VERB!" — 4 word options, 1 correct. Return ONLY JSON: {"questions":[{"instruction":"Catch the VERB!","options":["run","happy","quickly","big"],"correct":"run"}]}`,"Word runner questions."),[child]),
+    useCallback(async(lvl)=>claude(`Generate 10 grammar questions for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Instructions like "Catch the VERB!" — 4 word options, 1 correct. ${a11yPromptRules(child)} Return ONLY JSON: {"questions":[{"instruction":"Catch the VERB!","options":["run","happy","quickly","big"],"correct":"run"}]}`,"Word runner questions."),[child]),
     level
   );
   const [falling,setFalling]=useState([]);
@@ -6123,18 +6328,18 @@ function WordRunner({child,mode,onComplete,onQuit,onRetry,level=1}) {
 
 
 function VolcanoEscape({child,mode,onComplete,onQuit,onRetry,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 science questions with volcano escape theme for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Volcano Escape questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 science questions with volcano escape theme for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. ${a11yPromptRules(child)} Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Volcano Escape questions."),[child]);
   return <RunnerEngine child={child} name="Volcano Escape" emoji="🌋" subject="Science" color="#EF4444" bg="#FEF2F2" runnerChar="🧗" sceneBg="linear-gradient(180deg,#FEF2F2,#FCA5A5 50%,#7F1D1D)" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit} onRetry={onRetry}/>;
 }
 
 function TreasureMap({child,mode,onComplete,onQuit,onRetry,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 history and geography treasure hunt questions for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Treasure Hunt questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 history and geography treasure hunt questions for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. ${a11yPromptRules(child)} Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Treasure Hunt questions."),[child]);
   return <RunnerEngine child={child} name="Treasure Hunt" emoji="🗺️" subject="History" color="#D97706" bg="#FFFBEB" runnerChar="🏴‍☠️" sceneBg="linear-gradient(180deg,#FFFBEB,#FDE68A 50%,#0369A1)" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit} onRetry={onRetry}/>;
 }
 
 function GrandPrix({child,mode,onComplete,onQuit,onRetry,level=1}) {
   const game=useLivesGame(
-    useCallback(async(lvl)=>claude(`Generate 10 measurement questions for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options. Return ONLY JSON: {"questions":[{"q":"cm in 1m?","options":["A) 10","B) 100","C) 1000","D) 50"],"correct":"B"}]}`,"Grand prix questions."),[child]),
+    useCallback(async(lvl)=>claude(`Generate 10 measurement questions for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options. ${a11yPromptRules(child)} Return ONLY JSON: {"questions":[{"q":"cm in 1m?","options":["A) 10","B) 100","C) 1000","D) 50"],"correct":"B"}]}`,"Grand prix questions."),[child]),
     level
   );
   const [pos,setPos]=useState(8);
@@ -6178,22 +6383,22 @@ function GrandPrix({child,mode,onComplete,onQuit,onRetry,level=1}) {
 
 
 function CandyShop({child,mode,onComplete,onQuit,onRetry,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 money/financial maths questions for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Prices, change, totals. Short option answers. Return ONLY JSON: {"questions":[{"q":"3 sweets at 20p each?","options":["50p","60p","70p","80p"],"correct":"60p"}]}`,"Candy shop questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 money/financial maths questions for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Prices, change, totals. Short option answers. ${a11yPromptRules(child)} Return ONLY JSON: {"questions":[{"q":"3 sweets at 20p each?","options":["50p","60p","70p","80p"],"correct":"60p"}]}`,"Candy shop questions."),[child]);
   return <CatcherEngine child={child} name="Candy Shop" emoji="🍭" subject="Maths" color="#EC4899" bg="#FDF2F8" fetchFn={fetchFn} catcherChar="🛍️" sceneBg="linear-gradient(180deg,#FDF2F8,#FCE7F3)" initialLevel={level} onComplete={onComplete} onQuit={onQuit} onRetry={onRetry}/>;
 }
 
 function BasketballMaths({child,mode,onComplete,onQuit,onRetry,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 statistics, data, averages, charts for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Basketball Maths questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 statistics, data, averages, charts for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. ${a11yPromptRules(child)} Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Basketball Maths questions."),[child]);
   return <CatcherEngine child={child} name="Basketball Maths" emoji="🏀" subject="Maths" color="#EA580C" bg="#FFF7ED" catcherChar="🏀" sceneBg="linear-gradient(180deg,#1E3A5F,#1E40AF)" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit} onRetry={onRetry}/>;
 }
 
 function TrainGame({child,mode,onComplete,onQuit,onRetry,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 number sequences, place value, patterns for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Number Train questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 number sequences, place value, patterns for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. ${a11yPromptRules(child)} Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Number Train questions."),[child]);
   return <SpaceExplorer child={child} name="Number Train" emoji="🚂" subject="Maths" color="#374151" bg="#F9FAFB" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit} onRetry={onRetry}/>;
 }
 
 function SupermarketMath({child,mode,onComplete,onQuit,onRetry,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 money, prices, change, financial maths for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Supermarket Sweep questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 money, prices, change, financial maths for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. ${a11yPromptRules(child)} Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Supermarket Sweep questions."),[child]);
   return <CatcherEngine child={child} name="Supermarket Sweep" emoji="🛒" subject="Maths" color="#16A34A" bg="#F0FDF4" catcherChar="🛒" sceneBg="linear-gradient(180deg,#F0FDF4,#DCFCE7)" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit} onRetry={onRetry}/>;
 }
 
@@ -6203,90 +6408,90 @@ function RocketMaths({child,mode,onComplete,onQuit,onRetry,level=1}) {
 }
 
 function SpellBingo({child,mode,onComplete,onQuit,onRetry,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 spelling at curriculum Level for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Spelling Bingo questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 spelling at curriculum Level for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. ${a11yPromptRules(child)} Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Spelling Bingo questions."),[child]);
   return <CatcherEngine child={child} name="Spelling Bingo" emoji="🎱" subject="English" color="#EC4899" bg="#FDF2F8" catcherChar="🎰" sceneBg="linear-gradient(180deg,#FDF2F8,#FCE7F3)" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit} onRetry={onRetry}/>;
 }
 
 function WordShake({child,mode,onComplete,onQuit,onRetry,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 vocabulary, word building for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"WordShake questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 vocabulary, word building for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. ${a11yPromptRules(child)} Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"WordShake questions."),[child]);
   return <SpaceExplorer child={child} name="WordShake" emoji="🎲" subject="English" color="#4F46E5" bg="#EEF2FF" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit} onRetry={onRetry}/>;
 }
 
 function SpotDifference({child,mode,onComplete,onQuit,onRetry,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 reading comprehension for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Spot the Difference questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 reading comprehension for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. ${a11yPromptRules(child)} Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Spot the Difference questions."),[child]);
   return <SpaceExplorer child={child} name="Spot the Difference" emoji="🔍" subject="English" color="#DC2626" bg="#FEF2F2" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit} onRetry={onRetry}/>;
 }
 
 function PuzzleWords({child,mode,onComplete,onQuit,onRetry,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 vocabulary, crossword clues for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Word Puzzle questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 vocabulary, crossword clues for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. ${a11yPromptRules(child)} Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Word Puzzle questions."),[child]);
   return <SpaceExplorer child={child} name="Word Puzzle" emoji="🧩" subject="English" color="#374151" bg="#F9FAFB" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit} onRetry={onRetry}/>;
 }
 
 function SchoolRun({child,mode,onComplete,onQuit,onRetry,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 English grammar/writing questions for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options. Return ONLY JSON: {"questions":[{"q":"Best word: She ___ to school.","options":["runned","ran","ranned","runned"],"correct":"ran"}]}`,"School run questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 English grammar/writing questions for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options. ${a11yPromptRules(child)} Return ONLY JSON: {"questions":[{"q":"Best word: She ___ to school.","options":["runned","ran","ranned","runned"],"correct":"ran"}]}`,"School run questions."),[child]);
   return <RunnerEngine child={child} name="School Run" emoji="🏃" subject="English" color="#0EA5E9" fetchFn={fetchFn} runnerChar="🏃" sceneBg="linear-gradient(180deg,#BAE6FD,#7DD3FC 50%,#4ADE80 50%)" initialLevel={level} onComplete={onComplete} onQuit={onQuit} onRetry={onRetry}/>;
 }
 
 function MemoryWords({child,mode,onComplete,onQuit,onRetry,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 vocabulary/reading questions for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options. Return ONLY JSON: {"questions":[{"q":"What does 'habitat' mean?","options":["A) Food","B) Home of animal","C) Weather","D) Plant"],"correct":"B"}]}`,"Memory words questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 vocabulary/reading questions for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options. ${a11yPromptRules(child)} Return ONLY JSON: {"questions":[{"q":"What does 'habitat' mean?","options":["A) Food","B) Home of animal","C) Weather","D) Plant"],"correct":"B"}]}`,"Memory words questions."),[child]);
   return <SpaceExplorer child={child} name="Memory Match" emoji="🧠" subject="English" color="#0EA5E9" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit} onRetry={onRetry}/>;
 }
 
 
 function DinosaurGame({child,mode,onComplete,onQuit,onRetry,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 dinosaurs, fossils, evolution, prehistoric life for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Dino Dig questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 dinosaurs, fossils, evolution, prehistoric life for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. ${a11yPromptRules(child)} Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Dino Dig questions."),[child]);
   return <CatcherEngine child={child} name="Dino Dig" emoji="🦕" subject="Science" color="#D97706" bg="#FFFBEB" catcherChar="⛏️" sceneBg="linear-gradient(180deg,#FFFBEB,#FEF3C7)" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit} onRetry={onRetry}/>;
 }
 
 function JungleExplorer({child,mode,onComplete,onQuit,onRetry,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 jungle living things, habitats, food chains for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Jungle Explorer questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 jungle living things, habitats, food chains for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. ${a11yPromptRules(child)} Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Jungle Explorer questions."),[child]);
   return <CatcherEngine child={child} name="Jungle Explorer" emoji="🌴" subject="Science" color="#16A34A" bg="#F0FDF4" catcherChar="🔭" sceneBg="linear-gradient(180deg,#F0FDF4,#DCFCE7)" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit} onRetry={onRetry}/>;
 }
 
 function OceanGame({child,mode,onComplete,onQuit,onRetry,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 ocean creatures, marine habitats, food chains for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Ocean Adventure questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 ocean creatures, marine habitats, food chains for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. ${a11yPromptRules(child)} Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Ocean Adventure questions."),[child]);
   return <CatcherEngine child={child} name="Ocean Adventure" emoji="🌊" subject="Science" color="#0369A1" bg="#F0F9FF" catcherChar="🤿" sceneBg="linear-gradient(180deg,#BAE6FD,#0EA5E9 60%,#0369A1)" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit} onRetry={onRetry}/>;
 }
 
 function BubbleBuster({child,mode,onComplete,onQuit,onRetry,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 materials science questions for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Properties, states, changes. Short options. Return ONLY JSON: {"questions":[{"q":"Which is waterproof?","options":["Paper","Rubber","Wood","Cotton"],"correct":"Rubber"}]}`,"Bubble buster questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 materials science questions for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Properties, states, changes. Short options. ${a11yPromptRules(child)} Return ONLY JSON: {"questions":[{"q":"Which is waterproof?","options":["Paper","Rubber","Wood","Cotton"],"correct":"Rubber"}]}`,"Bubble buster questions."),[child]);
   return <ShooterEngine child={child} name="Bubble Buster" emoji="🫧" subject="Science" color="#0EA5E9" bg="#F0F9FF" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit} onRetry={onRetry}/>;
 }
 
 function ColourScience({child,mode,onComplete,onQuit,onRetry,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 light and colour science questions for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short option answers. Return ONLY JSON: {"questions":[{"q":"Red + Blue light =","options":["Green","Purple","Orange","Yellow"],"correct":"Purple"}]}`,"Colour science questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 light and colour science questions for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short option answers. ${a11yPromptRules(child)} Return ONLY JSON: {"questions":[{"q":"Red + Blue light =","options":["Green","Purple","Orange","Yellow"],"correct":"Purple"}]}`,"Colour science questions."),[child]);
   return <CatcherEngine child={child} name="Colour Lab" emoji="🎨" subject="Science" color="#7C3AED" bg="#F5F3FF" fetchFn={fetchFn} catcherChar="🎨" sceneBg="linear-gradient(180deg,#FDF4FF,#FAE8FF)" initialLevel={level} onComplete={onComplete} onQuit={onQuit} onRetry={onRetry}/>;
 }
 
 function AstronautGame({child,mode,onComplete,onQuit,onRetry,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 Earth and space science questions for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options. Return ONLY JSON: {"questions":[{"q":"Earth orbits sun in?","options":["24hrs","28 days","365 days","100 yrs"],"correct":"365 days"}]}`,"Astronaut training questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 Earth and space science questions for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options. ${a11yPromptRules(child)} Return ONLY JSON: {"questions":[{"q":"Earth orbits sun in?","options":["24hrs","28 days","365 days","100 yrs"],"correct":"365 days"}]}`,"Astronaut training questions."),[child]);
   return <SpaceExplorer child={child} name="Astronaut Training" emoji="👨‍🚀" subject="Science" color="#1E40AF" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit} onRetry={onRetry}/>;
 }
 
 function PyramidsGame({child,mode,onComplete,onQuit,onRetry,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 ancient civilisations Egypt Greece Rome for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Pyramid Builder questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 ancient civilisations Egypt Greece Rome for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. ${a11yPromptRules(child)} Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Pyramid Builder questions."),[child]);
   return <RunnerEngine child={child} name="Pyramid Builder" emoji="🏛️" subject="History" color="#D97706" bg="#FFFBEB" runnerChar="🏃" sceneBg="linear-gradient(180deg,#FEF3C7,#FDE68A 50%,#D97706)" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit} onRetry={onRetry}/>;
 }
 
 function InspectorGame({child,mode,onComplete,onQuit,onRetry,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 historical sources, chronology, cause and effect for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"History Inspector questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 historical sources, chronology, cause and effect for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. ${a11yPromptRules(child)} Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"History Inspector questions."),[child]);
   return <RunnerEngine child={child} name="History Inspector" emoji="🕵️" subject="History" color="#374151" bg="#F9FAFB" runnerChar="🕵️" sceneBg="linear-gradient(180deg,#F9FAFB,#E5E7EB 50%,#9CA3AF)" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit} onRetry={onRetry}/>;
 }
 
 function HideSeekHistory({child,mode,onComplete,onQuit,onRetry,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 significant historical figures from national history for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"History Hide & Seek questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 significant historical figures from national history for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. ${a11yPromptRules(child)} Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"History Hide & Seek questions."),[child]);
   return <SpaceExplorer child={child} name="History Hide & Seek" emoji="🫣" subject="History" color="#4F46E5" bg="#EEF2FF" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit} onRetry={onRetry}/>;
 }
 
 function TenableGame({child,mode,onComplete,onQuit,onRetry,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 world history facts and categories for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Tenable Challenge questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 world history facts and categories for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. ${a11yPromptRules(child)} Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Tenable Challenge questions."),[child]);
   return <SpaceExplorer child={child} name="Tenable Challenge" emoji="📋" subject="History" color="#1E40AF" bg="#EFF6FF" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit} onRetry={onRetry}/>;
 }
 
 function FootballHistory({child,mode,onComplete,onQuit,onRetry,level=1}) {
   const country=child.country||"UK";
   const game=useLivesGame(
-    useCallback(async(lvl)=>claude(`Generate 10 ${country==="US"?"American":country==="CA"?"Canadian":"British"} history questions for age ${child.age}, ${country} curriculum, Level ${lvl}. Short options. Return ONLY JSON: {"questions":[{"q":"WW2 ended in?","options":["A) 1943","B) 1944","C) 1945","D) 1946"],"correct":"C"}]}`,"Penalty shootout questions."),[child]),
+    useCallback(async(lvl)=>claude(`Generate 10 ${country==="US"?"American":country==="CA"?"Canadian":"British"} history questions for age ${child.age}, ${country} curriculum, Level ${lvl}. Short options. ${a11yPromptRules(child)} Return ONLY JSON: {"questions":[{"q":"WW2 ended in?","options":["A) 1943","B) 1944","C) 1945","D) 1946"],"correct":"C"}]}`,"Penalty shootout questions."),[child]),
     level
   );
   const [ballPos,setBallPos]=useState({x:50,y:80});
@@ -6330,88 +6535,88 @@ function FootballHistory({child,mode,onComplete,onQuit,onRetry,level=1}) {
 
 
 function WorldMapGame({child,mode,onComplete,onQuit,onRetry,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 world geography, countries, capitals, continents for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"World Map Quest questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 world geography, countries, capitals, continents for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. ${a11yPromptRules(child)} Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"World Map Quest questions."),[child]);
   return <RunnerEngine child={child} name="World Map Quest" emoji="🌍" subject="Geography" color="#0369A1" bg="#F0F9FF" runnerChar="🌍" sceneBg="linear-gradient(180deg,#F0F9FF,#BAE6FD 50%,#0EA5E9)" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit} onRetry={onRetry}/>;
 }
 
 function GeographyGuesser({child,mode,onComplete,onQuit,onRetry,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 identifying places from clues for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Geography Guesser questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 identifying places from clues for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. ${a11yPromptRules(child)} Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Geography Guesser questions."),[child]);
   return <RunnerEngine child={child} name="Geography Guesser" emoji="📍" subject="Geography" color="#16A34A" bg="#F0FDF4" runnerChar="🗺️" sceneBg="linear-gradient(180deg,#F0FDF4,#DCFCE7 50%,#16A34A)" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit} onRetry={onRetry}/>;
 }
 
 function SkiingGeo({child,mode,onComplete,onQuit,onRetry,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 physical geography questions for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options. Return ONLY JSON: {"questions":[{"q":"Rock worn by rivers?","options":["Deposition","Erosion","Flooding","Sinking"],"correct":"Erosion"}]}`,"Ski slope questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 physical geography questions for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options. ${a11yPromptRules(child)} Return ONLY JSON: {"questions":[{"q":"Rock worn by rivers?","options":["Deposition","Erosion","Flooding","Sinking"],"correct":"Erosion"}]}`,"Ski slope questions."),[child]);
   return <RunnerEngine child={child} name="Ski Slope Race" emoji="⛷️" subject="Geography" color="#3B82F6" fetchFn={fetchFn} runnerChar="⛷️" sceneBg="linear-gradient(180deg,#EFF6FF,#DBEAFE 50%,#fff 50%)" initialLevel={level} onComplete={onComplete} onQuit={onQuit} onRetry={onRetry}/>;
 }
 
 function SkateboardGeo({child,mode,onComplete,onQuit,onRetry,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 human geography questions for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options. Return ONLY JSON: {"questions":[{"q":"People move city to country?","options":["Urbanisation","Ruralisation","Migration","Emigration"],"correct":"Ruralisation"}]}`,"Skatepark questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 human geography questions for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options. ${a11yPromptRules(child)} Return ONLY JSON: {"questions":[{"q":"People move city to country?","options":["Urbanisation","Ruralisation","Migration","Emigration"],"correct":"Ruralisation"}]}`,"Skatepark questions."),[child]);
   return <RunnerEngine child={child} name="Skatepark City" emoji="🛹" subject="Geography" color="#6366F1" fetchFn={fetchFn} runnerChar="🛹" sceneBg="linear-gradient(180deg,#1F2937,#374151 50%,#4B5563 50%)" initialLevel={level} onComplete={onComplete} onQuit={onQuit} onRetry={onRetry}/>;
 }
 
 function PirateGeo({child,mode,onComplete,onQuit,onRetry,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 map skills, compass, navigation for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Pirate Voyage questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 map skills, compass, navigation for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. ${a11yPromptRules(child)} Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Pirate Voyage questions."),[child]);
   return <RunnerEngine child={child} name="Pirate Voyage" emoji="🏴‍☠️" subject="Geography" color="#1E40AF" bg="#EFF6FF" runnerChar="⛵" sceneBg="linear-gradient(180deg,#BAE6FD,#0EA5E9 50%,#0369A1)" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit} onRetry={onRetry}/>;
 }
 
 function BusGame({child,mode,onComplete,onQuit,onRetry,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 environmental geography questions for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options. Return ONLY JSON: {"questions":[{"q":"Energy from the sun?","options":["Wind","Solar","Tidal","Nuclear"],"correct":"Solar"}]}`,"Eco bus questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 environmental geography questions for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options. ${a11yPromptRules(child)} Return ONLY JSON: {"questions":[{"q":"Energy from the sun?","options":["Wind","Solar","Tidal","Nuclear"],"correct":"Solar"}]}`,"Eco bus questions."),[child]);
   return <RunnerEngine child={child} name="Eco Bus Driver" emoji="🚌" subject="Geography" color="#16A34A" fetchFn={fetchFn} runnerChar="🚌" sceneBg="linear-gradient(180deg,#F0FDF4,#DCFCE7 50%,#86EFAC 50%)" initialLevel={level} onComplete={onComplete} onQuit={onQuit} onRetry={onRetry}/>;
 }
 
 function CodeGame({child,mode,onComplete,onQuit,onRetry,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 binary, data, computing concepts for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Code Breaker questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 binary, data, computing concepts for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. ${a11yPromptRules(child)} Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Code Breaker questions."),[child]);
   return <SpaceExplorer child={child} name="Code Breaker" emoji="🔐" subject="Computing" color="#16A34A" bg="#F0FDF4" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit} onRetry={onRetry}/>;
 }
 
 function FlippingFood({child,mode,onComplete,onQuit,onRetry,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 algorithms, sequences, computational thinking for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Recipe Robot questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 algorithms, sequences, computational thinking for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. ${a11yPromptRules(child)} Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Recipe Robot questions."),[child]);
   return <SpaceExplorer child={child} name="Recipe Robot" emoji="🍳" subject="Computing" color="#F59E0B" bg="#FFFBEB" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit} onRetry={onRetry}/>;
 }
 
 function MemoryComputer({child,mode,onComplete,onQuit,onRetry,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 computing terms, networks, hardware for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Computer Memory questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 computing terms, networks, hardware for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. ${a11yPromptRules(child)} Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Computer Memory questions."),[child]);
   return <SpaceExplorer child={child} name="Computer Memory" emoji="💾" subject="Computing" color="#4F46E5" bg="#EEF2FF" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit} onRetry={onRetry}/>;
 }
 
 function ShapeShooter({child,mode,onComplete,onQuit,onRetry,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 geometry questions for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Shapes, angles, symmetry. Options as short labels. Return ONLY JSON: {"questions":[{"q":"Sides of a hexagon?","options":["4","5","6","7"],"correct":"6"}]}`,"Shape shooter questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 geometry questions for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Shapes, angles, symmetry. Options as short labels. ${a11yPromptRules(child)} Return ONLY JSON: {"questions":[{"q":"Sides of a hexagon?","options":["4","5","6","7"],"correct":"6"}]}`,"Shape shooter questions."),[child]);
   return <ShooterEngine child={child} name="Shape Shooter" emoji="📐" subject="Maths" color="#7C3AED" bg="#F5F3FF" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit} onRetry={onRetry}/>;
 }
 
 function CoordinateQuest({child,mode,onComplete,onQuit,onRetry,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 coordinates, position, translation for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Coordinate Quest questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 coordinates, position, translation for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. ${a11yPromptRules(child)} Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Coordinate Quest questions."),[child]);
   return <SpaceExplorer child={child} name="Coordinate Quest" emoji="🧭" subject="Maths" color="#4F46E5" bg="#EEF2FF" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit} onRetry={onRetry}/>;
 }
 
 function RatioRecipe({child,mode,onComplete,onQuit,onRetry,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 ratio, proportion, scaling for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Ratio Kitchen questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 ratio, proportion, scaling for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. ${a11yPromptRules(child)} Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Ratio Kitchen questions."),[child]);
   return <SpaceExplorer child={child} name="Ratio Kitchen" emoji="⚖️" subject="Maths" color="#F59E0B" bg="#FFFBEB" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit} onRetry={onRetry}/>;
 }
 
 function PoetrySlam({child,mode,onComplete,onQuit,onRetry,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 poetry, rhyme, poetic devices for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Poetry Slam questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 poetry, rhyme, poetic devices for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. ${a11yPromptRules(child)} Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Poetry Slam questions."),[child]);
   return <SpaceExplorer child={child} name="Poetry Slam" emoji="🎤" subject="English" color="#7C3AED" bg="#F5F3FF" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit} onRetry={onRetry}/>;
 }
 
 function MediaDetective({child,mode,onComplete,onQuit,onRetry,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 media literacy, fact vs opinion for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Media Detective questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 media literacy, fact vs opinion for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. ${a11yPromptRules(child)} Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Media Detective questions."),[child]);
   return <SpaceExplorer child={child} name="Media Detective" emoji="📱" subject="English" color="#0EA5E9" bg="#F0F9FF" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit} onRetry={onRetry}/>;
 }
 
 function SeasonsGame({child,mode,onComplete,onQuit,onRetry,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 seasons and weather science questions for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short option answers. Return ONLY JSON: {"questions":[{"q":"Leaves fall in?","options":["Spring","Summer","Autumn","Winter"],"correct":"Autumn"}]}`,"Seasons game questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 seasons and weather science questions for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short option answers. ${a11yPromptRules(child)} Return ONLY JSON: {"questions":[{"q":"Leaves fall in?","options":["Spring","Summer","Autumn","Winter"],"correct":"Autumn"}]}`,"Seasons game questions."),[child]);
   return <CatcherEngine child={child} name="Seasons Explorer" emoji="🌤️" subject="Science" color="#F59E0B" bg="#FFFBEB" fetchFn={fetchFn} catcherChar="☂️" sceneBg="linear-gradient(180deg,#FEF9C3,#FEF3C7)" initialLevel={level} onComplete={onComplete} onQuit={onQuit} onRetry={onRetry}/>;
 }
 
 function SoundWaves({child,mode,onComplete,onQuit,onRetry,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 sound, vibrations, pitch, volume for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Sound Waves questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 sound, vibrations, pitch, volume for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. ${a11yPromptRules(child)} Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Sound Waves questions."),[child]);
   return <SpaceExplorer child={child} name="Sound Waves" emoji="🎵" subject="Science" color="#1E40AF" bg="#EFF6FF" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit} onRetry={onRetry}/>;
 }
 
 function CircuitBuilder({child,mode,onComplete,onQuit,onRetry,level=1}) {
   const game=useLivesGame(
-    useCallback(async(lvl)=>claude(`Generate 10 electricity and circuits science questions for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options. Return ONLY JSON: {"questions":[{"q":"Which conducts electricity?","options":["A) Plastic","B) Wood","C) Copper","D) Rubber"],"correct":"C"}]}`,"Circuit builder questions."),[child]),
+    useCallback(async(lvl)=>claude(`Generate 10 electricity and circuits science questions for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options. ${a11yPromptRules(child)} Return ONLY JSON: {"questions":[{"q":"Which conducts electricity?","options":["A) Plastic","B) Wood","C) Copper","D) Rubber"],"correct":"C"}]}`,"Circuit builder questions."),[child]),
     level
   );
   const [sel,setSel]=useState(null);const [ans,setAns]=useState(false);
@@ -6453,28 +6658,28 @@ function CircuitBuilder({child,mode,onComplete,onQuit,onRetry,level=1}) {
 
 
 function ChemistryLab({child,mode,onComplete,onQuit,onRetry,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 materials, reversible and irreversible changes for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Chemistry Lab questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 materials, reversible and irreversible changes for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. ${a11yPromptRules(child)} Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Chemistry Lab questions."),[child]);
   return <SpaceExplorer child={child} name="Chemistry Lab" emoji="🧫" subject="Science" color="#7C3AED" bg="#F5F3FF" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit} onRetry={onRetry}/>;
 }
 
 function TimeMachine({child,mode,onComplete,onQuit,onRetry,level=1}) {
   const country=child.country||"UK";
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 history questions about significant past events for age ${child.age}, ${country} curriculum, Level ${lvl}. Short options. Return ONLY JSON: {"questions":[{"q":"Great Fire of London?","options":["1466","1566","1666","1766"],"correct":"1666"}]}`,"Time machine questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 history questions about significant past events for age ${child.age}, ${country} curriculum, Level ${lvl}. Short options. ${a11yPromptRules(child)} Return ONLY JSON: {"questions":[{"q":"Great Fire of London?","options":["1466","1566","1666","1766"],"correct":"1666"}]}`,"Time machine questions."),[child]);
   return <SpaceExplorer child={child} name="Time Machine" emoji="⏰" subject="History" color="#4F46E5" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit} onRetry={onRetry}/>;
 }
 
 function LocalHero({child,mode,onComplete,onQuit,onRetry,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 local and community history for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Local Hero Quest questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 local and community history for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. ${a11yPromptRules(child)} Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Local Hero Quest questions."),[child]);
   return <SpaceExplorer child={child} name="Local Hero Quest" emoji="🏘️" subject="History" color="#16A34A" bg="#F0FDF4" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit} onRetry={onRetry}/>;
 }
 
 function SafetyShield({child,mode,onComplete,onQuit,onRetry,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 e-safety questions for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Online safety, privacy, cyberbullying. Short options. Return ONLY JSON: {"questions":[{"q":"Keep private online?","options":["Address","Name","Opinion","Hobby"],"correct":"Address"}]}`,"Safety shield questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 e-safety questions for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Online safety, privacy, cyberbullying. Short options. ${a11yPromptRules(child)} Return ONLY JSON: {"questions":[{"q":"Keep private online?","options":["Address","Name","Opinion","Hobby"],"correct":"Address"}]}`,"Safety shield questions."),[child]);
   return <ShooterEngine child={child} name="Safety Shield" emoji="🛡️" subject="Computing" color="#1E40AF" bg="#EFF6FF" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit} onRetry={onRetry}/>;
 }
 
 function CreativeStudio({child,mode,onComplete,onQuit,onRetry,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 creative computing, digital content for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Creative Studio questions."),[child]);
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 creative computing, digital content for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. ${a11yPromptRules(child)} Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Creative Studio questions."),[child]);
   return <SpaceExplorer child={child} name="Creative Studio" emoji="🎨" subject="Computing" color="#EC4899" bg="#FDF2F8" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit} onRetry={onRetry}/>;
 }
 
@@ -6840,6 +7045,27 @@ function useA11y(child) {
 }
 
 // ── A11y delivery: context for components + live gate for sound/speech ──
+// ── AGE TIER — the whole app adapts its feel to who's using it ─────
+// Little ones (4-6) need big, bouncy, emoji-forward, high-celebration UI.
+// Middles (7-9) get today's balanced default. Big kids (10-11) get a
+// sleeker, less babyish, more "grown up game" treatment — over-the-top
+// confetti and giant rounded buttons read as childish to an 11-year-old
+// and can actively put them off the app.
+function getAgeTier(age){
+  const a=age||8;
+  if(a<=6)return "little";
+  if(a<=9)return "mid";
+  return "big";
+}
+const AGE_STYLE={
+  little:{radius:24,padPrimary:"17px 26px",fontPrimary:18,radiusCard:22,tileMin:104,tileFont:1.15,celebrate:1.3,navIcon:24,navLabel:12},
+  mid:   {radius:14,padPrimary:"13px 22px",fontPrimary:15,radiusCard:20,tileMin:96, tileFont:1,   celebrate:1,   navIcon:20,navLabel:10.5},
+  big:   {radius:12,padPrimary:"12px 20px",fontPrimary:14,radiusCard:16,tileMin:84, tileFont:0.92,celebrate:0.75,navIcon:19,navLabel:10},
+};
+const AgeTierContext = React.createContext(null);
+function useAgeTier(){ return React.useContext(AgeTierContext) || "mid"; }
+function useAgeStyle(){ return AGE_STYLE[useAgeTier()]; }
+
 const A11yContext = React.createContext(null);
 const useGameA11y = () => React.useContext(A11yContext) || {};
 // Module-level mirror so playSound()/speak() (called from timeouts, outside
@@ -8196,7 +8422,7 @@ const BLANK = {name:"",age:7,country:"UK",yearGroup:"",avatar:"fox",tutor:null,m
     // US subjects
     "Math":1,"English Language Arts":1,"Social Studies":1,
     // CA subjects  
-    "Mathematics":1,"Language":1,"Science & Technology":1,"Social Studies":1,"Computer Studies":1
+    "Mathematics":1,"Language":1,"Science & Technology":1,"Computer Studies":1
   },
   topicLevels:{
     Maths:{addition:1,multiplication:1,fractions:1,placevalue:1,geometry:1,measurement:1,statistics:1,ratio:1,algebra:1},
@@ -8387,9 +8613,11 @@ export default function App() {
 
   const activeChild = active || children[0];
   const appA11y = useA11y(activeChild);
+  const ageTier = getAgeTier(activeChild?.age);
 
   // ── ROUTING ───────────────────────────────────────────────────────────
   return (
+    <AgeTierContext.Provider value={ageTier}>
     <A11yContext.Provider value={appA11y}>
       <A11ySync a11y={appA11y}/>
       {newBadge&&<BadgeNotif badgeId={newBadge} onDone={()=>setNB(null)}/>}
@@ -8812,6 +9040,7 @@ export default function App() {
         }}
       />}
     </A11yContext.Provider>
+    </AgeTierContext.Provider>
   );
 }
 // ── Learn Mode — Animated Curriculum Book ───────────────────────────────
