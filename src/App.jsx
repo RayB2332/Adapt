@@ -918,8 +918,8 @@ function Btn({children,onClick,disabled,v="primary",style={}}) {
 function Card({children,style={},onClick}) {
   return (
     <div onClick={onClick}
-      style={{background:C.surface,borderRadius:20,padding:"18px 20px",
-        border:`1px solid ${C.border}`,boxShadow:"0 4px 20px rgba(79,70,229,0.08)",
+      style={{background:"linear-gradient(170deg,#FFFFFF 0%,#F8F7FF 100%)",borderRadius:20,padding:"18px 20px",
+        border:"1.5px solid rgba(129,140,248,0.25)",boxShadow:"0 8px 28px rgba(99,102,241,0.14)",
         cursor:onClick?"pointer":"default",transition:onClick?"all 0.15s":undefined,...style}}
       onMouseOver={e=>{if(onClick)e.currentTarget.style.transform="translateY(-2px)"}}
       onMouseOut={e=>{if(onClick)e.currentTarget.style.transform=""}}>
@@ -930,7 +930,7 @@ function Card({children,style={},onClick}) {
 
 function Screen({children,pad=true}) {
   return (
-    <div style={{minHeight:"100vh",background:"linear-gradient(150deg,#EEF2FF 0%,#FDF2F8 35%,#EFF6FF 65%,#F3E8FF 100%)",fontFamily:F,display:"flex",
+    <div style={{minHeight:"100vh",background:"linear-gradient(150deg,#E0E7FF 0%,#FCE7F3 35%,#DBEAFE 65%,#EDE9FE 100%)",fontFamily:F,display:"flex",
       justifyContent:"center",padding:pad?"20px 16px 60px":"0",animation:"fadeUp 0.3s ease",position:"relative",overflow:"hidden"}}>
       {/* Colour orbs — the page glows instead of sitting flat grey */}
       <div style={{position:"fixed",top:-120,right:-100,width:420,height:420,borderRadius:"50%",pointerEvents:"none",
@@ -1682,7 +1682,8 @@ function Session({child,startSubject,startTopic,onComplete,onUpdate,onExit,a11y=
   const [primer,setPrimer]=useState(null);
   const [showPrimer,setShowPrimer]=useState(false);
   const [primerStep,setPrimerStep]=useState(0);
-  const primerKey=topic?`primer:${subject}|${topic.id}|lv${topicLevel}|${child.yearGroup||""}|${child.country||""}`:null;
+  const primerLvl=topic?((child.topicLevels?.[subject]||{})[topic.id]||1):1;
+  const primerKey=topic?`primer:${subject}|${topic.id}|lv${primerLvl}|${child.yearGroup||""}|${child.country||""}`:null;
   const openPrimer=async()=>{
     setPrimerStep(0);setShowPrimer(true);
     if(primer)return;
@@ -1692,7 +1693,7 @@ function Session({child,startSubject,startTopic,onComplete,onUpdate,onExit,a11y=
     }catch(e){}
     try{
       const p=await claude(
-        `Create a tiny "how to" primer for a child before practising. Child: ${child.yearGroup||"Year 3"}, ${child.country||"UK"} curriculum. Subject: ${subject}. Topic: ${topic.name}. Difficulty level ${topicLevel}/10. `+
+        `Create a tiny "how to" primer for a child before practising. Child: ${child.yearGroup||"Year 3"}, ${child.country||"UK"} curriculum. Subject: ${subject}. Topic: ${topic.name}. Difficulty level ${primerLvl}/10. `+
         a11yPromptRules(a11y)+
         ` Return ONLY JSON: {"title":"How to: ...","steps":[{"h":"What it is","b":"1-2 kid-friendly sentences"},{"h":"Worked example","b":"One example solved step by step, each step on a new line"},{"h":"Your turn tip","b":"One encouraging strategy tip"}]}. Keep each body under 55 words, warm and simple.`,
         "Primer for a child.");
@@ -1703,7 +1704,7 @@ function Session({child,startSubject,startTopic,onComplete,onUpdate,onExit,a11y=
   // First visit to this topic+level → show the primer automatically
   useEffect(()=>{
     if(topic&&primerKey&&!(child.primersSeen||{})[primerKey])openPrimer();
-  },[topic?.id,topicLevel]);
+  },[topic?.id,primerLvl]);
   const dismissPrimer=()=>{
     setShowPrimer(false);
     if(primerKey&&!(child.primersSeen||{})[primerKey])
@@ -1906,7 +1907,7 @@ function Session({child,startSubject,startTopic,onComplete,onUpdate,onExit,a11y=
               <div style={{background:"#fff",borderRadius:26,width:"100%",maxWidth:400,overflow:"hidden",boxShadow:"0 24px 80px rgba(0,0,0,0.45)",animation:"fadeUp 0.3s ease"}}>
                 <div style={{background:`linear-gradient(135deg,${ss.color},${ss.color}CC)`,padding:"18px 20px",position:"relative",overflow:"hidden"}}>
                   {[...Array(6)].map((_,i)=><div key={i} style={{position:"absolute",width:2.5,height:2.5,borderRadius:"50%",background:"#fff",opacity:0.35,pointerEvents:"none",top:`${(i*31+8)%80}%`,left:`${(i*41+5)%92}%`,animation:`twinkle ${1.6+i%3}s ease infinite`}}/>)}
-                  <p style={{fontSize:12,fontWeight:800,color:"rgba(255,255,255,0.8)",marginBottom:2,position:"relative"}}>{ss.emoji} {topic?.name} · Level {topicLevel}</p>
+                  <p style={{fontSize:12,fontWeight:800,color:"rgba(255,255,255,0.8)",marginBottom:2,position:"relative"}}>{ss.emoji} {topic?.name} · Level {primerLvl}</p>
                   <p style={{fontSize:19,fontWeight:900,color:"#fff",position:"relative"}}>{primer?primer.title:"Getting your guide ready…"}</p>
                 </div>
                 <div style={{padding:"20px",minHeight:190}}>
@@ -8164,7 +8165,24 @@ export default function App() {
             go("welcome");
           }
         } else {
-          go("auth_login");
+          // No parent session — but a child may have been signed in on this
+          // device. Restore them instead of dumping to the login screen.
+          let restored=false;
+          try{
+            const saved=JSON.parse(localStorage.getItem("adaptChildLogin")||"null");
+            if(saved?.parentId&&saved?.childId){
+              const pd=await loadData(saved.parentId);
+              const kid=(pd?.children||[]).find(c=>c.id===saved.childId);
+              if(pd?.account&&kid){
+                setAcct({...pd.account,type:"child",_parentId:saved.parentId});
+                setKids(pd.children||[]);
+                setAct(kid);
+                go("child_dash");
+                restored=true;
+              }
+            }
+          }catch(e){}
+          if(!restored)go("auth_login");
         }
         setLd(true);
       });
@@ -8284,6 +8302,7 @@ export default function App() {
         onBack={()=>go("auth_login")}
         onParentLogin={()=>go("auth_parent_login")}
         onLogin={async(payload, childId, parentId)=>{
+          try{localStorage.setItem("adaptChildLogin",JSON.stringify({childId,parentId}));}catch(e){}
           setAcct({...payload.account, _parentId: parentId});
           setKids(payload.children||[]);
           const child=(payload.children||[]).find(c=>c.id===childId);
@@ -8411,7 +8430,7 @@ export default function App() {
         onSignOut={async()=>{
           // Clear plain text password before signing out
           updChild(active.id,{childPassword:null});
-          await supabase.auth.signOut();
+          try{localStorage.removeItem("adaptChildLogin");}catch(e){} await supabase.auth.signOut();
           setAcct(null);setKids([]);setAct(null);
           hist.current=["auth_login"];setScr("auth_login");
         }}
@@ -8437,7 +8456,7 @@ export default function App() {
         }}
         onBadges={()=>go("badges")}
         onMyStats={()=>go("child_stats")}
-        onSignOut={async()=>{await supabase.auth.signOut();setAcct(null);setKids([]);setAct(null);hist.current=["auth_login"];setScr("auth_login");}}
+        onSignOut={async()=>{try{localStorage.removeItem("adaptChildLogin");}catch(e){} await supabase.auth.signOut();setAcct(null);setKids([]);setAct(null);hist.current=["auth_login"];setScr("auth_login");}}
         onParentView={()=>go("parent_dash")}
         onChangeAvatar={()=>go("child_avatar")}
         onLeaderboard={()=>go("leaderboard")}
@@ -8507,7 +8526,7 @@ export default function App() {
         onBack={()=>go("child_dash")}
         onLearn={topic=>{setTopic(topic);go("learn_mode");}}
         onStart={topic=>{setTopic(topic);go("session");}}
-        onSignOut={async()=>{await supabase.auth.signOut();setAcct(null);setKids([]);setAct(null);hist.current=["auth_login"];setScr("auth_login");}}
+        onSignOut={async()=>{try{localStorage.removeItem("adaptChildLogin");}catch(e){} await supabase.auth.signOut();setAcct(null);setKids([]);setAct(null);hist.current=["auth_login"];setScr("auth_login");}}
       />}
 
       {screen==="learn_mode"&&activeChild&&sessTopic&&<LearnMode
@@ -8576,7 +8595,7 @@ export default function App() {
           }
           setSetup({...BLANK});setType("parent");go("details");
         }}
-        onSignOut={async()=>{await supabase.auth.signOut();setAcct(null);setKids([]);setAct(null);hist.current=["auth_login"];setScr("auth_login");}}
+        onSignOut={async()=>{try{localStorage.removeItem("adaptChildLogin");}catch(e){} await supabase.auth.signOut();setAcct(null);setKids([]);setAct(null);hist.current=["auth_login"];setScr("auth_login");}}
         onSettings={()=>go("settings")}
       />}
 
@@ -8590,7 +8609,7 @@ export default function App() {
         onAdvanceYear={()=>go("advance_year")}
         onEmailReport={()=>go("email_report")}
         onSignOut={async()=>{
-          await supabase.auth.signOut();
+          try{localStorage.removeItem("adaptChildLogin");}catch(e){} await supabase.auth.signOut();
           setAcct(null);setKids([]);setAct(null);setMgr(null);
           hist.current=["auth_login"];setScr("auth_login");
         }}
@@ -8668,14 +8687,14 @@ export default function App() {
         onTerms={()=>go("terms_of_service")}
         onChangePassword={()=>go("change_password")}
         onSignOut={async()=>{
-          await supabase.auth.signOut();
+          try{localStorage.removeItem("adaptChildLogin");}catch(e){} await supabase.auth.signOut();
           setAcct(null);setKids([]);setAct(null);setMgr(null);
           hist.current=["auth_login"];setScr("auth_login");
         }}
         onReset={async()=>{
           if(window.confirm("This will delete ALL progress and profiles and cannot be undone. Are you sure?")){
             try{localStorage.removeItem(SK);}catch{}
-            if(authUser) await supabase.auth.signOut();
+            if(authUser) try{localStorage.removeItem("adaptChildLogin");}catch(e){} await supabase.auth.signOut();
             setAcct(null);setKids([]);setAct(null);setMgr(null);
             hist.current=["auth_login"];setScr("auth_login");
           }
