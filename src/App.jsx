@@ -932,13 +932,17 @@ function Screen({children,pad=true}) {
   return (
     <div style={{minHeight:"100vh",background:"linear-gradient(150deg,#EEF2FF 0%,#FDF2F8 35%,#EFF6FF 65%,#F3E8FF 100%)",fontFamily:F,display:"flex",
       justifyContent:"center",padding:pad?"20px 16px 60px":"0",animation:"fadeUp 0.3s ease",position:"relative",overflow:"hidden"}}>
-      {/* Soft colour orbs — the page glows instead of sitting flat grey */}
-      <div style={{position:"fixed",top:-120,right:-100,width:340,height:340,borderRadius:"50%",pointerEvents:"none",
-        background:"radial-gradient(circle,rgba(129,140,248,0.16),transparent 70%)"}}/>
-      <div style={{position:"fixed",bottom:-140,left:-120,width:380,height:380,borderRadius:"50%",pointerEvents:"none",
-        background:"radial-gradient(circle,rgba(244,114,182,0.12),transparent 70%)"}}/>
-      <div style={{position:"fixed",top:"40%",left:-80,width:220,height:220,borderRadius:"50%",pointerEvents:"none",
-        background:"radial-gradient(circle,rgba(45,212,191,0.10),transparent 70%)"}}/>
+      {/* Colour orbs — the page glows instead of sitting flat grey */}
+      <div style={{position:"fixed",top:-120,right:-100,width:420,height:420,borderRadius:"50%",pointerEvents:"none",
+        background:"radial-gradient(circle,rgba(129,140,248,0.35),transparent 68%)",animation:"floatY 9s ease-in-out infinite"}}/>
+      <div style={{position:"fixed",bottom:-140,left:-120,width:460,height:460,borderRadius:"50%",pointerEvents:"none",
+        background:"radial-gradient(circle,rgba(244,114,182,0.28),transparent 68%)",animation:"floatY 11s ease-in-out 1s infinite"}}/>
+      <div style={{position:"fixed",top:"36%",left:-100,width:300,height:300,borderRadius:"50%",pointerEvents:"none",
+        background:"radial-gradient(circle,rgba(45,212,191,0.24),transparent 68%)",animation:"floatY 10s ease-in-out 2s infinite"}}/>
+      <div style={{position:"fixed",top:"12%",left:"22%",width:260,height:260,borderRadius:"50%",pointerEvents:"none",
+        background:"radial-gradient(circle,rgba(251,191,36,0.16),transparent 70%)",animation:"floatY 12s ease-in-out 0.5s infinite"}}/>
+      <div style={{position:"fixed",bottom:"8%",right:"14%",width:320,height:320,borderRadius:"50%",pointerEvents:"none",
+        background:"radial-gradient(circle,rgba(167,139,250,0.26),transparent 68%)",animation:"floatY 8s ease-in-out 1.5s infinite"}}/>
       <div style={{maxWidth:480,width:"100%",position:"relative"}}>{children}</div>
     </div>
   );
@@ -1489,9 +1493,13 @@ function ChildDash({child,isParentView,onSession,onGames,onBadges,onParentView,o
           </p>
         </div>
 
-        {/* ── Main CTA ── */}
+        {/* ── Main CTA: starts the subject that needs the most work ── */}
         <div style={{padding:"0 16px",marginBottom:16}}>
-          <Btn onClick={onSession} style={{width:"100%",padding:18,fontSize:18,boxShadow:"0 4px 20px rgba(79,70,229,0.35)"}}>
+          <Btn onClick={()=>{
+            const subs=subjectsFor(child.country);
+            const rec=subs.reduce((a,s)=>(child.level?.[s]||1)<(child.level?.[a]||1)?s:a,subs[0]);
+            onSession(rec);
+          }} style={{width:"100%",padding:18,fontSize:18,boxShadow:"0 4px 20px rgba(79,70,229,0.35)"}}>
             ✨ Start Today's Lesson
           </Btn>
         </div>
@@ -1669,6 +1677,38 @@ function Session({child,startSubject,startTopic,onComplete,onUpdate,onExit,a11y=
   const [done,setDone]=useState(false);
   const [paused,setPaused]=useState(false);
   const [showTest,setShowTest]=useState(false);  // mastery test overlay
+  // ── "How to" primer: a worked example BEFORE the questions ──
+  // (Worked-example effect: seeing the method first beats practice alone)
+  const [primer,setPrimer]=useState(null);
+  const [showPrimer,setShowPrimer]=useState(false);
+  const [primerStep,setPrimerStep]=useState(0);
+  const primerKey=topic?`primer:${subject}|${topic.id}|lv${topicLevel}|${child.yearGroup||""}|${child.country||""}`:null;
+  const openPrimer=async()=>{
+    setPrimerStep(0);setShowPrimer(true);
+    if(primer)return;
+    try{
+      const cached=JSON.parse(localStorage.getItem(primerKey)||"null");
+      if(cached?.steps?.length){setPrimer(cached);return;}
+    }catch(e){}
+    try{
+      const p=await claude(
+        `Create a tiny "how to" primer for a child before practising. Child: ${child.yearGroup||"Year 3"}, ${child.country||"UK"} curriculum. Subject: ${subject}. Topic: ${topic.name}. Difficulty level ${topicLevel}/10. `+
+        a11yPromptRules(a11y)+
+        ` Return ONLY JSON: {"title":"How to: ...","steps":[{"h":"What it is","b":"1-2 kid-friendly sentences"},{"h":"Worked example","b":"One example solved step by step, each step on a new line"},{"h":"Your turn tip","b":"One encouraging strategy tip"}]}. Keep each body under 55 words, warm and simple.`,
+        "Primer for a child.");
+      if(p?.steps?.length){setPrimer(p);try{localStorage.setItem(primerKey,JSON.stringify(p));}catch(e){}}
+      else setShowPrimer(false); // fetch failed — never block the child
+    }catch(e){setShowPrimer(false);}
+  };
+  // First visit to this topic+level → show the primer automatically
+  useEffect(()=>{
+    if(topic&&primerKey&&!(child.primersSeen||{})[primerKey])openPrimer();
+  },[topic?.id,topicLevel]);
+  const dismissPrimer=()=>{
+    setShowPrimer(false);
+    if(primerKey&&!(child.primersSeen||{})[primerKey])
+      onUpdate({primersSeen:{...(child.primersSeen||{}),[primerKey]:true}});
+  };
   const [askedQs,setAskedQs]=useState([]);
   const mRef=useRef(mode);
   useEffect(()=>{
@@ -1819,6 +1859,7 @@ function Session({child,startSubject,startTopic,onComplete,onUpdate,onExit,a11y=
                 </button>
               ):null;
             })()}
+              {topic&&<button onClick={openPrimer} style={{background:C.pLight,border:`1.5px solid ${C.primary}`,borderRadius:8,padding:"6px 10px",cursor:"pointer",fontSize:12,fontWeight:800,color:C.primary,fontFamily:F}}>📖 How to</button>}
               <button onClick={()=>setPaused(true)} style={{background:C.aLight,border:`1.5px solid ${C.amber}`,borderRadius:8,padding:"6px 10px",cursor:"pointer",fontSize:12,fontWeight:800,color:C.amber,fontFamily:F}}>⏸ Break</button>
             </div>
           </div>
@@ -1856,7 +1897,48 @@ function Session({child,startSubject,startTopic,onComplete,onUpdate,onExit,a11y=
               setShowTest(false);
             }}
           />
-        )}        {paused&&(
+        )}        {showPrimer&&(()=>{
+          const ss=SUB[subject]||{color:C.primary,emoji:"📘"};
+          const step=primer?.steps?.[primerStep];
+          const last=primer&&primerStep>=primer.steps.length-1;
+          return(
+            <div style={{position:"fixed",inset:0,background:"rgba(15,23,42,0.65)",zIndex:9998,display:"flex",alignItems:"center",justifyContent:"center",padding:18}}>
+              <div style={{background:"#fff",borderRadius:26,width:"100%",maxWidth:400,overflow:"hidden",boxShadow:"0 24px 80px rgba(0,0,0,0.45)",animation:"fadeUp 0.3s ease"}}>
+                <div style={{background:`linear-gradient(135deg,${ss.color},${ss.color}CC)`,padding:"18px 20px",position:"relative",overflow:"hidden"}}>
+                  {[...Array(6)].map((_,i)=><div key={i} style={{position:"absolute",width:2.5,height:2.5,borderRadius:"50%",background:"#fff",opacity:0.35,pointerEvents:"none",top:`${(i*31+8)%80}%`,left:`${(i*41+5)%92}%`,animation:`twinkle ${1.6+i%3}s ease infinite`}}/>)}
+                  <p style={{fontSize:12,fontWeight:800,color:"rgba(255,255,255,0.8)",marginBottom:2,position:"relative"}}>{ss.emoji} {topic?.name} · Level {topicLevel}</p>
+                  <p style={{fontSize:19,fontWeight:900,color:"#fff",position:"relative"}}>{primer?primer.title:"Getting your guide ready…"}</p>
+                </div>
+                <div style={{padding:"20px",minHeight:190}}>
+                  {!primer?(
+                    <div style={{textAlign:"center",padding:"30px 0"}}><Spinner color={ss.color}/></div>
+                  ):(
+                    <div key={primerStep} style={{animation:"fadeUp 0.25s ease"}}>
+                      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
+                        <span style={{width:26,height:26,borderRadius:"50%",background:ss.color,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:900}}>{primerStep+1}</span>
+                        <p style={{fontSize:15,fontWeight:900,color:C.text}}>{step?.h}</p>
+                        {(child.mode==="audio"||a11y.alwaysAudio)&&!a11y.noAudio&&<button onClick={()=>speak(step?.b,child.tutor)} style={{marginLeft:"auto",background:"none",border:"none",cursor:"pointer",fontSize:16}}>🔊</button>}
+                      </div>
+                      <p style={{fontSize:a11y.largeText?17:15,fontWeight:600,color:"#334155",lineHeight:1.9,whiteSpace:"pre-line",fontFamily:a11y.dyslexiaFont?FDYS:F,letterSpacing:a11y.dyslexiaFont?"0.04em":undefined}}>{step?.b}</p>
+                    </div>
+                  )}
+                </div>
+                {primer&&(
+                  <div style={{padding:"0 20px 20px",display:"flex",gap:10,alignItems:"center"}}>
+                    <div style={{display:"flex",gap:5,flex:1}}>
+                      {primer.steps.map((_,i)=><div key={i} style={{width:i===primerStep?20:7,height:7,borderRadius:4,background:i<=primerStep?ss.color:C.border,transition:"all 0.25s"}}/>)}
+                    </div>
+                    <Btn onClick={()=>last?dismissPrimer():setPrimerStep(s=>s+1)} style={{padding:"12px 26px",fontSize:15,background:`linear-gradient(180deg,${ss.color},${ss.color}DD)`}}>
+                      {last?"Let's practise! 🚀":"Next ›"}
+                    </Btn>
+                  </div>
+                )}
+                <button onClick={dismissPrimer} aria-label="Skip primer" style={{position:"absolute"}} hidden/>
+              </div>
+            </div>
+          );
+        })()}
+        {paused&&(
           <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
             <div style={{background:C.surface,borderRadius:24,padding:"32px 24px",width:"100%",maxWidth:360,textAlign:"center",boxShadow:"0 20px 60px rgba(0,0,0,0.3)"}}>
               <div style={{fontSize:48,marginBottom:12}}>⏸</div>
@@ -8127,13 +8209,20 @@ export default function App() {
       // Debounced save — persist to Supabase after 2s of no updates
       // Force save immediately for critical updates (level changes, test results)
       const doSave=()=>{
-        const uid=authUser?.id||account?._parentId;
-        if(uid){
-          setKids(cur=>{
-            saveData(uid,{account,children:cur});
-            return cur;
-          });
-        }
+        setKids(cur=>{
+          if(authUser?.id){
+            saveData(authUser.id,{account,children:cur});
+          } else if(account?._parentId){
+            // Child device: merge into the parent's record — never overwrite
+            // the parent's account object or wipe siblings
+            loadData(account._parentId).then(pd=>{
+              if(!pd?.account)return;
+              const merged=(pd.children||[]).map(c=>cur.find(lc=>lc.id===c.id)||c);
+              saveData(account._parentId,{...pd,children:merged});
+            }).catch(()=>{});
+          }
+          return cur;
+        });
       };
       if(forceSave){
         clearTimeout(saveTimer.current);
@@ -8341,7 +8430,7 @@ export default function App() {
       {screen==="child_dash"&&activeChild&&<ChildDash
         child={activeChild}
         isParentView={account?.type==="parent"&&!!authUser}
-        onSession={sub=>{if(!sub)return;setSub(sub);go("topic_pick");}}
+        onSession={sub=>{if(typeof sub!=="string"||!sub)return;setSub(sub);go("topic_pick");}}
         onGames={()=>{
           if(activeChild.controls?.miniGames===false){alert("Mini games are turned off by your parent.");return;}
           go("game_hub");
@@ -8432,6 +8521,7 @@ export default function App() {
         child={activeChild}
         a11y={appA11y}
         startSubject={sessSub}
+        startTopic={sessTopic}
         onComplete={stats=>{
           // Tricky Ones deck: add this session's misses
           let deck=activeChild.trickyQs||[];
