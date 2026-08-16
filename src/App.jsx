@@ -2043,13 +2043,15 @@ function ParentDash({account,children,onProgressChild,onAddChild,onSettings,onSi
                   </div>
                 </div>
                 <div style={{display:"flex",flexDirection:"column",gap:5,marginBottom:12}}>
-                  {subjectsFor(child.country).map(s=>(
+                  {subjectsFor(c.country).map(s=>{
+                    const st=SUB[s]||{emoji:"📘",color:C.primary};
+                    return(
                     <div key={s} style={{display:"flex",alignItems:"center",gap:8}}>
-                      <span style={{fontSize:12,minWidth:58,fontWeight:700,color:C.muted}}>{SUB[s].emoji} {s}</span>
-                      <PBar value={c.level[s]-1} max={4} color={SUB[s].color} h={5}/>
-                      <span style={{fontSize:11,fontWeight:800,color:SUB[s].color,minWidth:22}}>Lv.{c.level[s]}</span>
+                      <span style={{fontSize:12,minWidth:58,fontWeight:700,color:C.muted}}>{st.emoji} {s}</span>
+                      <PBar value={(c.level?.[s]||1)-1} max={4} color={st.color} h={5}/>
+                      <span style={{fontSize:11,fontWeight:800,color:st.color,minWidth:22}}>Lv.{c.level?.[s]||1}</span>
                     </div>
-                  ))}
+                  );})}
                 </div>
                 <div style={{display:"flex",gap:8}}>
                   <Btn onClick={()=>onProgressChild(c)} style={{width:"100%",padding:"10px",fontSize:14}}>📊 View {c.name}'s Progress →</Btn>
