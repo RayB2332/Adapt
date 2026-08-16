@@ -45,7 +45,12 @@ export default async function handler(req, res) {
             <td style="padding:6px 0;color:#64748B;font-size:14px">🏅 Total badges</td>
             <td style="padding:6px 0;font-weight:700;text-align:right;color:#0F172A">${(child.badges||[]).length}</td>
           </tr>
+          <tr>
+            <td style="padding:6px 0;color:#64748B;font-size:14px">🎯 Tricky questions conquered</td>
+            <td style="padding:6px 0;font-weight:700;text-align:right;color:#BE185D">${child.trickyFixedCount||0}</td>
+          </tr>
         </table>
+        ${(child.trickyQs||[]).length > 0 ? `<p style="color:#64748B;font-size:13px;margin-top:8px">💡 ADAPT is automatically working on ${(child.trickyQs||[]).length} question${(child.trickyQs||[]).length===1?'':'s'} ${child.name} found tricky — they'll be practised until mastered.</p>` : ''}
         ${weekSessions.length === 0 ? '<p style="color:#EF4444;font-size:13px;margin-top:8px">⚠️ No sessions this week — try to encourage daily learning!</p>' : ''}
       </div>
     `;
