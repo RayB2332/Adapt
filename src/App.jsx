@@ -930,9 +930,16 @@ function Card({children,style={},onClick}) {
 
 function Screen({children,pad=true}) {
   return (
-    <div style={{minHeight:"100vh",background:"linear-gradient(160deg,#F0F4FF 0%,#EFF6FF 50%,#F5F0FF 100%)",fontFamily:F,display:"flex",
-      justifyContent:"center",padding:pad?"20px 16px 60px":"0",animation:"fadeUp 0.3s ease"}}>
-      <div style={{maxWidth:480,width:"100%"}}>{children}</div>
+    <div style={{minHeight:"100vh",background:"linear-gradient(150deg,#EEF2FF 0%,#FDF2F8 35%,#EFF6FF 65%,#F3E8FF 100%)",fontFamily:F,display:"flex",
+      justifyContent:"center",padding:pad?"20px 16px 60px":"0",animation:"fadeUp 0.3s ease",position:"relative",overflow:"hidden"}}>
+      {/* Soft colour orbs — the page glows instead of sitting flat grey */}
+      <div style={{position:"fixed",top:-120,right:-100,width:340,height:340,borderRadius:"50%",pointerEvents:"none",
+        background:"radial-gradient(circle,rgba(129,140,248,0.16),transparent 70%)"}}/>
+      <div style={{position:"fixed",bottom:-140,left:-120,width:380,height:380,borderRadius:"50%",pointerEvents:"none",
+        background:"radial-gradient(circle,rgba(244,114,182,0.12),transparent 70%)"}}/>
+      <div style={{position:"fixed",top:"40%",left:-80,width:220,height:220,borderRadius:"50%",pointerEvents:"none",
+        background:"radial-gradient(circle,rgba(45,212,191,0.10),transparent 70%)"}}/>
+      <div style={{maxWidth:480,width:"100%",position:"relative"}}>{children}</div>
     </div>
   );
 }
@@ -1491,7 +1498,7 @@ function ChildDash({child,isParentView,onSession,onGames,onBadges,onParentView,o
 
         {/* ── Subjects + Games grid ── */}
         <div style={{padding:"0 16px",marginBottom:8}}>
-          <p style={{fontSize:11,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:12}}>Your Subjects</p>
+          <p id="adapt-subjects" style={{fontSize:11,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:12,scrollMarginTop:16}}>Your Subjects</p>
           <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,marginBottom:12}}>
             {getSubjects(child.country||"UK").map(s=>{
               const sc=SUB[s]||{emoji:"📚",color:C.primary,light:C.pLight};
@@ -1560,7 +1567,7 @@ function ChildDash({child,isParentView,onSession,onGames,onBadges,onParentView,o
           {!isParentView&&<button onClick={()=>{if(window.confirm("Report an issue with a question or content?"))alert("Thank you! Our team will review this.");}} style={{fontSize:12,fontWeight:700,color:C.muted,background:"none",border:"none",cursor:"pointer",fontFamily:F,width:"100%"}}>🚩 Report a content issue</button>}
         </div>
       </div>
-      <BottomNav active="home" onHome={()=>{}} onLearn={onSession} onGames={onGames} onBadges={onBadges}/>
+      <BottomNav active="home" onHome={()=>{}} onLearn={()=>{document.getElementById("adapt-subjects")?.scrollIntoView({behavior:"smooth",block:"start"});}} onGames={onGames} onBadges={onBadges}/>
     </Screen>
   );
 }
@@ -1717,10 +1724,10 @@ function Session({child,startSubject,startTopic,onComplete,onUpdate,onExit,a11y=
       const updatedCounts={...(child.topicQCounts||{}),[topicKey]:newCount};
       // Trigger mastery test after 50 questions
       if(newCount>=QUESTIONS_PER_LEVEL&&!showTest){
-        onUpdate({topicQCounts:updatedCounts});
+        onUpdate({topicQCounts:updatedCounts},true); // force: milestone must not be lost
         setTimeout(()=>setShowTest(true),900); // show after answer reveal
       }else{
-        onUpdate({topicQCounts:updatedCounts});
+        onUpdate({topicQCounts:updatedCounts},newCount%5===0); // force-save every 5 answers
       }
     }
 
@@ -1756,6 +1763,30 @@ function Session({child,startSubject,startTopic,onComplete,onUpdate,onExit,a11y=
   return (
     <Screen>
       <div style={{paddingTop:12}}>
+        {/* Subject identity band — the lesson wears its subject's colours */}
+        {(()=>{const ss=SUB[subject]||{color:C.primary,emoji:"📘"};return(
+          <div style={{margin:"0 0 12px",padding:"13px 16px",borderRadius:20,position:"relative",overflow:"hidden",
+            background:`linear-gradient(135deg,${ss.color} 0%,${ss.color}CC 100%)`,boxShadow:`0 8px 24px ${ss.color}40`}}>
+            {[...Array(7)].map((_,i)=><div key={i} style={{position:"absolute",width:i%3===0?3:2,height:i%3===0?3:2,borderRadius:"50%",pointerEvents:"none",
+              background:"#fff",opacity:0.3,top:`${(i*29+10)%80}%`,left:`${(i*37+6)%94}%`,animation:`twinkle ${1.7+i%3}s ease infinite`}}/>)}
+            <div style={{display:"flex",alignItems:"center",gap:11,position:"relative"}}>
+              <span style={{fontSize:26,filter:"drop-shadow(0 2px 4px rgba(0,0,0,0.25))"}}>{ss.emoji}</span>
+              <div style={{flex:1,minWidth:0}}>
+                <p style={{fontSize:15,fontWeight:900,color:"#fff",textShadow:"0 1px 2px rgba(0,0,0,0.2)"}}>{subject}</p>
+                {topic&&<p style={{fontSize:11,fontWeight:700,color:"rgba(255,255,255,0.85)"}}>{topic.name} · Level {topicLevel}</p>}
+              </div>
+              {topic&&(
+                <div style={{textAlign:"right"}}>
+                  <p style={{fontSize:13,fontWeight:900,color:"#fff"}}>{topicQCount}/{QUESTIONS_PER_LEVEL}</p>
+                  <div style={{width:64,height:5,borderRadius:3,background:"rgba(255,255,255,0.25)",marginTop:3,overflow:"hidden",marginLeft:"auto"}}>
+                    <div style={{height:"100%",width:`${Math.min(100,(topicQCount/QUESTIONS_PER_LEVEL)*100)}%`,background:"#fff",borderRadius:3,transition:"width 0.5s ease"}}/>
+                  </div>
+                  <p style={{fontSize:8.5,fontWeight:800,color:"rgba(255,255,255,0.8)",marginTop:2}}>saved · to mastery test</p>
+                </div>
+              )}
+            </div>
+          </div>
+        );})()}
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14}}>
           <div style={{display:"flex",alignItems:"center",gap:10}}>
             <TutorChar name={child.tutor} size={40}/>
@@ -1841,7 +1872,7 @@ function Session({child,startSubject,startTopic,onComplete,onUpdate,onExit,a11y=
                 <Btn onClick={()=>{
                   if(sT>0){
                     const session={acc:Math.round(sC/sT*100),date:new Date().toISOString(),xp:sXP};
-                    onUpdate({streak:child.streak,sessionHistory:[...(child.sessionHistory||[]),session].slice(-30)});
+                    onUpdate({streak:child.streak,xp:(child.xp||0)+sXP,sessionHistory:[...(child.sessionHistory||[]),session].slice(-30)},true); // FORCE save — never lose a paused session
                   }
                   onExit();
                 }} v="ghost" style={{width:"100%",fontSize:15}}>Save & go home 🏠</Btn>
@@ -3332,6 +3363,7 @@ function genMathQs(kind,lvl=1,count=15){
 function sanitizeQs(qs){
   return (qs||[]).filter(q=>{
     if(!q)return false;
+    if(q._raw)return true; // engine-native shapes (ordering etc.) skip MCQ checks
     const text=String(q.q||q.question||"").trim();
     if(!text)return false;
     // Reject anything that looks like leaked JSON/code rather than a question
@@ -4781,7 +4813,7 @@ function orderStep(correct,placedCount,tapped){
 function OrderEngine({child,name,emoji,subject,kind,onComplete=()=>{},onQuit=()=>{},onRetry=null,level=1}){
   const A=useGameA11y();
   const littleOne=(child.age||8)<=6;
-  const fetchFn=useCallback(async(lvl)=>({questions:genSequenceQs(kind,lvl,10).map(q=>({...q,q:q.prompt,options:q.items,correct:"∅"}))}),[kind]);
+  const fetchFn=useCallback(async(lvl)=>({questions:genSequenceQs(kind,lvl,10).map(q=>({...q,q:q.prompt,options:q.items,correct:"∅",_raw:true}))}),[kind]);
   const game=useLivesGame(fetchFn,level,littleOne?5:3);
   const [placed,setPlaced]=useState([]);
   const [shakeItem,setShakeItem]=useState(null);
@@ -6495,6 +6527,8 @@ function ChildLogin({children, onSelect, onParent}) { // onSelect goes to progre
 
 // ── Topic Picker ──────────────────────────────────────────────────────────
 function TopicPicker({child,subject,onStart,onBack,onLearn}) {
+  useEffect(()=>{if(!subject)onBack&&onBack();},[subject]);
+  if(!subject)return null;
   const sc = SUB[subject];
   const topics = getCurriculum(child.country)[subject] || [];
   const tLevels = child.topicLevels?.[subject] || {};
@@ -8307,7 +8341,7 @@ export default function App() {
       {screen==="child_dash"&&activeChild&&<ChildDash
         child={activeChild}
         isParentView={account?.type==="parent"&&!!authUser}
-        onSession={sub=>{setSub(sub);go("topic_pick");}}
+        onSession={sub=>{if(!sub)return;setSub(sub);go("topic_pick");}}
         onGames={()=>{
           if(activeChild.controls?.miniGames===false){alert("Mini games are turned off by your parent.");return;}
           go("game_hub");
@@ -8316,6 +8350,10 @@ export default function App() {
         onMyStats={()=>go("child_stats")}
         onSignOut={async()=>{await supabase.auth.signOut();setAcct(null);setKids([]);setAct(null);hist.current=["auth_login"];setScr("auth_login");}}
         onParentView={()=>go("parent_dash")}
+        onChangeAvatar={()=>go("child_avatar")}
+        onLeaderboard={()=>go("leaderboard")}
+        onWeeklyChallenge={()=>go("weekly_challenge")}
+        children={kids}
       />}
 
       {screen==="game_hub"&&activeChild&&<GameHub
