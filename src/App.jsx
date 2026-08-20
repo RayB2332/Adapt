@@ -1310,7 +1310,7 @@ function Session({child,startSubject,startTopic,onComplete,onUpdate,onExit,a11y=
     };
     const {badges,newBadge}=checkBadges({...child,...updated});
     onUpdate({...updated,badges,_newBadge:newBadge});
-    if(mode==="audio") speak(ok?(q?.encouragement||"Correct!"):"Not quite. "+(q?.explanation||""),child.tutor);
+    if((child.mode==="audio"||a11y.alwaysAudio)&&!a11y.noAudio) speak(ok?(q?.encouragement||"Correct!"):"Not quite. "+(q?.explanation||""),child.tutor);
     if(q?.question) setAskedQs(prev=>[...prev,q.question].slice(-20));
   };
 
@@ -1398,13 +1398,7 @@ function Session({child,startSubject,startTopic,onComplete,onUpdate,onExit,a11y=
             </div>
           </div>
         </div>
-        {!locked&&(
-          <div style={{display:"flex",gap:6,marginBottom:12}}>
-            {[["traditional","📝 Read"],["audio","🎧 Listen"],["visual","🎨 Visual"]].map(([m,label])=>(
-              <button key={m} onClick={()=>{setMode(m);mRef.current=m;if(m!==mode)load(subject,m);}} style={{flex:1,padding:"7px 4px",borderRadius:8,fontFamily:F,fontSize:11,fontWeight:800,cursor:"pointer",transition:"all 0.12s",background:mode===m?C.pLight:C.surface,border:`2px solid ${mode===m?C.primary:C.border}`,color:mode===m?C.primary:C.muted}}>{label}</button>
-            ))}
-          </div>
-        )}
+
                 {showTest&&topic&&(
           <MasteryTest
             child={child}
@@ -1501,11 +1495,10 @@ function Session({child,startSubject,startTopic,onComplete,onUpdate,onExit,a11y=
           {loading?<Spinner color={tutor.color}/>:q?(
             <div style={{animation:"fadeUp 0.25s ease"}}>
               <span style={{display:"inline-block",marginBottom:14,padding:"3px 10px",borderRadius:20,fontSize:10,fontWeight:800,textTransform:"uppercase",letterSpacing:"0.1em",background:q.difficulty==="hard"?C.rLight:q.difficulty==="medium"?C.aLight:C.gLight,color:q.difficulty==="hard"?C.red:q.difficulty==="medium"?C.amber:C.green}}>{q.difficulty}</span>
-              {mode==="visual"&&q.svg&&<div style={{margin:"0 0 16px",borderRadius:14,overflow:"hidden",background:"linear-gradient(135deg,#EEF2FF,#F0F9FF)",border:`2px solid ${C.border}`,display:"flex",flexDirection:"column",justifyContent:"center",alignItems:"center",padding:"16px 12px",minHeight:160}}><div style={{width:"100%",maxWidth:220,overflow:"hidden",borderRadius:8}} dangerouslySetInnerHTML={{__html:q.svg}}/></div>}
-              {!(mode==="visual"&&q.svg)&&<TeachVisual key={q.question} visual={pickTeachVisual(subject,topic?.id,q.question)}/>}
+              <TeachVisual key={q.question} visual={pickTeachVisual(subject,topic?.id,q.question)}/>
               <p style={{fontSize:a11y.largeText?22:19,fontWeight:700,color:C.text,lineHeight:1.8,marginBottom:20,fontFamily:a11y.dyslexiaFont?FDYS:F,letterSpacing:a11y.dyslexiaFont?"0.05em":undefined}}>{q.question}</p>
               {q.hint&&!ans&&<div style={{marginBottom:14,padding:"10px 14px",borderRadius:10,fontSize:13,fontWeight:600,color:"#92400E",background:"#FFFBEB",border:"1px solid #FDE68A"}}>💡 {q.hint}</div>}
-              {mode==="audio"&&<button onClick={()=>speak(q.question,child.tutor)} style={{marginBottom:14,padding:"7px 14px",borderRadius:8,cursor:"pointer",border:`2px solid ${tutor.color}`,background:tutor.light,fontFamily:F,color:tutor.color,fontWeight:800,fontSize:13}}>🔊 Hear again</button>}
+              <button onClick={()=>speak(q.question,child.tutor)} aria-label="Read the question aloud" style={{marginBottom:14,padding:"7px 14px",borderRadius:8,cursor:"pointer",border:`2px solid ${tutor.color}`,background:tutor.light,fontFamily:F,color:tutor.color,fontWeight:800,fontSize:13}}>🔊 Read aloud</button>
               {!ans&&<button onClick={useLessonHint} disabled={hintsLeft<=0} aria-label={`Use a hint, ${hintsLeft} left`}
                 style={{display:"block",marginBottom:14,padding:"7px 15px",borderRadius:10,cursor:hintsLeft>0?"pointer":"default",
                 fontFamily:F,fontSize:12.5,fontWeight:900,border:`2px solid ${hintsLeft>0?"#FDE68A":C.border}`,
@@ -2818,17 +2811,37 @@ const _teachIcons=["🍎","🍊","⭐","🐶","🎈","🚗","🐟","🌸","🧩"
 function pickTeachVisual(subject,topicId,questionText=""){
   const q=(questionText||"").toLowerCase();
   const nums=(questionText.match(/\d+/g)||[]).map(Number);
+  const isMaths=/^(maths|math|mathematics)$/i.test(subject||"");
+  // Fractions and place value are unambiguous from vocabulary alone —
+  // safe to show regardless of subject label quirks.
   if(/fraction|half|quarter|third/i.test(topicId||"")||/fraction|half|quarter/.test(q))
     return {kind:"fraction",parts:nums.find(n=>n>=2&&n<=8)||4,filled:nums.find(n=>n>=1&&n<nums[0])||1};
   if(/place.?value|thousand|hundred|digit/i.test(topicId||"")||/place value|thousands|hundreds/.test(q))
     return {kind:"place",value:nums[0]||124};
-  if(/count|number.?sense|addition|subtraction|multiplication/i.test(topicId||subject||"")&&nums.length&&nums[0]<=20)
-    return {kind:"count",n:Math.max(1,Math.min(20,nums[0]))};
-  if(nums.length>=2&&nums[0]<=20&&nums[1]<=20)
+  // Everything below is only trustworthy for genuine arithmetic — a
+  // History question mentioning "1945" or a Science question mentioning
+  // "3 states of matter" must never trigger a maths-style visual just
+  // because a number appears in the text.
+  if(!isMaths)return null;
+  // Multiplication: showing "6 objects to count" for "6 × 7" is WRONG —
+  // it visually teaches addition, not multiplication. Show real groups.
+  if(/×|\*|times|multiplied by/.test(q)&&nums.length>=2&&nums[0]<=10&&nums[1]<=12)
+    return {kind:"groups",groups:nums[0],each:nums[1]};
+  // Comparison needs real comparison language, not just "two numbers
+  // happen to be present" — an addition question has two numbers too,
+  // and showing a "which is bigger" bar chart for "14 + 9" is misleading.
+  if(/bigger|smaller|greater|less than|more than|fewer|compare/.test(q)&&nums.length>=2&&nums[0]<=20&&nums[1]<=20)
     return {kind:"compare",a:nums[0],b:nums[1]};
-  if(/number.?line|sequence|order/i.test(topicId||"")||nums.length)
-    return {kind:"line",target:nums[0]||5,max:Math.max(10,(nums[0]||5)+5)};
-  return null; // nothing concrete to show — text/hint carries the teaching instead
+  // Counting: only for genuinely small, concrete "how many" style counts.
+  if(/how many|count/.test(q)&&nums.length&&nums[0]<=20)
+    return {kind:"count",n:Math.max(1,Math.min(20,nums[0]))};
+  // Number line: only for real addition/subtraction language, so a
+  // random number in an unrelated maths question doesn't trigger it.
+  if(/\+|−|-|plus|minus|add|subtract|take away/.test(q)&&nums.length){
+    const target=nums[nums.length-1];
+    return {kind:"line",target,max:Math.max(10,target+5)};
+  }
+  return null; // nothing concrete and certain to show — never guess
 }
 function TeachVisual({visual,color="#6366F1"}){
   const [tapped,setTapped]=useState([]);
@@ -2836,6 +2849,23 @@ function TeachVisual({visual,color="#6366F1"}){
   const box={margin:"0 0 16px",borderRadius:16,background:"linear-gradient(135deg,#EEF2FF,#F5F3FF)",
     border:"2px solid rgba(99,102,241,0.18)",padding:"16px 14px",display:"flex",flexDirection:"column",
     alignItems:"center",justifyContent:"center",minHeight:120};
+  if(visual.kind==="groups"){
+    const icon=_teachIcons[visual.each%_teachIcons.length];
+    return(
+      <div style={box}>
+        <p style={{fontSize:10,fontWeight:800,color:"#6366F1",marginBottom:8,textTransform:"uppercase",letterSpacing:"0.08em"}}>
+          {visual.groups} groups of {visual.each}
+        </p>
+        <div style={{display:"flex",flexDirection:"column",gap:6,maxHeight:150,overflowY:"auto"}}>
+          {[...Array(visual.groups)].map((_,g)=>(
+            <div key={g} style={{display:"flex",gap:3,padding:"3px 6px",borderRadius:8,background:"rgba(99,102,241,0.08)"}}>
+              {[...Array(visual.each)].map((_,i)=><span key={i} style={{fontSize:16}}>{icon}</span>)}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
   if(visual.kind==="count"){
     const icon=_teachIcons[visual.n%_teachIcons.length];
     return(
@@ -3446,6 +3476,7 @@ function MissionIntro({world,name,emoji,child,onGo,total=MISSION_LEN}) {
       style={{width:"100%",minHeight:"100vh",fontFamily:F,background:world.sky,
       display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:24,position:"relative",overflow:"hidden",
       filter:A.calmScheme?"saturate(0.78)":undefined}}>
+      <GameBackdrop gameName={name} accent={world.accent} noMotion={A.noMotion}/>
       {!A.noMotion&&[...Array(30)].map((_,i)=><div key={i} style={{position:"absolute",borderRadius:"50%",
         width:i%6===0?3:1.5,height:i%6===0?3:1.5,background:"#fff",opacity:0.25+(i%5)*0.1,
         top:`${(i*13+7)%95}%`,left:`${(i*17+3)%97}%`,animation:`twinkle ${1.5+i%4}s ease infinite`}}/>)}
@@ -3664,6 +3695,97 @@ function ShareScore({name,emoji,score,childName}){
   );
 }
 
+// ══════════════════════════════════════════════════════════════════
+// GAME BACKDROP — every game gets its OWN scene, not a shared sky.
+// Was: ~58 games reused one of just 4 generic backgrounds keyed only
+// to subject, so a train game and a memory-match game looked
+// identical. This picks a large silhouette motif from the game's own
+// NAME (deterministic — same game always looks the same, different
+// games almost never collide), layered under the subject's colour
+// palette, then makes the whole scene respond to touch/mouse for
+// real parallax depth — the technique that makes a flat background
+// read as a real place rather than a gradient rectangle.
+// ══════════════════════════════════════════════════════════════════
+function _hashStr(s){let h=0;for(let i=0;i<s.length;i++){h=(h*31+s.charCodeAt(i))|0;}return Math.abs(h);}
+const MOTIFS=["mountains","city","waves","forest","dunes","castle","factory","ruins"];
+function pickMotif(gameName){
+  const n=(gameName||"").toLowerCase();
+  // Obvious name matches win outright — "Volcano Escape" should look like
+  // a volcano, not whatever the hash lands on by chance.
+  if(/volcano|mountain|peak|climb/.test(n))return "mountains";
+  if(/ocean|sea|wave|fish|pirate|boat|beach|treasure/.test(n))return "waves";
+  if(/forest|jungle|tree|animal|explorer/.test(n))return "forest";
+  if(/desert|dune|sand|pyramid|egypt/.test(n))return "dunes";
+  if(/castle|knight|king|history|medieval/.test(n))return "castle";
+  if(/circuit|robot|factory|machine|code|build/.test(n))return "factory";
+  if(/ancient|ruin|fossil|dinosaur|time/.test(n))return "ruins";
+  if(/city|train|bus|street|traffic|race|racing|prix|grand prix/.test(n))return "city";
+  return MOTIFS[_hashStr(n)%MOTIFS.length];
+}
+
+function useParallax(){
+  const [tilt,setTilt]=useState({x:0,y:0});
+  const ref=useRef(null);
+  useEffect(()=>{
+    const onMove=(e)=>{
+      const t=e.touches?e.touches[0]:e;
+      if(!t)return;
+      const nx=(t.clientX/window.innerWidth-0.5)*2;
+      const ny=(t.clientY/window.innerHeight-0.5)*2;
+      setTilt({x:nx,y:ny});
+    };
+    window.addEventListener("mousemove",onMove,{passive:true});
+    window.addEventListener("touchmove",onMove,{passive:true});
+    return()=>{window.removeEventListener("mousemove",onMove);window.removeEventListener("touchmove",onMove);};
+  },[]);
+  return tilt;
+}
+
+function GameBackdrop({gameName,accent,noMotion}){
+  const motif=pickMotif(gameName);
+  const tilt=useParallax();
+  const shift=(depth)=>noMotion?{}:{transform:`translate(${tilt.x*depth}px,${tilt.y*depth*0.5}px)`,transition:"transform 0.4s ease-out"};
+  const far=accent+"22", mid=accent+"3D", near=accent+"66";
+  const layers={
+    mountains:(<>
+      <path d="M0,220 L60,150 L110,190 L180,110 L250,200 L320,140 L400,220 Z" fill={far} style={shift(6)}/>
+      <path d="M0,240 L80,175 L150,215 L230,140 L300,225 L400,170 L400,240 Z" fill={mid} style={shift(12)}/>
+    </>),
+    city:(<>
+      {[...Array(7)].map((_,i)=><rect key={i} x={i*58+10} y={240-((i*37)%110+50)} width={34} height={(i*37)%110+50} fill={i%2?far:mid} style={shift(6+i%3*2)}/>)}
+    </>),
+    waves:(<>
+      <path d="M0,210 Q50,190 100,210 T200,210 T300,210 T400,210 L400,260 L0,260 Z" fill={far} style={shift(5)}/>
+      <path d="M0,230 Q50,215 100,230 T200,230 T300,230 T400,230 L400,260 L0,260 Z" fill={mid} style={shift(10)}/>
+    </>),
+    forest:(<>
+      {[...Array(9)].map((_,i)=><polygon key={i} points={`${i*45+10},${235-((i*13)%40)} ${i*45-8},240 ${i*45+28},240`} fill={i%2?far:mid} style={shift(4+i%4*2)}/>)}
+    </>),
+    dunes:(<>
+      <path d="M0,225 Q100,175 200,220 T400,210 L400,260 L0,260 Z" fill={far} style={shift(5)}/>
+      <path d="M0,245 Q120,205 240,238 T400,235 L400,260 L0,260 Z" fill={mid} style={shift(11)}/>
+    </>),
+    castle:(<>
+      <rect x="130" y="150" width="140" height="100" fill={mid} style={shift(8)}/>
+      {[0,1,2,3,4].map(i=><rect key={i} x={130+i*28} y="140" width="16" height="16" fill={mid} style={shift(8)}/>)}
+      <rect x="185" y="120" width="30" height="130" fill={far} style={shift(5)}/>
+    </>),
+    factory:(<>
+      <rect x="40" y="170" width="320" height="80" fill={mid} style={shift(7)}/>
+      {[80,160,240,300].map((x,i)=><rect key={i} x={x} y={100+i%2*20} width="14" height={70-i%2*20} fill={far} style={shift(4+i)}/>)}
+    </>),
+    ruins:(<>
+      {[...Array(5)].map((_,i)=><rect key={i} x={i*75+20} y={190-(i%3)*25} width={22} height={(i%3)*25+50} fill={i%2?far:mid} style={shift(5+i)}/>)}
+    </>),
+  };
+  return(
+    <svg viewBox="0 0 400 260" preserveAspectRatio="xMidYMax slice"
+      style={{position:"absolute",inset:0,width:"100%",height:"100%",pointerEvents:"none",opacity:0.8}}>
+      {layers[motif]}
+    </svg>
+  );
+}
+
 // ── GameShell — chrome for the standalone arcade games ─────────────
 function GameShell({name,emoji,subject,score,maxScore,round,total,streak,onQuit,lives,level,children}) {
   const A=useGameA11y();
@@ -3673,6 +3795,7 @@ function GameShell({name,emoji,subject,score,maxScore,round,total,streak,onQuit,
     <div className={A.noMotion?"a11y-still":undefined}
       style={{width:"100%",minHeight:"100vh",fontFamily:F,background:world.sky,position:"relative",overflow:"hidden",
       filter:A.calmScheme?"saturate(0.78)":undefined}}>
+      <GameBackdrop gameName={name} accent={world.accent} noMotion={A.noMotion}/>
       {!A.noMotion&&[...Array(22)].map((_,i)=><div key={i} style={{position:"absolute",borderRadius:"50%",pointerEvents:"none",
         width:i%6===0?3:1.5,height:i%6===0?3:1.5,background:"#fff",opacity:0.18+(i%5)*0.08,
         top:`${(i*13+5)%60}%`,left:`${(i*17+3)%97}%`,animation:`twinkle ${1.6+i%4}s ease infinite`}}/>)}
@@ -4003,6 +4126,7 @@ function EngineCore({child,name,emoji,subject,world,scene,fetchFn,initialLevel=1
     <div className={A.noMotion?"a11y-still":undefined}
       style={{width:"100%",minHeight:"100vh",fontFamily:F,background:world.sky,
       position:"relative",overflow:"hidden",animation:fx.hurt&&!A.noMotion?"screenShake 0.4s ease":"none"}}>
+      <GameBackdrop gameName={name} accent={world.accent} noMotion={A.noMotion}/>
       {/* Calm scheme (anxiety/autism): soften the world's saturation */}
       <div style={A.calmScheme?{position:"absolute",inset:0,filter:"saturate(0.72) brightness(1.04)",pointerEvents:"none"}:{position:"absolute",inset:0,pointerEvents:"none"}}>
         {scene({boost:fx.boost&&!A.noMotion,hurt:fx.hurt,streak:game.streak,score:game.score,qIdx:game.qIdx,sector:game.sector})}
@@ -4408,6 +4532,7 @@ function MeteorEngine({child,name,emoji,subject,fetchFn,initialLevel=1,onComplet
       style={{width:"100%",minHeight:"100vh",fontFamily:F,background:WORLDS.meteor.sky,
       position:"relative",overflow:"hidden",animation:fx.hurt&&!A.noMotion?"screenShake 0.4s ease":"none",
       filter:A.calmScheme?"saturate(0.78)":undefined}}>
+      <GameBackdrop gameName={name} accent={WORLDS.meteor.accent} noMotion={A.noMotion}/>
       {!A.noMotion&&[...Array(30)].map((_,i)=><div key={i} style={{position:"absolute",borderRadius:"50%",
         width:i%6===0?3:1.5,height:i%6===0?3:1.5,background:"#fff",opacity:0.15+(i%5)*0.08,
         top:`${(i*13+5)%90}%`,left:`${(i*17+3)%97}%`,animation:`twinkle ${1.6+i%4}s ease infinite`,pointerEvents:"none"}}/>)}
