@@ -1,5 +1,13 @@
 import React from 'react';
 import { supabase } from './lib/supabase';
+import { C, F, FDYS } from './data/theme.js';
+import {
+  SUBJECTS, SUB, UK_CURRICULUM, US_CURRICULUM, CA_CURRICULUM,
+  getCurriculum, subjectsFor, SUBJECT_NAMES, getSubjects, CURRICULUM,
+  YEAR, TUTORS, AVATARS, BADGES
+} from './data/content.js';
+import { GAMES } from './data/games.js';
+import { WORLDS, TILE } from './data/worlds.js';
 
 // Simple password hasher for child accounts
 async function hashPassword(pass) {
@@ -102,545 +110,9 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 })();
 
 // ── DESIGN TOKENS ─────────────────────────────────────────────────────────
-const C = {
-  // Backgrounds
-  bg:"#F5F3FF", surface:"#FFFFFF", card:"#FFFFFF",
-  // Primary - richer indigo
-  primary:"#4338CA", pLight:"#EEF2FF", pDark:"#3730A3",
-  // Semantic colours - more saturated
-  amber:"#D97706",  aLight:"#FEF3C7",
-  violet:"#7C3AED", vLight:"#F3F0FF",
-  sky:"#0284C7",    sLight:"#E0F2FE",
-  green:"#16A34A",  gLight:"#DCFCE7",
-  pink:"#DB2777",   pkLight:"#FCE7F3",
-  red:"#DC2626",    rLight:"#FEE2E2",
-  orange:"#EA580C", oLight:"#FFEDD5",
-  teal:"#0D9488",   tLight:"#CCFBF1",
-  lime:"#65A30D",   lLight:"#ECFCCB",
-  // Text
-  text:"#0F172A", muted:"#64748B", border:"#E2E8F0",
-  // Game answer button colours (Kahoot-style)
-  ansA:"#E53E3E", ansB:"#3182CE", ansC:"#D69E2E", ansD:"#38A169",
-  ansALight:"#FED7D7", ansBLight:"#BEE3F8", ansCLight:"#FEFCBF", ansDLight:"#C6F6D5",
-};
-const F = "'Nunito',sans-serif";
-const FDYS = "'OpenDyslexic','Comic Sans MS',sans-serif";
 
 // ── DATA ──────────────────────────────────────────────────────────────────
-const SUBJECTS = ["Maths","English","Science","History","Geography","Computing"];
-const SUB = {
-  // Each subject is a distinct vivid world
-  Maths:    {emoji:"🔢",color:"#2563EB",light:"#DBEAFE",grad:"linear-gradient(135deg,#1D4ED8,#3B82F6,#60A5FA)",ring:"#93C5FD"},
-  English:  {emoji:"📖",color:"#EA580C",light:"#FED7AA",grad:"linear-gradient(135deg,#C2410C,#EA580C,#FB923C)",ring:"#FDBA74"},
-  Science:  {emoji:"🔬",color:"#16A34A",light:"#BBF7D0",grad:"linear-gradient(135deg,#15803D,#22C55E,#4ADE80)",ring:"#86EFAC"},
-  History:  {emoji:"📜",color:"#92400E",light:"#FDE68A",grad:"linear-gradient(135deg,#78350F,#B45309,#D97706)",ring:"#FCD34D"},
-  Geography:{emoji:"🌍",color:"#0E7490",light:"#A5F3FC",grad:"linear-gradient(135deg,#0E7490,#0891B2,#22D3EE)",ring:"#67E8F9"},
-  Computing:{emoji:"💻",color:"#7C3AED",light:"#DDD6FE",grad:"linear-gradient(135deg,#6D28D9,#7C3AED,#A78BFA)",ring:"#C4B5FD"},
-  "11+ Verbal Reasoning":  {emoji:"🔤",color:"#DB2777",light:"#FCE7F3",grad:"linear-gradient(135deg,#BE185D,#DB2777,#F472B6)",ring:"#F9A8D4"},
-  "11+ Non-Verbal Reasoning":{emoji:"🔷",color:"#0F766E",light:"#CCFBF1",grad:"linear-gradient(135deg,#0F766E,#14B8A6,#5EEAD4)",ring:"#99F6E4"},
-  "11+ Maths": {emoji:"🔢",color:"#1D4ED8",light:"#BFDBFE",grad:"linear-gradient(135deg,#1E40AF,#2563EB,#60A5FA)",ring:"#93C5FD"},
-  // US/CA aliases with same rich colours
-  Math:        {emoji:"🔢",color:"#2563EB",light:"#DBEAFE",grad:"linear-gradient(135deg,#1D4ED8,#3B82F6,#60A5FA)"},
-  Mathematics: {emoji:"🔢",color:"#2563EB",light:"#DBEAFE",grad:"linear-gradient(135deg,#1D4ED8,#3B82F6,#60A5FA)"},
-  "English Language Arts":{emoji:"📖",color:"#EA580C",light:"#FED7AA",grad:"linear-gradient(135deg,#C2410C,#EA580C,#FB923C)"},
-  Language:    {emoji:"📖",color:"#EA580C",light:"#FED7AA",grad:"linear-gradient(135deg,#C2410C,#EA580C,#FB923C)"},
-  "Science & Technology":{emoji:"🔬",color:"#16A34A",light:"#BBF7D0",grad:"linear-gradient(135deg,#15803D,#22C55E,#4ADE80)"},
-  "Social Studies":{emoji:"🌏",color:"#92400E",light:"#FDE68A",grad:"linear-gradient(135deg,#78350F,#B45309,#D97706)"},
-  "Computer Studies":{emoji:"💻",color:"#7C3AED",light:"#DDD6FE",grad:"linear-gradient(135deg,#6D28D9,#7C3AED,#A78BFA)"},
-};
 
-
-// ═══════════════════════════════════════════════════════════
-// CURRICULUM — Fully aligned to national standards
-// UK: National Curriculum KS1/KS2
-// US: Common Core + NGSS + CSTA
-// CA: Ontario Curriculum (most widely applicable province)
-// ═══════════════════════════════════════════════════════════
-
-const UK_CURRICULUM = {
-  Maths: [
-    {id:"number_place",   name:"Number & Place Value",        emoji:"🔢", minAge:5,
-     desc:"Counting, reading, writing and ordering numbers",
-     levels:["Count to 100, tens and ones, more and less","Numbers to 1000, place value, rounding to 10/100","Numbers to 10,000, negative numbers, Roman numerals","Numbers to 1,000,000, ordering, rounding, counting in steps","Numbers to 10,000,000, powers of 10, negative numbers in context","Integers to 10 million, negative numbers, prime factors and HCF/LCM","Indices, standard form intro, ordering fractions/decimals/percentages","Surds intro, irrational numbers, exact values, significant figures","Number theory: prime factorisation, Euclidean algorithm, modular arithmetic","Advanced number: complex concepts, proof by exhaustion, number patterns"]},
-    {id:"addition",       name:"Addition & Subtraction",      emoji:"➕", minAge:5,
-     desc:"Mental and written addition and subtraction methods",
-     levels:["Number bonds to 10 and 20, adding single digits","Adding/subtracting 2-digit numbers, column method introduction","Column addition and subtraction to 3 digits, estimating","Adding/subtracting 4-digit numbers, inverse operations","Multi-step problems, decimals, mental strategies","Multi-step problems with decimals, negative numbers, mental strategies","Adding/subtracting fractions with different denominators, mixed numbers","Algebraic addition: collecting like terms, simplifying expressions","Addition in different contexts: vectors, matrix addition, coordinates","Proof and generalisation: sum of consecutive numbers, algebraic proofs"]},
-    {id:"multiplication", name:"Multiplication & Division",   emoji:"✖️", minAge:6,
-     desc:"Times tables, short and long multiplication and division",
-     levels:["2, 5 and 10 times tables, arrays, grouping","3, 4 and 8 times tables, short multiplication/division","All tables to 12, short division with remainders","Long multiplication 2-digit, short division with fractions","Long multiplication and division, prime factors, BODMAS","Multiply/divide decimals, prime factorisation, factor trees","Multiply fractions and mixed numbers, multiply negative numbers","Multiply algebraic expressions, expand single brackets","Expand double brackets, factorise expressions, difference of squares","Advanced algebra: factorising quadratics, completing the square"]},
-    {id:"fractions",      name:"Fractions, Decimals & %",     emoji:"½",  minAge:6,
-     desc:"Fractions, decimals and percentages",
-     levels:["Halves, quarters and thirds, unit fractions","Equivalent fractions, ordering, simple addition","Adding/subtracting fractions same denominator, tenths","Decimal equivalents, hundredths, fractions of amounts","Percentages, fraction/decimal/% equivalence, multi-step","Fractions of amounts with complex denominators, mixed operations","Dividing fractions by fractions, fraction/decimal/% conversions","Fractions in algebraic contexts, ratio as fractions","Recurring decimals, fraction arithmetic in problem solving","Advanced fraction work: compound fractions, limits, approximations"]},
-    {id:"measurement",    name:"Measurement",                 emoji:"📏", minAge:5,
-     desc:"Length, mass, capacity, time, money, perimeter and area",
-     levels:["Compare and measure length/mass/capacity, time to hour","Measure in cm/m/kg/l, money to £1, time to 5 mins","Perimeter, area basics, time to minute, Roman numerals","Area by counting, converting units, 24-hour clock","Area/perimeter formulae, volume, converting metric units","Area of triangles, parallelograms, compound shapes","Volume of prisms, surface area, converting between metric and imperial","Circumference and area of circles, arc length, sector area","3D shapes: surface area and volume of cylinders, pyramids, cones","Advanced measurement: spheres, frustums, similar shapes scale factors"]},
-    {id:"geometry",       name:"Geometry — Shape",            emoji:"📐", minAge:5,
-     desc:"2D and 3D shapes, angles, symmetry and properties",
-     levels:["Name 2D/3D shapes, sort by properties, symmetry lines","Quadrilaterals, polygons, right angles, lines of symmetry","Angles acute/obtuse/right, triangles, 3D shape nets","Angles on lines and points, regular/irregular polygons","Calculate angles, circles, area of triangles/parallelograms","Angle rules: parallel lines, triangles, polygons interior/exterior","Congruence and similarity, scale drawings, loci and constructions","Pythagoras theorem, trigonometry: sin, cos, tan","Circle theorems, geometric proof, vectors","Advanced geometry: 3D trigonometry, sine and cosine rules"]},
-    {id:"position",       name:"Position & Direction",        emoji:"🧭", minAge:6,
-     desc:"Coordinates, translation, reflection and rotation",
-     levels:["Directions, half/quarter turns, patterns","Describe positions, first quadrant coordinates","Translate shapes, reflect in axes, describe movement","Four-quadrant coordinates, translation by vector","Reflection and translation, solve geometry problems","Transformations: enlargement with scale factor, centre of enlargement","Combining transformations, invariant points","Vectors: addition, subtraction, scalar multiplication","Vector geometry: midpoints, parallel lines using vectors","Advanced transformation geometry: matrices for transformations"]},
-    {id:"statistics",     name:"Statistics & Data",           emoji:"📊", minAge:7,
-     desc:"Tally charts, bar charts, line graphs, pie charts",
-     levels:["Tally charts, pictograms, block diagrams","Bar charts with labels, simple data questions","Bar charts scaled axes, line graphs, tables","Time graphs, calculate mean, compare data sets","Pie charts, line graphs, mean from frequency tables","Scatter graphs, correlation, lines of best fit","Cumulative frequency, box plots, interquartile range","Histograms with unequal class widths, frequency density","Probability: tree diagrams, conditional probability","Advanced statistics: hypothesis testing, sampling methods"]},
-    {id:"ratio",          name:"Ratio & Proportion",          emoji:"⚖️", minAge:10,
-     desc:"Ratio, proportion, scale and unequal sharing",
-     levels:["Introduction to ratio notation and simple ratios","Simplify ratios, share amounts in given ratio","Scale factors, ratio in recipes and maps","Proportion problems, percentage as ratio","Combine ratio and proportion in multi-step problems","Ratio in direct proportion, best value problems","Inverse proportion, ratio and percentage combined","Ratio in geometry: similar shapes, trigonometry ratios","Proportion: direct and inverse proportion graphs and equations","Advanced ratio: compound measures, rates of change"]},
-    {id:"algebra",        name:"Algebra",                     emoji:"🔣", minAge:10,
-     desc:"Formulae, sequences, unknowns and equations",
-     levels:["Number sequences and patterns, missing numbers","Formulae with one variable, substitution","Linear sequences, generating terms, simple equations","Solve one-step equations, express missing angles","Two-step equations, enumerate possibilities, formulae","Solving linear equations with brackets and fractions","Simultaneous equations by substitution and elimination","Quadratic equations: factorising, quadratic formula","Graphs of quadratics, cubics, reciprocals, exponentials","Advanced algebra: functions, iteration, proof"]},
-  ],
-  English: [
-    {id:"phonics",        name:"Phonics & Decoding",          emoji:"🔤", minAge:4,
-     desc:"Letter sounds, blending and segmenting",
-     levels:["Phase 2: s,a,t,p,i,n,m,d,g,o,c,k — CVC words","Phase 3: j,v,w,x,y,z,qu, digraphs ch,sh,th,ng","Phase 4: CCVC/CVCC words, blending longer words","Phase 5: alternative graphemes, split digraphs","Common exception words, polysyllabic words, fluency","Polysyllabic words, morphology, word families","Etymology: Latin and Greek roots, word origins","Complex spelling patterns, technical vocabulary","Advanced decoding: ambiguous graphemes, accent and dialect","Linguistic analysis: phonological awareness in context"]},
-    {id:"spelling",       name:"Spelling",                    emoji:"✏️", minAge:5,
-     desc:"Spelling rules, patterns and common exception words",
-     levels:["KS1 common exception words, simple CVC patterns","Suffixes -ing/-ed/-er, double consonants, y to i","Prefixes un-/re-/mis-, soft c and g, homophones","KS2 Year 3-4 statutory word list, prefixes pre-/dis-","Year 5-6 statutory list, silent letters, word origins","Complex prefixes: inter-, super-, anti-, auto-","Word origins: French, Latin, Greek influences on English","Specialist vocabulary across subjects, technical terms","Advanced etymology, spelling conventions by word origin","Morphological analysis: derivational and inflectional morphemes"]},
-    {id:"grammar",        name:"Grammar & Punctuation",       emoji:"📝", minAge:5,
-     desc:"Sentence structure, word types and punctuation",
-     levels:["Capital letters, full stops, question marks, finger spaces","Nouns, verbs, adjectives, exclamation marks, commas in lists","Conjunctions, adverbs, apostrophes, inverted commas","Pronouns, prepositions, fronted adverbials, paragraphs","Relative clauses, modal verbs, subjunctive, formal/informal","Passive voice, subjunctive mood, complex sentences","Punctuation: colons, semi-colons, dashes, parenthesis","Discourse markers, cohesive devices, text organisation","Register and formality, Standard English, dialect","Advanced grammar: syntax analysis, grammatical ambiguity"]},
-    {id:"reading",        name:"Reading Comprehension",       emoji:"📖", minAge:5,
-     desc:"Retrieval, inference and understanding texts",
-     levels:["Retell stories, sequence events, simple retrieval","Infer character feelings, predict, ask questions about text","Explain and justify using evidence, summarise main ideas","Compare texts, author purpose, vocabulary in context","Critical analysis, writer techniques, evaluate perspectives","Extended inference, implicit meaning, reading between lines","Authorial intent, social and historical context","Comparative reading: compare themes, language, structure","Critical reading: evaluating bias, argument and rhetoric","Advanced literary analysis: symbolism, narrative technique, context"]},
-    {id:"writing",        name:"Writing — Composition",       emoji:"🖊️", minAge:6,
-     desc:"Stories, recounts, letters, instructions and reports",
-     levels:["Simple sentences, describe pictures, recount events","Stories with beginning/middle/end, simple instructions","Paragraphs, expanded noun phrases, different sentence types","Multi-paragraph stories, persuasive letters, formal reports","Complex narratives, evaluate and edit, audience and purpose","Extended writing: multi-genre, sustained argument","Writing for different audiences: broadening register","Crafting language: imagery, tone, voice, style","Editing and redrafting: improving coherence and impact","Advanced writing: literary techniques, independent authorial voice"]},
-    {id:"vocabulary",     name:"Vocabulary & Word Study",     emoji:"💬", minAge:6,
-     desc:"Word meanings, synonyms, antonyms and context",
-     levels:["Match words to pictures, simple definitions","Synonyms and antonyms, word families, compound words","Prefixes and suffixes change meaning, context clues","Formal/informal word choice, figurative language intro","Connotation, etymology, technical vocabulary by subject","Academic vocabulary across subjects, morphological strategies","Figurative language: metaphor, irony, hyperbole in context","Word choice for effect: connotation, register, precision","Etymology and word history: how language evolves","Advanced vocabulary: linguistic analysis, word power in texts"]},
-    {id:"poetry",         name:"Poetry & Creative Writing",   emoji:"🎭", minAge:7,
-     desc:"Rhyme, rhythm, imagery and creative expression",
-     levels:["Rhyming couplets, simple poems, describe a scene","Similes, alliteration, acrostic poems, kennings","Metaphors, personification, performance poetry","Free verse, haiku, narrative poetry, poetic devices","Extended creative writing, evaluate techniques, original voice","Extended poetic forms: sonnets, odes, dramatic monologue","Poetic movement and context: Romantics, War poets","Comparative poetry: themes, form, language, context","Writing extended poetry: developing a poetic voice","Advanced poetry analysis: critical interpretation, reader response"]},
-    {id:"media",          name:"Non-fiction & Media Literacy",emoji:"📰", minAge:7,
-     desc:"Reports, persuasion, evaluating sources",
-     levels:["Information texts, labels, captions, simple reports","Recount texts, newspapers, fact vs opinion","Persuasive writing techniques, bias, argument structure","Formal reports, journalistic writing, evaluate reliability","Complex argument, rhetorical devices, digital media literacy","Extended non-fiction: investigative journalism, documentary","Multimodal texts: image and text combined","Digital media creation: blogs, vlogs, podcasts","Media representation: gender, race, culture in media","Advanced media literacy: propaganda, fake news, political bias"]},
-  ],
-  Science: [
-    {id:"plants",         name:"Plants",                      emoji:"🌱", minAge:5,
-     desc:"Parts of plants, growth, pollination and life cycles",
-     levels:["Name basic parts: root, stem, leaf, flower","What plants need: water, light, warmth, nutrients","Flowers, pollination, seed dispersal, germination","Life cycle of flowering plants, photosynthesis basics","Plant reproduction, adaptation, plant classification","Photosynthesis equation, limiting factors, leaf structure","Plant hormones: tropisms, auxins and their effects","Sexual and asexual reproduction in plants","Plant classification: dichotomous keys, taxonomy","Ecology: plant communities, succession, conservation"]},
-    {id:"animals",        name:"Animals Including Humans",    emoji:"🐾", minAge:5,
-     desc:"Basic needs, food chains, human body and health",
-     levels:["Name and group animals, basic needs, offspring","Food chains, predator/prey, habitats and survival","Skeleton and muscles, nutrition, healthy eating","Digestion, teeth types, food groups, exercise and health","Circulatory system, heart, blood, drugs and lifestyle","Breathing and gas exchange, respiration aerobic/anaerobic","Nervous system: neurones, reflex arc, brain function","Hormonal system: endocrine glands, feedback mechanisms","Reproduction: fertilisation, development, birth","Advanced biology: homeostasis, evolution, ecosystems"]},
-    {id:"materials",      name:"Materials & Their Properties",emoji:"🧪", minAge:5,
-     desc:"Properties of materials, changes and suitability",
-     levels:["Name materials: wood, plastic, metal, glass, fabric","Properties: hard/soft, waterproof, transparent, flexible","Solids, liquids, gases — particles and properties","Dissolving, filtering, evaporation — reversible changes","Irreversible changes, burning, rusting, thermal conductivity","Atomic structure: protons, neutrons, electrons, periodic table","Chemical bonding: ionic, covalent, metallic","Chemical reactions: word and symbol equations, energy changes","Acids, bases, salts: neutralisation, pH scale","Advanced chemistry: rates, equilibrium, organic chemistry"]},
-    {id:"seasons",        name:"Seasonal Changes & Weather",  emoji:"☀️", minAge:4,
-     desc:"The four seasons, weather patterns and day length",
-     levels:["Four seasons: name and describe each","Weather: sunny, rainy, snowy, windy, measuring","Day length changes, sunrise and sunset across seasons","Weather symbols, recording, patterns and predictions","Climate vs weather, UK climate, impact on living things","Climate zones: tropical, temperate, polar, arid","Weather systems: pressure, fronts, precipitation","Climate change: evidence, causes, effects, solutions","Microhabitats and seasonal adaptation","Advanced climatology: models, feedback loops, prediction"]},
-    {id:"living",         name:"Living Things & Habitats",    emoji:"🌿", minAge:6,
-     desc:"Classification, adaptation and ecosystems",
-     levels:["Living/non-living, microhabitats, name local animals","Food chains, producers/consumers, describe habitats","Classification: vertebrates/invertebrates, keys","Adaptation to habitats, variation within species","Classification systems, ecosystems, human impact","Cell biology: cell types, organelles, specialisation","Microscopy: magnification, cell size, drawing cells","Transport in cells: osmosis, diffusion, active transport","Genetics: DNA, chromosomes, genes, inheritance","Advanced biology: protein synthesis, mutations, genetic engineering"]},
-    {id:"forces",         name:"Forces & Motion",             emoji:"🚀", minAge:7,
-     desc:"Gravity, friction, magnetism and mechanisms",
-     levels:["Push and pull forces, magnets attract/repel","Gravity, friction, water resistance, air resistance","Simple mechanisms: levers, pulleys, gears","Effects of forces on shape and movement, balanced forces","Speed calculations, force diagrams, pressure","Newton's Laws: F=ma, resultant forces, free body diagrams","Momentum and impulse, conservation of momentum","Work, energy and power: W=Fd, P=W/t","Pressure: P=F/A, fluid pressure, Hooke's Law","Advanced mechanics: moments, circular motion, waves"]},
-    {id:"light",          name:"Light & Shadow",              emoji:"💡", minAge:7,
-     desc:"Light sources, reflection, shadows and seeing",
-     levels:["Light sources, dark without light, eyes to see","Shadows form opposite light source, shadow size","Reflection from surfaces, mirrors and periscopes","Refraction, prism, spectrum, colour and light","Light travel, speed of light, scientific applications","Reflection: angle of incidence = angle of reflection, mirrors","Refraction: Snell's Law, critical angle, total internal reflection","Lenses: converging and diverging, focal length, ray diagrams","Electromagnetic spectrum: properties and uses of each wave type","Advanced optics: interference, diffraction, polarisation"]},
-    {id:"sound",          name:"Sound",                       emoji:"🎵", minAge:7,
-     desc:"Vibrations, pitch, volume and how sound travels",
-     levels:["Sounds come from vibrations, volume near/far","Pitch high/low linked to size, volume and distance","Insulating sound, string telephones, ear drum","How sound travels through solids/liquids/gases","Speed of sound, echoes, ultrasound applications","Wave properties: frequency, amplitude, wavelength, wave speed","Sound in different media, speed of sound, echoes","Musical instruments: standing waves, harmonics, resonance","The ear: structure and function, hearing range, decibels","Advanced acoustics: Doppler effect, ultrasound applications"]},
-    {id:"electricity",    name:"Electricity & Circuits",      emoji:"⚡", minAge:8,
-     desc:"Simple circuits, components and electrical safety",
-     levels:["Everyday uses of electricity, electrical safety","Simple circuits: battery, bulb, wire, switch","Insulators and conductors, testing materials","Series circuits, voltage, changing brightness/pitch","Circuit diagrams, resistance, electrical current basics","Ohm's Law: V=IR, series and parallel circuits calculations","Power: P=IV, energy: E=Pt, electrical safety","Electromagnetism: solenoids, electromagnets, applications","Induction: generators, transformers, mains electricity","Advanced electricity: semiconductors, logic gates, diodes"]},
-    {id:"earth",          name:"Earth & Space",               emoji:"🌍", minAge:9,
-     desc:"Solar system, Earth rotation, Moon and gravity",
-     levels:["Name planets in solar system, sun is a star","Earth rotation causes day and night, 365 days","Moon orbit of Earth, phases of the Moon","Geocentric vs heliocentric model, historical understanding","Gravity in space, satellites, space exploration","Rock cycle: sedimentary, igneous, metamorphic formation","Plate tectonics: structure of Earth, continental drift","Earthquakes and volcanoes: causes, effects, prediction","Atmosphere: composition, evolution, greenhouse effect","Advanced Earth science: carbon cycle, geologic time, climate"]},
-    {id:"evolution",      name:"Evolution & Inheritance",     emoji:"🦕", minAge:10,
-     desc:"Fossils, adaptation, inheritance and natural selection",
-     levels:["Fossils show life has changed over time","Parents pass traits to offspring, variation","Animals adapt to environments over many generations","Natural selection: survival of the fittest","Evidence for evolution, Darwin, DNA basics","Natural selection: variation, competition, survival, reproduction","Evidence for evolution: fossils, DNA, comparative anatomy","Speciation: geographic isolation, reproductive barriers","Human evolution: hominid fossil record, genetic evidence","Advanced evolution: Hardy-Weinberg, population genetics"]},
-    {id:"properties2",    name:"Properties & Changes",        emoji:"🔬", minAge:9,
-     desc:"States of matter, dissolving, separating and reactions",
-     levels:["Solids/liquids/gases, particle model basics","Dissolving, solutions, solute and solvent","Separating mixtures: filtering, sieving, evaporating","Irreversible changes, new substances formed","Combustion, oxidation, thermal decomposition","Rates of reaction: factors affecting rate, collision theory","Catalysts: enzymes, industrial catalysts, activation energy","Electrolysis: electrolytes, products at electrodes, uses","Energy in reactions: exothermic/endothermic, bond energies","Advanced chemistry: equilibrium, Le Chatelier's principle"]},
-  ],
-  History: [
-    {id:"living_memory",  name:"Changes in Living Memory",    emoji:"👴", minAge:5,
-     desc:"How life has changed within living memory",
-     levels:["How homes have changed: TVs, phones, appliances","How schools have changed: lessons, equipment, rules","How transport has changed: cars, planes, space","Changes to food, shops and everyday life","Oral history, interviewing grandparents, local change","Explore changes in daily life within grandparents' lifetimes: transport, technology, food","Significant national events within living memory: Olympic Games, Royal events","Compare life in the 1950s-1980s with today using photographs and oral histories","Social changes within living memory: women's roles, multiculturalism, technology revolution","Economic and political changes: Thatcher era, devolution, EU membership debate"]},
-    {id:"beyond_memory",  name:"Events Beyond Living Memory", emoji:"📜", minAge:5,
-     desc:"Significant national/global events from the past",
-     levels:["Great Fire of London 1666: causes and effects","The Moon Landing 1969: space race and achievement","The Titanic 1912: why it sank, impact and memory","The Gunpowder Plot 1605: Guy Fawkes, treason, legacy","World events that changed history: suffragettes, plagues","Events beyond living memory significant nationally: Great Fire 1666, Titanic 1912","Victorian Britain: industrial revolution, child labour, railways and empire","World War One: causes, trenches, home front, Armistice, commemoration","World War Two: causes, Blitz, evacuation, Holocaust, D-Day, legacy","Post-war Britain 1945-present: NHS, immigration, Cold War, Falklands, devolution"]},
-    {id:"significant",    name:"Significant People & Events", emoji:"⭐", minAge:5,
-     desc:"Important people who shaped Britain and the world",
-     levels:["Florence Nightingale: nursing, Crimean War, reform","Rosa Parks and Martin Luther King: civil rights","Neil Armstrong: space exploration, the Moon","Queen Elizabeth II: longest reign, modern history","Scientists and inventors: Darwin, Newton, Faraday, Curie","Significant people who changed Britain: Brunel, Florence Nightingale, Suffragettes","Significant people in world history: Gandhi, MLK, Mandela, Marie Curie","Religious and cultural significant figures: Muhammad, Jesus, Buddha in historical context","Scientific and exploratory figures: Darwin, Copernicus, Columbus — impact and controversy","Evaluate historical significance: why do some people matter more to history than others?"]},
-    {id:"ancient",        name:"Ancient Civilisations",       emoji:"🏛️", minAge:7,
-     desc:"Stone Age through to Roman Britain",
-     levels:["Stone Age: hunter-gatherers, cave art, Stonehenge","Bronze and Iron Age: farming, hillforts, Celts","Ancient Egypt: pharaohs, pyramids, mummification, Nile","Ancient Greece: Athens, democracy, Olympics, gods, philosophers","Roman Britain: invasion, Boudicca, roads, villas, legacy","Ancient Egypt: pharaohs, pyramids, mummies, hieroglyphics, River Nile civilisation","Ancient Greece: city-states, democracy, mythology, Olympics, philosophy, legacy","Ancient Rome: Republic to Empire, Julius Caesar, legions, Romanisation of Britain","Mesopotamia: Sumer, Babylon, writing, law codes, ziggurats, first cities","Compare ancient civilisations: trade, beliefs, governance, legacy to modern world"]},
-    {id:"british",        name:"British History",             emoji:"👑", minAge:7,
-     desc:"Anglo-Saxons, Vikings, Tudors, Victorians and beyond",
-     levels:["Anglo-Saxons: kingdoms, Beowulf, culture, Christianity","Vikings: raids, Danelaw, longships, Norse mythology","Tudors: Henry VIII, six wives, Reformation, Elizabeth I","Victorians: industrial revolution, empire, poverty, reform","WW1 and WW2: causes, trenches, home front, legacy","Romans in Britain: invasion, Boudicca, forts, roads, Romanisation, withdrawal","Anglo-Saxons: kingdoms, Christianity, Alfred the Great, culture and settlements","Vikings: raids, settlements, Danelaw, Norse culture, Jorvik","Norman Conquest 1066: Battle of Hastings, Domesday Book, feudal system, castles","Medieval Britain: Magna Carta, Black Death, Peasants' Revolt, Wars of Roses"]},
-    {id:"world_history",  name:"World History",               emoji:"🌐", minAge:8,
-     desc:"Significant events and changes in world history",
-     levels:["Ancient civilisations: Mesopotamia, Indus Valley, China","Medieval world: Crusades, Black Death, Islamic Golden Age","Age of exploration: Columbus, Vasco da Gama, Magellan","Industrial Revolution: steam, factories, social change","Modern world: WW1, WW2, Cold War, decolonisation","Early Islamic civilisation: Baghdad, scholars, medicine, mathematics, trade routes","The Maya: city-states, calendar, astronomy, writing, decline","Benin and West African kingdoms: Benin bronzes, trade, governance, Portuguese contact","Tang Dynasty China: silk road, inventions, paper, gunpowder, printing, global influence","Age of Exploration 1400-1600: Explorers, trade routes, colonisation, Columbian Exchange"]},
-    {id:"local_history",  name:"Local & Community History",   emoji:"🏘️", minAge:6,
-     desc:"History of the local area, buildings and community",
-     levels:["Describe changes to local area using old photos","Identify old buildings and their purpose","Find out how local area developed over time","Research using local archives, maps and census records","Compare local history with national events","Changes in our local area over the last 100 years using maps, photos, census records","Significant local events and people who shaped our town or village","Local industrial history: what was made here, who worked here, conditions","How our local area was affected by national events: WWI/II, industry, immigration","Connecting local history to national and world events — placing local in global context"]},
-    {id:"chronology",     name:"Chronology & Historical Skills",emoji:"📅", minAge:5,
-     desc:"Timelines, historical enquiry and source skills",
-     levels:["Before/after, older/newer, ordering events in sequence","BC and AD, centuries, simple timelines","Primary and secondary sources, what is evidence?","Cause and consequence, similarity and difference","Significance, interpretation, historical argument","Sequence events using timelines: BCE/CE, decades, centuries — place key events","Cause and consequence: identify why events happened and what resulted","Similarity and difference: compare people's lives across different historical periods","Using primary sources: evaluate reliability, bias, perspective of historical evidence","Historical significance: why do some events and people matter more than others?"]},
-  ],
-  Geography: [
-    {id:"uk_geo",         name:"UK Geography",                emoji:"🇬🇧", minAge:5,
-     desc:"UK countries, cities, physical features and regions",
-     levels:["4 countries, capital cities, surrounding seas","Counties, regions, major cities, Offa's Dyke","UK physical features: mountains, rivers, coasts","UK climate, land use, economic regions","Environmental issues, sustainability, UK in the world","UK regions, capital cities, seas and key physical features","UK counties, major cities, population distribution, land use patterns","UK climate: factors affecting weather, regional variations, seasons","UK economic geography: industry, agriculture, tourism, trade and ports","UK challenges: urbanisation, inequality, housing, transport, sustainability"]},
-    {id:"world_geo",      name:"World Geography",             emoji:"🌍", minAge:6,
-     desc:"Continents, countries, capitals and world features",
-     levels:["7 continents and 5 oceans, basic locations","Major countries and capitals, equator and poles","Climate zones: tropical, polar, desert, temperate","Biomes, world rivers, mountain ranges, landmarks","Globalisation, trade, world population and migration","Seven continents, five oceans, lines of latitude and longitude, hemispheres","World's major countries, capital cities and their locations","World climate zones: tropical, arid, temperate, polar — causes and characteristics","World physical geography: major mountain ranges, rivers, deserts, rainforests","Global patterns: population, development, trade, migration, interdependence"]},
-    {id:"physical",       name:"Physical Geography",          emoji:"🏔️", minAge:7,
-     desc:"Weather, landscapes, rivers and natural processes",
-     levels:["Weather types, measuring, recording data","Landscapes: mountains, valleys, coasts, rivers","River formation, erosion, deposition, flooding","Volcanoes, earthquakes, tectonic plates","Climate change: causes, effects, action","Rivers: source, tributaries, meanders, floodplains, erosion and deposition","Mountains: formation, types (fold, block, volcanic), high-altitude biomes","Coasts: erosion features — cliffs, arches, stacks; deposition — beaches, spits","Glaciation: ice ages, glaciers, U-valleys, corries, moraines, fjords","Weather systems: depressions, anticyclones, fronts, precipitation formation"]},
-    {id:"human",          name:"Human Geography",             emoji:"🏙️", minAge:7,
-     desc:"Settlement, land use, trade and economic activity",
-     levels:["Differences between villages, towns, cities","Land use types: farming, industry, leisure, housing","How settlements grow and change over time","Trade links, economic activity, imports/exports","Migration, population, global development issues","Settlement patterns: site and situation, villages, towns, cities, megacities","Land use: residential, commercial, industrial, rural — change over time","Economic activity: primary, secondary, tertiary, quaternary sectors","Trade and globalisation: supply chains, interdependence, fair trade, TNCs","Development: GDP, HDI, development gap, aid vs trade debate"]},
-    {id:"maps",           name:"Maps & Fieldwork",            emoji:"🗺️", minAge:5,
-     desc:"Map reading, grid references and fieldwork skills",
-     levels:["Simple maps, symbols, compass N/S/E/W","4-figure grid references, map keys and scale","6-figure grid references, contour lines, OS maps","Interpreting Ordnance Survey maps, aerial photographs","GIS, satellite imagery, fieldwork data collection","Compass points (8), simple grid references on OS maps, key map symbols","4-figure grid references, scale, measuring distances, contour lines","6-figure grid references, interpreting contour patterns for relief","OS map skills: identifying land use, planning routes, measuring areas","GIS and digital mapping: Google Maps, data layers, spatial analysis"]},
-    {id:"environment",    name:"Environmental Geography",     emoji:"🌿", minAge:8,
-     desc:"Climate change, sustainability and environmental action",
-     levels:["How humans use and change the environment","Pollution: air, water, land — causes and effects","Deforestation, desertification, habitat loss","Climate change: greenhouse gases, rising temperatures","Sustainability, renewable energy, global solutions","Deforestation: causes, effects on biodiversity and climate, sustainable forestry","Climate change: greenhouse gases, evidence, effects on physical and human systems","Renewable vs non-renewable energy: comparison, advantages, disadvantages","Water cycle and water security: scarcity, management, sustainable use","Sustainable development goals: measuring progress, global vs local action"]},
-    {id:"fieldwork",      name:"Fieldwork & Local Study",     emoji:"🔭", minAge:7,
-     desc:"Observing, recording and analysing the local area",
-     levels:["Observe and describe features of local area","Simple surveys and data collection outside","Map own school grounds, use compasses","Land use survey, traffic count, questionnaires","Analyse results, draw conclusions, geographical argument","Data collection methods: tallies, questionnaires, sketches, photographs, measurements","Analysing fieldwork data: bar charts, scatter graphs, maps, annotated sketches","Presenting fieldwork findings: written reports, posters, digital presentations","Evaluating fieldwork: reliability, improvements, comparing data sets","Independent geographical investigation: design, conduct, analyse, conclude, evaluate"]},
-  ],
-
-  // ── 11+ Preparation (Age 10-11) ──────────────────────────────────────
-  "11+ Verbal Reasoning": [
-    {id:"vr_words",      name:"Word Relationships",    emoji:"🔤", minAge:10, desc:"Synonyms, antonyms, odd-one-out", levels:["Synonyms and antonyms","Word categories and odd one out","Analogies: word pairs","Hidden words and word connections","Complex verbal deductions","Advanced synonyms and antonyms at 11+ level vocabulary","Complex analogies: semantic relationships, abstract connections","Word classification: odd-one-out with abstract categories","Hidden words, connected words, compound word patterns","Complex verbal deductions: multiple-step reasoning with words"]},
-    {id:"vr_codes",      name:"Codes & Sequences",     emoji:"🔣", minAge:10, desc:"Letter codes, number sequences", levels:["Simple A=1 number codes","Letter shift codes","Complex coding patterns","Mixed code types","Multi-step code breaking","Multi-step letter codes: A=1 type with offsets and reversals","Complex shift codes: variable shifts, mirror codes","Number sequence codes: arithmetic and geometric within codes","Mixed type codes: letter-number combinations","Timed code-breaking: speed and accuracy under exam conditions"]},
-    {id:"vr_logic",      name:"Logic & Deductions",    emoji:"🧩", minAge:10, desc:"If/then reasoning, true/false", levels:["Simple true/false from statements","Two-step deductions","Multi-clue logic puzzles","Contradictions and validity","Complex argument evaluation","Multi-statement logical deductions: true/false/cannot say","Logical sequences: complete the series with abstract reasoning","Family relationship problems: multi-step family trees","Spatial and ordering logic: who sits where, what order","Complex multi-variable logic puzzles: 11+ style exam questions"]},
-    {id:"vr_comprehension",name:"Comprehension",       emoji:"📖", minAge:10, desc:"Advanced reading comprehension", levels:["Main idea identification","Inference from text","Author's purpose and tone","Evaluating evidence","Critical analysis of argument","11+ style extended reading passages with inference questions","Author's language choices: effect, connotation, technique","Evaluating texts: comparing two passages, identifying bias","Complex inference and deduction from literary extracts","Timed comprehension under exam conditions with full mark scheme"]},
-      {id:"vr_spelling", name:"Spelling & Word Structure", emoji:"✏️", minAge:9,
-     desc:"Spot spelling mistakes and apply word structure rules",
-     levels:["Identify misspelled word from 4 options: Year 3-4 list","Correct the spelling in a sentence context","Homophones: which spelling is correct here?","Prefixes: identify correctly spelled prefixed word","Suffixes: which suffix makes a real word?","Silent letters and double letters: common patterns","Year 5-6 statutory spelling list words","Etymology: Latin and Greek root spelling patterns","Word families: find the correctly spelled related word","Speed spelling: 20 words timed, GL exam style"]},
-],
-  "11+ Non-Verbal Reasoning": [
-    {id:"nvr_patterns",  name:"Pattern Recognition",   emoji:"🔷", minAge:10, desc:"Sequences and matrices", levels:["Simple shape sequences","2x2 pattern matrices","3x3 pattern matrices","Complex rotation patterns","Multi-rule pattern completion","Complete the sequence: 6-item series with two rules","Matrix completion: 3x3 grids with two simultaneous rules","Analogy matrices: abstract shape relationships","Complex rotation and reflection patterns combined","Full 11+ NVR paper: mixed question types under timed conditions"]},
-    {id:"nvr_shapes",    name:"Shape Transformations", emoji:"📐", minAge:10, desc:"Rotation, reflection, nets", levels:["Reflection and rotation basics","Nets of 3D shapes","Paper folding and unfolding","3D cube rotations","Complex spatial reasoning","Nets of all 5 Platonic solids: identify and construct","Complex paper folding: multiple folds with punch holes","3D rotation: visualise rotated 3D objects from 2D views","Similar and congruent shapes: identify from complex sets","Plans and elevations: front, side and top views of 3D shapes"]},
-    {id:"nvr_codes",     name:"Symbol Codes",          emoji:"⬛", minAge:10, desc:"Shape-based codes and rules", levels:["One-feature rules","Two-feature codes","Three-feature codes","Complex shape codes","Multi-rule deductions","Two-feature shape codes: identify rules for each feature","Three-feature codes: size, shading, position, number, rotation","Four-feature codes: most complex NVR code type","Mixed code types: sequences within codes","Full exam practice: timed NVR code papers with marking"]},
-      {id:"nvr_odd_one_out", name:"Odd One Out", emoji:"🔍", minAge:9,
-     desc:"Which shape is the odd one out and why?",
-     levels:["Odd one out by shading: one shape has different fill","Odd one out by type: one is not a polygon","Odd one out by number of sides","Odd one out by symmetry: one lacks a line of symmetry","Odd one out by size relative to others","Odd one out by internal feature position","Two possible odd ones out: explain which and why","Abstract odd one out: complex overlapping rules","Verbal odd one out linked to visual reasoning","CEM style mixed odd one out under timed conditions"]},
-],
-  "11+ Maths": [
-    {id:"11m_number",    name:"Number Operations",     emoji:"🔢", minAge:10, desc:"Advanced arithmetic and number theory", levels:["Multi-step calculations","Factors, multiples, primes","Fractions decimals percentages","Ratio and proportion","Algebra and problem solving","Efficient mental methods: breaking apart, compensation, working backwards","Negative numbers: four operations, order of operations, BIDMAS","Prime factorisation: HCF and LCM using Venn diagrams","Fractions, decimals, percentages: fluent conversion and comparison","Algebra: form and solve equations, substitution, sequences, nth term"]},
-    {id:"11m_shape",     name:"Shape & Space",         emoji:"📐", minAge:10, desc:"Geometry, area, volume, angles", levels:["Area and perimeter of polygons","Volume of cuboids","Circle calculations (pi)","Angles in parallel lines","Coordinate geometry","Area of circles, sectors, composite shapes involving circles","Volume and surface area: cuboids, cylinders, prisms","Angle proofs: parallel lines, polygons, circle theorems intro","Coordinates: midpoints, distance, linear graphs y=mx+c","Similarity and congruence: scale factors, proof, applications"]},
-    {id:"11m_data",      name:"Data & Statistics",     emoji:"📊", minAge:10, desc:"Charts, averages, probability", levels:["Mean, median, mode, range","Pie charts and bar charts","Probability fractions","Frequency tables","Complex data interpretation","Averages from frequency tables, choosing appropriate average","Scatter graphs: correlation, lines of best fit, interpolation","Probability: sample space diagrams, Venn diagrams, tree diagrams","Complex data interpretation: multiple charts, comparing distributions","Statistical reasoning: hypothesis, sample size, bias, conclusions"]},
-  ],  Computing: [
-    {id:"algorithms",     name:"Algorithms & Sequencing",     emoji:"🔢", minAge:5,
-     desc:"Step-by-step instructions, sequences and logic",
-     levels:["Step-by-step instructions for everyday tasks","Sequences: what order, what happens next","Loops: repeating actions to save steps","Conditions: if this, then that — decisions","Nested loops, complex conditions, algorithm design","Algorithms in everyday life: recipes, instructions, directions, rules","Flowcharts: sequence, selection (if/else), iteration (loops)","Decomposition: breaking problems into smaller manageable parts","Pattern recognition: finding similarities to solve new problems efficiently","Abstraction: identifying and focusing on essential information only"]},
-    {id:"coding",         name:"Programming",                 emoji:"💻", minAge:6,
-     desc:"Creating programs using Scratch-style block coding",
-     levels:["Simple sequences in Scratch: move, turn, sound","Events: when key pressed, when sprite clicked","Loops: repeat, forever, count-controlled","Variables: store and change data in programs","Functions, parameters, debugging complex programs","Scratch: sequences, events, motion, looks — simple animated story","Scratch: loops (repeat, forever), conditionals (if/if-else), variables","Python intro: print, input, variables, arithmetic, string operations","Python: if/elif/else statements, while and for loops, functions","Python: lists, dictionaries, file handling, debugging, commenting"]},
-    {id:"networks",       name:"Networks & The Internet",     emoji:"🌐", minAge:7,
-     desc:"How the internet works, websites and communication",
-     levels:["What is the internet? Computers connected globally","The World Wide Web, websites, search engines","How email works, digital communication forms","How data travels: packets, routers, IP addresses","Cloud computing, cybersecurity, HTTPS and encryption","What is the internet: routers, packets, IP addresses, DNS","World Wide Web vs internet: HTTP, URLs, web browsers, search engines","Network hardware: routers, switches, servers, clients, Wi-Fi, Ethernet","Cybersecurity: threats — malware, phishing, hacking; defences — firewalls, encryption","Communication technology: email protocols, VoIP, streaming, cloud computing"]},
-    {id:"data",           name:"Data & Information",          emoji:"📊", minAge:6,
-     desc:"Collecting, organising and presenting data",
-     levels:["Data: information we collect, store and use","Binary: computers use 0s and 1s, pixels","Spreadsheets: entering, sorting, filtering data","Charts and graphs from data, patterns and trends","Databases, big data, data analysis and ethics","Data types: text, numbers, images, sound — how computers store each","Binary: counting in binary, converting to/from decimal, bytes and bits","Data storage: file sizes, compression, lossless vs lossy, cloud storage","Databases: records, fields, queries, sorting, filtering, spreadsheet databases","Big data: what it is, how it's collected, uses, privacy implications"]},
-    {id:"esafety",        name:"E-Safety & Digital Literacy", emoji:"🛡️", minAge:5,
-     desc:"Staying safe online, personal information and rights",
-     levels:["Personal information: what is private, who to tell","Cyberbullying: recognise, report, how to help","Reliable information: not everything online is true","Passwords, privacy settings, safe browsing","Digital footprint, copyright, responsible use","Personal information: what to keep private online, why privacy matters","Cyberbullying: recognise, respond, report — bystander responsibility","Online reliability: evaluating websites, fake news, checking sources","Digital footprint: what you leave online, how it's used, permanence","Screen time, wellbeing, healthy habits: balance, sleep, relationships"]},
-    {id:"creative",       name:"Creative Computing",          emoji:"🎨", minAge:7,
-     desc:"Creating digital content: art, music, video, presentations",
-     levels:["Create digital artwork using painting tools","Create simple animations frame by frame","Record and edit audio, podcasts, voice overs","Create multimedia presentations with images and sound","Design websites, video editing, digital publishing","Digital art: using drawing tools, layers, colour, saving in different formats","Digital audio: recording, editing, importing, exporting, copyright","Video production: filming, editing, transitions, captions, publishing","Web design: HTML basics, structure, CSS styling, publishing a simple page","App design: planning, wireframing, prototyping, user testing, iteration"]},
-  ],
-};
-
-const US_CURRICULUM = {
-  Math: [
-    {id:"counting",       name:"Counting & Cardinality",      emoji:"🔢", minAge:5,
-     desc:"Count to 100, compare numbers, understand quantity — Kindergarten",
-     levels:["Count to 20, one-to-one correspondence, cardinality","Count to 100, count on from any number, compare groups","Skip count by 2s, 5s, 10s, even and odd numbers","Place value to 1,000, compare and order 3-digit numbers","Place value to 1,000,000, rounding, comparing large numbers","Count and compare numbers to 1,000; skip count by 2s, 5s, 10s, 100s","Place value to 10,000: expanded form, comparing, ordering, rounding to 1,000","Place value to 1,000,000: powers of 10, standard and word form","Whole numbers to 1 billion; integers: positive, negative, absolute value","Rational numbers: integers, fractions, decimals on the number line"]},
-    {id:"operations",     name:"Operations & Algebraic Thinking",emoji:"➕", minAge:5,
-     desc:"Addition, subtraction, multiplication, division — word problems",
-     levels:["Add and subtract within 10, word problems with objects","Add/subtract within 20, relate addition to subtraction","Multiplication as equal groups, division as sharing fairly","Multiply/divide within 100, properties of operations","Multi-step word problems, factors, multiples, patterns","Multi-digit multiplication and division, partial products","Decimals: add, subtract, multiply, divide to hundredths","Fractions: all operations, mixed numbers","Ratios, rates, unit rates, proportional reasoning","Integers and rational numbers: all four operations"]},
-    {id:"base_ten",       name:"Number & Operations — Base Ten",emoji:"🔟", minAge:5,
-     desc:"Place value, multi-digit arithmetic and rounding",
-     levels:["Compose/decompose numbers 11-19 using tens and ones","Understand hundreds, add/subtract 2-digit numbers","Round to nearest 10/100, add/subtract within 1,000","Multi-digit multiplication, divide with remainders","Multiply multi-digit numbers, divide 4-digit by 2-digit","Numbers to millions, scientific notation intro","Decimal operations: all four operations, estimation","Powers of 10, exponents, order of operations (PEMDAS)","Rational and irrational numbers, absolute value","Real number system: classify and operate with all types"]},
-    {id:"fractions",      name:"Fractions & Decimals",         emoji:"½",  minAge:7,
-     desc:"Unit fractions, equivalent fractions, operations",
-     levels:["Equal parts of a whole, halves, fourths, thirds","Unit fractions on number line, equivalent fractions","Fractions greater than 1, compare with same denominator","Add/subtract fractions same denominator, multiply by whole","Add/subtract unlike denominators, multiply/divide fractions","Unit fractions and non-unit fractions: parts of whole and set","Equivalent fractions: visual models, number line representations","Compare and order fractions with different denominators","Add and subtract fractions: like and unlike denominators","Multiply and divide fractions: whole numbers, fractions, mixed numbers"]},
-    {id:"measurement_us", name:"Measurement & Data",           emoji:"📏", minAge:5,
-     desc:"Measuring length, time, money, graphs and data",
-     levels:["Order by length/height/weight, above and below","Measure in inches and centimeters, tell time to hour","Measure to nearest quarter inch, bar graphs, picture graphs","Perimeter of polygons, area by counting, time intervals","Convert measurement units, volume, line plots, data analysis","Measurement conversions: metric and customary","Area and perimeter of complex polygons","Volume of rectangular prisms, nets","Surface area and volume of 3D figures","Measurement in real-world problem solving with algebraic thinking"]},
-    {id:"geometry_us",    name:"Geometry",                     emoji:"📐", minAge:5,
-     desc:"2D/3D shapes, area, perimeter and coordinate plane",
-     levels:["Name 2D and 3D shapes, sort by attributes","Partition shapes into equal parts, halves, fourths","Understand perimeter, identify quadrilaterals, area","Lines, angles, symmetry, classify triangles and quadrilaterals","Coordinate plane, graph points, classify 2D figures","Coordinate geometry: all four quadrants","Area: triangles, parallelograms, trapezoids","Angle relationships: supplementary, complementary, vertical","Transformations: translations, reflections, rotations, dilations","Pythagorean theorem, distance formula, geometric proofs"]},
-    {id:"number_system",  name:"The Number System",            emoji:"🔣", minAge:9,
-     desc:"Factors, multiples, decimals and negative numbers",
-     levels:["Factors and multiples, prime and composite numbers","Decimal notation, compare decimals to thousandths","Negative numbers on number line, absolute value","GCF and LCM, fraction/decimal/percent equivalence","Rational numbers, operations with integers","Factors and multiples: GCF, LCM, prime and composite numbers","Rational numbers: add, subtract, multiply, divide positive and negative","Rates, ratios and proportional reasoning: unit rates, equivalent ratios","Percent: meaning, conversions, percent of a number, percent change","Scientific notation: writing, comparing, multiplying and dividing"]},
-    {id:"expressions",    name:"Expressions & Equations",      emoji:"📐", minAge:10,
-     desc:"Variables, simple equations and inequalities",
-     levels:["Understand variables, evaluate expressions","Write and solve one-step equations","Write and graph inequalities","Dependent and independent variables","Analyse patterns, represent relationships","Write and evaluate numerical expressions: order of operations, parentheses","Variables: write expressions and equations with variables","Equivalent expressions: combine like terms, distributive property","Solve one-step equations: addition, subtraction, multiplication, division","Solve two-step equations and inequalities; graph solutions on number line"]},
-  ],
-  "English Language Arts": [
-    {id:"reading_lit",    name:"Reading — Literature",         emoji:"📚", minAge:5,
-     desc:"Key ideas, story structure, character and theme",
-     levels:["Retell stories, identify characters, setting, events","Ask and answer questions, central message, lesson","Describe characters and how they affect the story","Determine theme, summarise, compare stories and myths","Quote accurately, compare themes, analyse how chapters fit","Ask and answer questions about key details in literary texts","Determine theme or central message; describe how characters respond to challenges","Compare and contrast characters, settings, or events using details from text","Determine theme and summarise; analyse character development over a story","Cite textual evidence; analyse how characters, setting, plot interact"]},
-    {id:"reading_info",   name:"Reading — Informational Text", emoji:"📰", minAge:5,
-     desc:"Main idea, text features and author's purpose",
-     levels:["Identify main topic, key details, connections","Ask and answer questions, identify main idea, retell","Determine main idea, explain how reasons support it","Determine main idea, explain how examples support it","Quote text, determine main idea, explain author's purpose","Identify main topic and key details in informational texts","Determine main idea and key details; explain how author supports points","Explain how key details support the main idea; compare two texts on same topic","Determine main idea; explain how it is supported by key details; summarise","Cite textual evidence; determine two or more main ideas; analyse text structure"]},
-    {id:"foundational",   name:"Foundational Reading Skills",  emoji:"🔤", minAge:4,
-     desc:"Phonics, phonological awareness and reading fluency",
-     levels:["Phonemic awareness: rhyme, syllables, initial sounds","Letter-sound relationships, decode CVC words","Vowel teams, blends, digraphs, sight words 100","R-controlled vowels, prefixes/suffixes, fluency grade 2","Multisyllabic words, fluency with grade 3 texts","Phonics: consonant blends, digraphs, long vowel patterns, syllable types","Decoding multisyllabic words: prefixes, suffixes, root words, syllabication","Fluency: read grade-level text with accuracy, appropriate rate, expression","Vocabulary strategies: context clues, word relationships, reference materials","Academic vocabulary: domain-specific words, figurative language, connotations"]},
-    {id:"writing_us",     name:"Writing",                      emoji:"✏️", minAge:5,
-     desc:"Opinion, informational and narrative writing",
-     levels:["Write name, draw and write about topics","Write opinion with reason, informational, narrative","Write opinion with multiple reasons, informational reports","Write structured opinion, informational, narrative essays","Research-based writing, precise language, clear structure","Opinion writing: introduce topic, state opinion, supply reasons, provide conclusion","Informative writing: introduce topic, develop with facts and definitions, conclude","Narrative writing: establish situation, introduce narrator/characters, sequence events","Research-based writing: gather information from multiple sources, cite sources","Extended argument: claim, counterclaim, evidence, analysis, formal style"]},
-    {id:"speaking",       name:"Speaking & Listening",         emoji:"🗣️", minAge:5,
-     desc:"Collaborative discussions and presentations",
-     levels:["Participate in conversations, follow rules for discussion","Build on others' talk, ask clarifying questions","Determine main ideas, report on topics clearly","Engage in discussion, report on topics with facts","Adapt speech for context, present claims, multimedia","Participate in collaborative discussions: listen, take turns, stay on topic","Report on a topic using facts and details; speak clearly at understandable pace","Summarise texts read aloud; identify reasons and evidence a speaker provides","Present claims and findings sequentially; use appropriate facts and details","Adapt speech to context: formal presentations, evidence-based discussions"]},
-    {id:"language_us",    name:"Language & Grammar",           emoji:"📝", minAge:5,
-     desc:"Grammar conventions, vocabulary and figurative language",
-     levels:["Print letters, capitalisation, end punctuation","Nouns, verbs, adjectives, commas in series","Irregular nouns/verbs, adjectives, adverbs, commas","Relative pronouns/adverbs, progressive verbs, modifiers","Perfect verbs, shifts in verb tense, correlative conjunctions","Nouns, pronouns, verbs, adjectives, adverbs: identify and use correctly","Capitalization, punctuation, spelling: commas, apostrophes, quotation marks","Sentence variety: simple, compound, complex; subordinating conjunctions","Formal vs informal English; correct shifts in verb tense; pronoun agreement","Subject-verb agreement; active vs passive voice; mood — indicative, imperative"]},
-  ],
-  Science: [
-    {id:"earth_space_us", name:"Earth & Space Science",        emoji:"🌍", minAge:5,
-     desc:"Weather, Earth materials, solar system — NGSS aligned",
-     levels:["Weather patterns: sunny, rainy, snowy, seasonal changes","Earth materials: rocks, soil, water — properties and uses","Earth's surface: mountains, valleys, plains, water bodies","Solar system: sun, moon, planets, Earth's rotation","Earth processes: erosion, weathering, water cycle, fossils","Weather and climate: temperature, precipitation, wind; patterns and prediction","Earth's materials: rocks, soil, water; properties, uses, natural resources","Earth's systems: lithosphere, hydrosphere, atmosphere, biosphere interactions","Earth's history: fossils, rock layers, continental drift, geological time","Space systems: Earth-Moon-Sun; solar system; stars; universe scale and structure"]},
-    {id:"life_science",   name:"Life Science",                 emoji:"🌿", minAge:5,
-     desc:"Plants, animals, ecosystems and heredity — NGSS aligned",
-     levels:["Needs of living things: plants and animals, survival","Life cycles: plants, insects, frogs, birds","Ecosystems: food chains, habitats, interdependence","Heredity: traits from parents, variation, adaptation","Natural selection, evolution evidence, biodiversity","Organisms and environments: basic needs, habitats, adaptations, food webs","Life cycles and traits: inherited and acquired traits, reproduction strategies","Ecosystems: energy flow, matter cycling, biodiversity, human impact","Heredity and evolution: variation, natural selection, fossil evidence","Body systems: structure and function of major human body systems"]},
-    {id:"physical_sci",   name:"Physical Science",             emoji:"⚡", minAge:6,
-     desc:"Matter, forces, motion and energy — NGSS aligned",
-     levels:["Properties of matter: solid, liquid, gas, weight, volume","Forces and motion: pushes/pulls, speed, direction","Energy: light, heat, sound, electrical — forms and transfer","Waves: light and sound properties, communication","Chemical reactions, conservation of matter, energy transfer","Matter: properties, states, physical vs chemical changes, mixtures, solutions","Forces and motion: push/pull, speed, gravity, friction, balanced/unbalanced forces","Energy: forms, transfer, conservation; sound, light, heat, electricity","Waves: properties of light and sound waves; electromagnetic spectrum","Engineering design: define problem, brainstorm solutions, test, evaluate, improve"]},
-    {id:"engineering",    name:"Engineering Design",           emoji:"🔧", minAge:6,
-     desc:"Define problems, design solutions, test and improve",
-     levels:["Identify a problem, brainstorm and choose a solution","Build and test a model, improve based on results","Define criteria and constraints, compare solutions","Optimise solutions, communicate results scientifically","System thinking, trade-offs, societal impact of solutions","Engineering design process: identify problem, criteria and constraints","Generate and test solutions: prototyping, fair testing, iteration","Materials properties in engineering: choosing right material for function","Simple machines: lever, pulley, inclined plane, wheel and axle, screw, wedge","Systems thinking: inputs, outputs, feedback, optimising complex systems"]},
-  ],
-  "Social Studies": [
-    {id:"community",      name:"Community & Citizenship",      emoji:"🏘️", minAge:5,
-     desc:"Rules, rights, responsibilities and community roles",
-     levels:["Classroom and school rules, why we have them","Community helpers: police, firefighters, doctors, teachers","Rights and responsibilities at home, school, community","Local government: mayor, city council, how decisions made","State and national government, Constitution, Bill of Rights","Roles in community: family, school, neighbourhood, local government","Rules and laws: why we have them, how they are made, rights and responsibilities","Community helpers and workers: services, goods, supply and demand basics","Local government: mayor, city council, services provided, civic participation","Communities across America: urban, suburban, rural; how geography shapes life"]},
-    {id:"us_history",     name:"American History",             emoji:"🦅", minAge:6,
-     desc:"Native Americans through Civil Rights Movement",
-     levels:["Native American peoples: culture, traditions, regions","Colonial America: Pilgrims, Jamestown, 13 colonies","American Revolution: causes, key figures, Declaration of Independence","Civil War: slavery, Lincoln, battles, abolition, Reconstruction","Civil Rights Movement: segregation, MLK, Rosa Parks, legislation","Native Americans: major tribes, cultures, traditions, relationship with land","European exploration and colonisation: Columbus, Pilgrims, 13 Colonies, reasons","American Revolution: causes, Declaration of Independence, key figures, outcome","Constitution and early republic: founding documents, branches of government","Westward expansion: Manifest Destiny, Oregon Trail, impact on Native Americans"]},
-    {id:"world_hist_us",  name:"World History",                emoji:"🌐", minAge:8,
-     desc:"Ancient civilisations to modern global events",
-     levels:["Ancient Egypt, Greece, Rome: achievements and legacy","Medieval world: feudalism, Crusades, Black Death, Islam","Age of Exploration: Columbus, conquistadors, colonisation","Industrial Revolution, imperialism, World War 1","World War 2, Cold War, decolonisation, modern global issues","Ancient civilisations: Mesopotamia, Egypt, Greece, Rome — achievements and legacy","Medieval world: feudalism, Islamic Golden Age, Crusades, Black Death","Renaissance and Reformation: humanism, scientific revolution, religious change","Age of exploration and colonisation: trade routes, empires, cultural exchange","Industrial Revolution: causes, effects on society, workers, cities, global trade"]},
-    {id:"us_geography",   name:"US Geography",                 emoji:"🇺🇸", minAge:6,
-     desc:"50 states, regions, physical features and human geography",
-     levels:["Cardinal directions, map symbols, continents and oceans","US regions: Northeast, Southeast, Midwest, Southwest, West","50 states and capitals, major physical features","US climate zones, rivers (Mississippi), mountain ranges","US population, cities, economic regions, immigration patterns","US regions: Northeast, Southeast, Midwest, Southwest, West — features and culture","Physical features of the US: Rocky Mountains, Mississippi River, Great Plains","US climate zones: factors affecting climate, regional differences","Human geography: population patterns, immigration, urbanisation, land use","US in the world: trade, alliances, foreign policy, global interdependence"]},
-    {id:"world_geo_us",   name:"World Geography",              emoji:"🌍", minAge:7,
-     desc:"Continents, countries, cultures and world issues",
-     levels:["7 continents, 5 oceans, major countries and capitals","Physical geography: biomes, climate zones, landforms","Human geography: population, urbanisation, migration","Cultural diversity: language, religion, customs worldwide","Global issues: trade, climate, conflict, interdependence","World regions: identify major world regions on maps, key physical features","Population geography: where people live, why, migration patterns","Cultural geography: language, religion, traditions, cultural diffusion","Economic geography: developed vs developing nations, resources, trade patterns","Environmental geography: human impact, climate zones, natural disasters, sustainability"]},
-    {id:"economics_us",   name:"Economics & Financial Literacy",emoji:"💵", minAge:7,
-     desc:"Needs vs wants, money, trade and economic systems",
-     levels:["Needs vs wants, goods and services, making choices","Earning, spending, saving, importance of budgeting","Supply and demand, producers and consumers, markets","Trade: imports, exports, comparative advantage, global trade","Economic systems, entrepreneurship, personal finance","Scarcity and choice: needs vs wants, opportunity cost, making decisions","Supply and demand: how prices are set, market economy basics","Producers and consumers: specialisation, trade, interdependence","Money and banking: saving, borrowing, interest, budgeting basics","Government's economic role: taxes, public goods, economic systems comparison"]},
-      {id:"11m_algebra", name:"Algebra & Equations", emoji:"🔡", minAge:9,
-     desc:"Form and solve equations to find unknowns",
-     levels:["Missing number: □ + 7 = 15, find the value","Simple equations: x + 5 = 12, solve for x","Two-step equations: 2x + 3 = 11, solve for x","Equations with brackets: 3(x + 2) = 15","Word problems: form and solve an equation","Substitution: find value when n=3 in expressions","Function machines: two-step, find input or output","Sequences and nth term: find the formula","Simultaneous equations: x + y = 10, x - y = 2","Multi-step algebraic word problems: GL exam style"]},
-    {id:"11m_worded", name:"Multi-Step Word Problems", emoji:"📝", minAge:9,
-     desc:"Real-world problems requiring multiple calculation steps",
-     levels:["Single-operation word problems: choose the right operation","Two-step problems: e.g. total cost with change","Ratio word problems: share an amount in given ratio","Percentage problems: discount, profit and loss","Speed distance time: find the missing variable","Time problems: intervals, timetables, before and after","Money problems: bills, VAT, best value comparisons","Mixture problems: combining different rates or prices","Geometry word problems: apply formulae in context","Full GL/CEM mock: 50 questions in 50 minutes timed"]},
-],
-  Computing: [
-    {id:"comp_thinking",  name:"Computational Thinking",       emoji:"🧠", minAge:5,
-     desc:"Decomposition, patterns, abstraction and algorithms",
-     levels:["Break problems into steps, spot patterns in sequences","Decompose complex tasks, identify what to ignore","Algorithm design, precise unambiguous instructions","Generalise solutions, evaluate efficiency of solutions","Abstraction in code, modelling real-world problems","Decomposition: break complex problems into smaller steps","Pattern recognition: find repeated elements to create efficient solutions","Abstraction: remove unnecessary detail, focus on what matters","Algorithms: write precise step-by-step instructions for solving problems","Evaluation: test solutions, identify errors, improve and optimise"]},
-    {id:"programming_us", name:"Programming",                  emoji:"💻", minAge:6,
-     desc:"Creating programs in Scratch and text-based languages",
-     levels:["Scratch: sequences, events, motion and sounds","Scratch: loops, conditions, variables","Scratch: functions/sprites, simple games and stories","Python/JS introduction: variables, loops, conditions","Functions, lists, debugging, sharing and collaborating","Scratch: sequences, events, loops, basic game or animation","Scratch: variables, conditionals, user input, more complex projects","Python basics: print, variables, input, arithmetic, string formatting","Python: conditionals, loops, functions, simple programs with purpose","Python: lists, file I/O, modules, debugging, commenting, documentation"]},
-    {id:"networks_us",    name:"Networks & The Internet",      emoji:"🌐", minAge:7,
-     desc:"How the internet works and digital communication",
-     levels:["Devices connect to share information, basic network","The internet vs World Wide Web, search effectively","Email, messaging, video calls — digital communication tools","How websites work: HTML basics, DNS, IP addresses","Cybersecurity: threats, protection, staying safe online","Internet basics: packets, routers, IP addresses, how data travels","Web vs internet: HTTP, browsers, URLs, search engines, how websites work","Cybersecurity: passwords, phishing, malware, how to stay safe online","Privacy: data collection, cookies, personal information, digital rights","Network infrastructure: client-server, cloud computing, IoT, future internet"]},
-    {id:"data_us",        name:"Data & Analysis",              emoji:"📊", minAge:6,
-     desc:"Collecting, visualising and interpreting data",
-     levels:["Collect and organise data, tally charts, pictographs","Spreadsheets: enter and sort data, simple charts","Create graphs, identify patterns and outliers","Database queries, filtering and sorting complex data","Statistical thinking, bias in data, ethical data use","Binary: bits and bytes, counting in binary, representing data","Data types: text, numbers, images, audio — how computers store information","Spreadsheets: entering data, formulas, sorting, filtering, basic charts","Databases: tables, records, fields, queries, sorting, relational databases","Data science: collecting, cleaning, analysing, visualising, interpreting data"]},
-    {id:"digital_citizen",name:"Digital Citizenship",          emoji:"🛡️", minAge:5,
-     desc:"Online safety, privacy and responsible technology use",
-     levels:["Personal information: private vs public, trusted adults","Cyberbullying: recognise, respond, report, empathy","Media balance, screen time, healthy technology habits","Privacy settings, strong passwords, phishing awareness","Digital footprint, copyright, fair use, credibility of sources","Online identity: usernames, privacy settings, what to share and not share","Cyberbullying: recognise, respond, report; be an upstander not bystander","Media literacy: evaluate websites, identify fake news, check sources","Copyright and fair use: creative commons, citing sources, plagiarism","Screen time and wellbeing: balanced technology use, healthy digital habits"]},
-    {id:"impacts",        name:"Impacts of Computing",         emoji:"🤖", minAge:8,
-     desc:"How technology shapes society, AI and the future",
-     levels:["How computers help us: medicine, transport, communication","Automation: jobs technology does, jobs humans do","Artificial intelligence: what it is, examples in daily life","Social media: benefits, risks, misinformation, mental health","Ethical computing: bias, accessibility, environmental impact","Positive impacts of technology: healthcare, communication, education, accessibility","Negative impacts: job displacement, addiction, environment, digital divide","Artificial intelligence: what it is, how it works, examples in daily life","Algorithmic bias: how algorithms can be unfair, who is responsible","Future of technology: emerging trends, ethical questions, citizen responsibility"]},
-  ],
-};
-
-const CA_CURRICULUM = {
-  Mathematics: [
-    {id:"number_sense",   name:"Number Sense",                 emoji:"🔢", minAge:4,
-     desc:"Counting, place value, fractions and operations — Ontario aligned",
-     levels:["Count to 50, subitize groups, compare quantities (Kindergarten)","Numbers to 200, place value, addition/subtraction to 20","Numbers to 1000, multiplication/division patterns, fractions","Multi-digit operations, fractions on number line, decimals intro","Operations with fractions and decimals, ratios, proportional reasoning","Number relationships to 10,000, rounding strategies","Mental math: compensation, friendly numbers","Integers: meaning, ordering, adding and subtracting","Rational numbers: fractions, decimals, percents","Powers and exponents, order of operations"]},
-    {id:"algebra_ca",     name:"Algebra",                      emoji:"🔣", minAge:7,
-     desc:"Patterns, relationships, variables and equations",
-     levels:["Identify and extend repeating and growing patterns","Describe patterns with tables and rules","Represent patterns with variables, solve simple equations","Linear patterns, algebraic expressions, solving equations","Systems of relationships, algebraic modelling, coding connections","Patterns: identify, describe, extend, create growing and shrinking patterns","Variables: understand variables as placeholders, simple expressions","Linear relationships: tables of values, graphs, equations y=mx+b","Solving equations: one-step, two-step, check by substitution","Algebraic reasoning: model real situations, solve problems, justify solutions"]},
-    {id:"data_ca",        name:"Data Literacy",                emoji:"📊", minAge:5,
-     desc:"Collecting, organising and interpreting data — statistics",
-     levels:["Sort and classify objects, simple graphs (pictographs)","Bar graphs, tally charts, ask questions about data","Stem-and-leaf plots, mean/median/mode intro, bias awareness","Scatter plots, correlation, data collection methods","Statistical reasoning, probability, census vs sample","Collecting and organising data: surveys, experiments","Graphing: double bar, broken line, scatter plot","Measures of central tendency and spread","Probability: theoretical, experimental, tree diagrams","Data analysis: drawing conclusions, making predictions"]},
-    {id:"spatial",        name:"Spatial Sense",                emoji:"📐", minAge:5,
-     desc:"2D/3D shapes, measurement, location and transformation",
-     levels:["Name 2D/3D shapes, describe location, measure length","Perimeter, area basics, angles as turns, coordinate grid","Area of rectangles, volume basics, transformations","Surface area, volume of prisms, Cartesian plane, scale","Pythagorean theorem intro, geometric reasoning, design projects","2D shapes: properties, sorting, identifying in the environment","3D figures: identify, describe properties, nets, views","Location and movement: grid coordinates, transformations","Geometric relationships: angles, parallel, perpendicular, congruence","Measurement and geometry: area, perimeter, surface area, volume connections"]},
-    {id:"financial",      name:"Financial Literacy",           emoji:"💰", minAge:6,
-     desc:"Money, earning, spending, saving and budgeting",
-     levels:["Identify coins and bills, make amounts, simple purchases","Estimate costs, make change, save for a goal","Budgeting: income vs expenses, wants vs needs, planning","Interest, taxes intro, charitable giving, consumer rights","Credit, debt, financial planning, economic citizenship","Money: count coins and bills, make change, compare costs","Budgeting: needs vs wants, making a simple budget, saving goals","Banking basics: accounts, deposits, withdrawals, interest concept","Consumer math: unit price, best buy, taxes, discounts, tipping","Financial literacy: debt, credit, investing basics, economic choices"]},
-    {id:"social_emo",     name:"Social-Emotional Learning",    emoji:"❤️", minAge:5,
-     desc:"Growth mindset, problem-solving and resilience in learning",
-     levels:["I can learn from mistakes, try different strategies","Identify helpful vs unhelpful thinking, persist with challenges","Reflect on learning, seek help, collaborate on problems","Manage frustration, set goals, monitor own learning","Self-advocacy, mentor others, contribute to math community","Self-awareness: identifying emotions, strengths, areas for growth","Social skills: listening, cooperation, conflict resolution, empathy","Goal setting: SMART goals, planning, persisting through challenges","Decision making: consequences, values, responsible choices","Community and global citizenship: rights, responsibilities, contributing"]},
-  ],
-  Language: [
-    {id:"reading_ca",     name:"Reading",                      emoji:"📖", minAge:4,
-     desc:"Phonics, decoding, fluency and comprehension — Ontario",
-     levels:["Letter sounds, phonemic awareness, 45 core phonemes, CVC words","Blending and segmenting, common sight words, simple books","Fluency with grade-level texts, monitor comprehension","Text features, main idea, inference, author's craft","Critical literacy, comparing perspectives, synthesising across texts","Reading strategies: predict, connect, visualise, question, infer, determine importance","Reading comprehension: retell, identify main idea, make inferences from text","Reading for purpose: fiction vs non-fiction, author's intent, text features","Critical literacy: whose voice is heard, what perspectives are missing","Independent reading: self-select texts, monitor comprehension, read widely"]},
-    {id:"writing_ca",     name:"Writing",                      emoji:"✏️", minAge:5,
-     desc:"Narrative, expository, persuasive and multimedia writing",
-     levels:["Write simple sentences about familiar topics with pictures","Paragraph structure, narrative with beginning/middle/end","Multi-paragraph writing, persuasive letters, research reports","Complex narratives, formal/informal register, citation basics","Extended essays, argument writing, multimedia composition","Writing process: brainstorm, plan, draft, revise, edit, publish","Narrative writing: personal narrative, fiction, descriptive details, voice","Informational writing: research, note-taking, organise, cite sources","Persuasive writing: opinion, reasons, evidence, counter-argument, call to action","Writing for real purposes: letters, blogs, scripts, multi-modal texts"]},
-    {id:"oral",           name:"Oral Communication",           emoji:"🗣️", minAge:4,
-     desc:"Listening, speaking, discussion and presentation skills",
-     levels:["Follow simple instructions, speak in full sentences, listen actively","Small group discussion, take turns, ask relevant questions","Present information clearly, active listening strategies","Formal presentations, debate, adjusting for audience and purpose","Lead discussions, evaluate effectiveness, interview techniques","Active listening: focus, ask questions, respond respectfully","Speaking clearly: volume, pace, eye contact, appropriate vocabulary","Collaborative discussion: build on others' ideas, disagree respectfully","Oral presentation: prepare, practise, use visuals, handle questions","Media communication: podcast, video, digital storytelling, audiences"]},
-    {id:"media_ca",       name:"Media Literacy",               emoji:"📱", minAge:6,
-     desc:"Analyse, create and evaluate media texts — digital literacy",
-     levels:["Identify different types of media, messages in advertising","Identify point of view in media, create simple media texts","Analyse how media constructs meaning, audience awareness","Evaluate credibility of online sources, responsible creation","Media and identity, algorithmic bias, ethical media production","Identify types of media: print, digital, audio, video, social media","Analyse media messages: purpose, audience, techniques used to persuade","Evaluate media: reliability, bias, representation, stereotypes","Create media texts: plan, produce, reflect on purpose and audience","Media and society: how media shapes culture, values, identity, democracy"]},
-  ],
-  "Science & Technology": [
-    {id:"life_systems",   name:"Life Systems",                 emoji:"🌿", minAge:5,
-     desc:"Plants, animals, human body, habitats and ecosystems",
-     levels:["Needs of living things, parts of plants, animals and habitats","Life cycles of plants and animals, growth and change","Human body systems, nutrition, health and well-being","Ecosystems: food chains, biotic/abiotic, biodiversity","Population dynamics, human impact on ecosystems, conservation","Characteristics of living things: cells, growth, response, reproduction","Plant systems: roots, stems, leaves, flowers — structure and function","Animal systems: digestive, circulatory, respiratory, skeletal, nervous","Ecosystems: food webs, energy flow, biodiversity, interdependence","Sustainability: human impact on ecosystems, conservation, stewardship"]},
-    {id:"matter_ca",      name:"Matter & Materials",           emoji:"🧪", minAge:5,
-     desc:"Properties of materials, states of matter and changes",
-     levels:["Properties of materials, sort by: hard/soft, magnetic","States of matter: solid, liquid, gas, observable changes","Physical vs chemical changes, mixtures, solutions","Particle model, changes of state, heat and temperature","Atomic structure basics, periodic table intro, chemical reactions","Properties of matter: physical properties, measuring, comparing materials","States of matter: solid, liquid, gas — particle model, changing states","Pure substances vs mixtures: elements, compounds, mechanical mixtures, solutions","Chemical vs physical change: evidence, reversibility, new substances","Atomic theory: atoms, elements, periodic table basics, chemical bonding intro"]},
-    {id:"energy_ca",      name:"Energy & Control",             emoji:"⚡", minAge:7,
-     desc:"Forces, motion, electricity, light and sound",
-     levels:["Push/pull forces, magnets attract/repel, simple machines","Electricity: circuits, series, safety, conductors/insulators","Light: sources, reflection, refraction, colour spectrum","Sound: vibrations, pitch, volume, how sound travels","Forms of energy, energy transformation, conservation of energy","Forms of energy: mechanical, thermal, light, sound, electrical, chemical","Energy transfer and transformation: follow energy through a system","Heat energy: conduction, convection, radiation, insulators and conductors","Light and optics: reflection, refraction, colour, lenses and mirrors","Electricity and magnetism: circuits, electromagnets, generators, renewable energy"]},
-    {id:"structures",     name:"Structures & Mechanisms",      emoji:"🏗️", minAge:6,
-     desc:"Simple machines, structures, forces and design process",
-     levels:["Strong shapes in structures, build stable structures","Simple machines: lever, pulley, wheel, ramp, screw","Mechanical advantage, gears, pneumatics and hydraulics","Design process: identify, design, build, test, improve","Complex structures, loads, materials engineering, systems","Structures in nature and built environment: identify function and design","Forces on structures: load, tension, compression, torsion, shear","Properties of materials: strength, flexibility, hardness for structural use","Design process: identify need, design, build, test, evaluate, improve","Sustainable design: environmental impact, materials choice, life cycle"]},
-    {id:"earth_ca",       name:"Earth & Space Systems",        emoji:"🌍", minAge:6,
-     desc:"Rocks, water cycle, weather, climate and solar system",
-     levels:["Rocks and minerals, soil formation, erosion","Water cycle: evaporation, condensation, precipitation","Weather patterns, climate vs weather, Canadian climate regions","Solar system, moon phases, Earth's rotation and revolution","Climate change, human impact, sustainability, Indigenous knowledge","Weather: measuring, recording, predicting; instruments and meteorology","Water cycle: evaporation, condensation, precipitation, collection, groundwater","Rocks and minerals: types, formation, properties, identification, uses","Soils: composition, formation, properties, importance to ecosystems","Climate change: causes, evidence, effects in Canada, global solutions"]},
-  ],
-  "Social Studies": [
-    {id:"canadian",       name:"Canadian Heritage & Identity", emoji:"🍁", minAge:6,
-     desc:"First Nations, colonial history, Confederation and modern Canada",
-     levels:["My community: home, school, neighbourhood, local leaders","First Nations peoples: diverse cultures, traditions, land relationships","New France and British colonisation: fur trade, conflict, cultural exchange","Confederation 1867: Fathers of Confederation, why Canada united","WW1, WW2, peacekeeping: Canada's role and contribution","Indigenous peoples of Canada: First Nations, Métis, Inuit — culture and contributions","Early Canadian history: explorers, New France, British colonisation, Confederation","Canadian identity: multiculturalism, Charter of Rights, official languages","Canadian government: federal, provincial, municipal — roles and responsibilities","Canada in the world: NATO, UN, peacekeeping, trade, foreign policy"]},
-    {id:"ca_geography",   name:"Canadian Geography",           emoji:"🗺️", minAge:5,
-     desc:"Provinces, territories, physical features and regions",
-     levels:["Province and territory names and capitals on a map","Natural regions: Canadian Shield, Prairies, Rockies, Arctic","Physical features: Great Lakes, St. Lawrence, Rocky Mountains","Climate regions, natural resources, Indigenous territories","Population distribution, urbanisation, regional identity","Canada's regions: Atlantic, Central, Prairie, Pacific, Northern — features and resources","Physical geography: Canadian Shield, Rocky Mountains, Great Lakes, rivers","Natural resources: forestry, mining, agriculture, oil — sustainability","Population geography: distribution, urbanisation, immigration, diversity","Environmental geography: climate zones, ecosystems, conservation in Canada"]},
-    {id:"world_hist_ca",  name:"World History & Global Geography",emoji:"🌐", minAge:7,
-     desc:"Ancient civilisations, exploration and global connections",
-     levels:["Ancient civilisations: Egypt, Greece, Rome, China, Mesopotamia","Medieval world: feudalism, Islam, trade routes, Black Death","Age of Exploration: European contact, colonisation and its impacts","Industrial Revolution, imperialism, WW1 and WW2 global impact","Cold War, decolonisation, United Nations, modern global issues","Ancient civilisations: contributions to science, arts, governance, philosophy","Medieval and early modern world: feudalism, trade routes, religious change","European contact and colonisation: impact on Indigenous peoples worldwide","Industrial Revolution: causes, effects on work, cities, environment globally","Modern world history: WWI, WWII, Cold War, decolonisation, globalisation"]},
-    {id:"government_ca",  name:"Government & Citizenship",     emoji:"⚖️", minAge:7,
-     desc:"Democratic government, rights, responsibilities and law",
-     levels:["Rules vs laws, class rules, school community decisions","Municipal government: mayor, councillors, local services","Provincial government: Premier, MPPs, how laws are made","Federal government: Prime Minister, Parliament, Constitution","Canadian Charter of Rights and Freedoms, Indigenous rights, treaties","Rules and laws: why communities need them, how they protect rights","Local government: how it works, services provided, how to participate","Provincial and federal government: roles, responsibilities, how bills become law","Democracy and voting: rights, responsibilities, how elections work in Canada","Global governance: United Nations, international law, Canada's global role"]},
-    {id:"economics_ca",   name:"Economics & Sustainable Development",emoji:"🌱", minAge:7,
-     desc:"Resources, trade, financial literacy and sustainability",
-     levels:["Needs vs wants, goods and services, producers and consumers","Natural resources: renewable vs non-renewable, responsible use","Trade: why Canada trades, imports/exports, major trading partners","Economic systems, entrepreneurship, Indigenous economic models","Sustainable development goals, green economy, global responsibility","Needs and wants: scarcity, choice, opportunity cost in daily life","Canadian economy: sectors, major industries, trade partners, labour market","Entrepreneurship: innovation, risk, reward, social enterprise","Global economics: trade, interdependence, fair trade, development","Financial decisions: budgeting, saving, investing, understanding debt"]},
-    {id:"global_issues",  name:"Global Issues & Perspectives", emoji:"🌐", minAge:9,
-     desc:"Sustainability, climate, human rights and global connections",
-     levels:["Global citizenship: rights and responsibilities worldwide","Climate change: causes, effects, Canadian and global action","Poverty and inequality: causes, solutions, international aid","Conflict, peacekeeping and the UN: Canada's role","Sustainable Development Goals, activism, making a difference","Human rights: Universal Declaration, examples of violations, advocacy","Poverty and inequality: causes, effects, organisations working for change","Environmental sustainability: climate change, biodiversity loss, solutions","Migration and refugees: causes, experiences, responsibility, policy","Global citizenship: taking action locally, nationally and globally"]},
-  ],
-  "Computer Studies": [
-    {id:"comp_think_ca",  name:"Computational Thinking",       emoji:"🧠", minAge:5,
-     desc:"Algorithms, decomposition, patterns and problem-solving",
-     levels:["Follow and give step-by-step instructions, spot patterns","Decompose problems, identify what information is needed","Design algorithms, evaluate different solutions","Generalise solutions, use abstraction to simplify problems","Model complex problems, optimise solutions, evaluate efficiency","Decomposition: break problems into parts, identify steps in daily processes","Abstraction: identify essential information, create simplified models","Algorithms: write clear instructions, identify errors, improve solutions","Pattern recognition: identify repeating elements, apply to new problems","Debugging: find and fix errors systematically, test and verify solutions"]},
-    {id:"coding_ca",      name:"Coding & Programming",         emoji:"💻", minAge:6,
-     desc:"Scratch, Python and block-based programming",
-     levels:["Scratch: sequences, events, sprites and backdrops","Scratch: loops, conditionals, variables, simple games","Python intro: print, input, variables, if/else statements","Python: loops, functions, lists, debug and test programs","Projects: create original programs, collaborate, present code","Scratch: sequences, events, motion, basic interactive program","Scratch: loops, conditionals, variables, interactive game or story","Python: print, variables, input, arithmetic, string manipulation","Python: if/elif/else, for/while loops, functions with parameters","Python: lists, file handling, modules, commenting, collaborative projects"]},
-    {id:"digital_cit_ca", name:"Digital Citizenship",          emoji:"🛡️", minAge:5,
-     desc:"Online safety, privacy, wellbeing and responsible use",
-     levels:["Personal information safety, trusted adults, reporting concerns","Cyberbullying: recognition, empathy, bystander responsibility","Screen time balance, mental health, healthy digital habits","Critical thinking online: misinformation, advertising, algorithms","Privacy rights, digital footprint, responsible content creation","Digital identity: managing your online presence, privacy settings","Cyberbullying: recognise, respond, report; creating positive online culture","Information literacy: evaluating digital sources, fact-checking, citations","Copyright and intellectual property: creating and respecting original work","Digital wellbeing: screen time, sleep, relationships, healthy technology use"]},
-    {id:"data_ca2",       name:"Data Literacy & Computing",    emoji:"📊", minAge:7,
-     desc:"Collecting, analysing and presenting data ethically",
-     levels:["Collect and record data, simple graphs and charts","Spreadsheets: sort, filter, create charts from data","Statistical thinking: mean, median, bias, sampling","Database design, queries, analysis of large data sets","Ethical data use, privacy, AI and machine learning basics","Data collection: surveys, experiments, observations — organising data","Data representation: bar graphs, line graphs, pictographs, circle graphs","Binary and data storage: how computers represent information","Spreadsheets: entering, sorting, filtering, formulas, creating charts","Data privacy: how companies collect data, rights, protecting personal information"]},
-  ],
-};
-
-// ── Active curriculum selector ────────────────────────────────────────────
-// Returns the curriculum for the child's country
-// UK National Curriculum Computing — was missing entirely despite
-// Computing games and the Computing hub category existing.
-UK_CURRICULUM_COMPUTING_FIX: {
-  UK_CURRICULUM.Computing = [
-    {id:"algorithms",     name:"Algorithms & Logic",       emoji:"🧩", minAge:5,
-     desc:"Understanding and creating step-by-step instructions",
-     levels:["Follow simple instructions in order","Create simple algorithms for everyday tasks","Debug simple algorithms, predict outcomes","Sequence, selection and repetition in algorithms","Design algorithms with variables and conditions","Decompose problems into smaller parts","Compare algorithms for efficiency","Logical reasoning to detect and correct errors","Searching and sorting algorithm concepts","Algorithm design: flowcharts, pseudocode, evaluation"]},
-    {id:"programming",    name:"Programming",              emoji:"💻", minAge:6,
-     desc:"Writing and debugging programs",
-     levels:["Give a device simple commands","Create simple programs with blocks","Use repetition (loops) in programs","Use selection (if/then) in programs","Use variables to store and change values","Combine loops, selection and variables","Write programs with inputs and outputs","Design, write and debug modular programs","Work with procedures and functions","Plan, build and evaluate complete projects"]},
-    {id:"data_info",      name:"Data & Information",       emoji:"📊", minAge:6,
-     desc:"How computers store, organise and present data",
-     levels:["Sort objects into groups","Create simple pictograms","Collect and record data","Present data in charts and tables","Use branching databases","Search and sort data in a database","Understand how data is stored as binary intro","Design a database with fields and records","Interpret and question data critically","Data modelling and spreadsheet formulas"]},
-    {id:"online_safety",  name:"Online Safety & Networks", emoji:"🛡️", minAge:5,
-     desc:"Staying safe online and understanding the internet",
-     levels:["Know to tell a trusted adult about worries online","Keep personal information private","Recognise kind and unkind online behaviour","Understand passwords and why they matter","Know what to do about unkind messages","Understand the internet as connected computers","Evaluate whether online content is trustworthy","Understand digital footprints","Recognise persuasive design and fake content","Networks, the web, and safe responsible use"]},
-  ];
-}
-
-function getCurriculum(country) {
-  if(country === "US") return US_CURRICULUM;
-  if(country === "CA") return CA_CURRICULUM;
-  return UK_CURRICULUM; // default to UK
-}
-// The subjects a child ACTUALLY studies, named as their country names them.
-// (US: Math/ELA/Social Studies; CA: Mathematics/Language/Science & Technology.)
-function subjectsFor(country) {
-  return Object.keys(getCurriculum(country||"UK")).filter(s=>!s.startsWith("11+"));
-}
-
-// Subject names per country
-const SUBJECT_NAMES = {
-  UK: ["Maths","English","Science","History","Geography","Computing","11+ Verbal Reasoning","11+ Non-Verbal Reasoning","11+ Maths"],
-  US: ["Math","English Language Arts","Science","Social Studies","Computing"],
-  CA: ["Mathematics","Language","Science & Technology","Social Studies","Computer Studies"],
-};
-
-// Canonical subjects for display (maps to country-specific names)
-function getSubjects(country) {
-  return SUBJECT_NAMES[country] || SUBJECT_NAMES.UK;
-}
-
-// Legacy CURRICULUM for backward compatibility
-const CURRICULUM = UK_CURRICULUM;
-
-
-// Subject-style aliases: every country's subject names must resolve
-SUB["Math"]=SUB["Math"]||SUB.Maths;
-SUB["Mathematics"]=SUB["Mathematics"]||SUB.Maths;
-SUB["English Language Arts"]=SUB["English Language Arts"]||SUB.English;
-SUB["Language"]=SUB["Language"]||SUB.English;
-SUB["Science & Technology"]=SUB["Science & Technology"]||SUB.Science;
-SUB["Social Studies"]=SUB["Social Studies"]||SUB.History;
-SUB["Computer Studies"]=SUB["Computer Studies"]||SUB.Computing;
-
-const YEAR = {
-  UK:{4:"Reception",5:"Year 1",6:"Year 2",7:"Year 3",8:"Year 4",9:"Year 5",10:"Year 6",11:"Year 6"},
-  US:{4:"Kindergarten",5:"Grade 1",6:"Grade 1",7:"Grade 2",8:"Grade 3",9:"Grade 4",10:"Grade 5",11:"Grade 5"},
-  CA:{4:"Kindergarten",5:"Grade 1",6:"Grade 2",7:"Grade 3",8:"Grade 4",9:"Grade 5",10:"Grade 6",11:"Grade 6"},
-};
-const TUTORS = {
-  Sparky:{emoji:"⚡",color:C.amber,light:C.aLight,anim:"bounceY 1.1s ease-in-out infinite",
-    tagline:"Let's GO! Learning is the best adventure!",
-    style:"energetic and enthusiastic. Short punchy sentences. Exclamation marks. Celebrate every win loudly.",
-    voice:{rate:0.85,pitch:1.2}},
-  Pip:{emoji:"🦉",color:C.violet,light:C.vLight,anim:"floatY 2s ease-in-out infinite",
-    tagline:"Every question is a little discovery...",
-    style:"gentle and curious. Warm storytelling. Say hmm and interesting. Make the child feel safe.",
-    voice:{rate:0.78,pitch:1.0}},
-};
-const AVATARS = [
-  {id:"fox",e:"🦊"},{id:"panda",e:"🐼"},{id:"lion",e:"🦁"},{id:"penguin",e:"🐧"},
-  {id:"dragon",e:"🐲"},{id:"unicorn",e:"🦄"},{id:"cat",e:"🐱"},{id:"dog",e:"🐶"},
-  {id:"rabbit",e:"🐰"},{id:"bear",e:"🐻"},{id:"frog",e:"🐸"},{id:"owl",e:"🦉"},
-];
-const BADGES = [
-  {id:"first",   name:"First Step",      emoji:"🌟",check:p=>p.total>=1},
-  {id:"streak3", name:"On a Roll",        emoji:"🔥",check:p=>p.streak>=3},
-  {id:"streak7", name:"Weekly Warrior",   emoji:"⚡",check:p=>p.streak>=7},
-  {id:"streak30",name:"Monthly Legend",   emoji:"👑",check:p=>p.streak>=30},
-  {id:"xp100",   name:"Century Club",     emoji:"💯",check:p=>p.xp>=100},
-  {id:"xp500",   name:"XP Legend",        emoji:"🏆",check:p=>p.xp>=500},
-  {id:"acc80",   name:"Sharp Mind",       emoji:"🎯",check:p=>p.total>=20&&p.correct/p.total>=0.8},
-  {id:"maths3",  name:"Maths Star",       emoji:"🔢",check:p=>p.level.Maths>=3},
-  {id:"eng3",    name:"Word Wizard",      emoji:"📖",check:p=>p.level.English>=3},
-  {id:"sci3",    name:"Science Whiz",     emoji:"🔬",check:p=>p.level.Science>=3},
-  {id:"q50",     name:"Halfway Hero",     emoji:"🏅",check:p=>p.total>=50},
-  {id:"q100",    name:"Centurion",        emoji:"🎖️",check:p=>p.total>=100},
-  {id:"allSubs", name:"All-Rounder",      emoji:"🌈",check:p=>(p.subsTried||[]).length>=3},
-  {id:"perfect", name:"Perfectionist",    emoji:"✨",check:p=>(p.bestStreak||0)>=10},
-  {id:"gamer",   name:"Game On",          emoji:"🎮",check:p=>(p.gamesPlayed||0)>=1},
-  {id:"speed",   name:"Speed Demon",      emoji:"💨",check:p=>(p.gamesBeat||0)>=1},
-  {id:"gamePro", name:"Game Master",      emoji:"🕹️",check:p=>(p.gamesPlayed||0)>=9},
-];
 
 // ── STORAGE ───────────────────────────────────────────────────────────────
 const SK = "adapt:v1";
@@ -1023,7 +495,7 @@ function BadgeNotif({badgeId,onDone}) {
 }
 
 // ── ANSWER OPTIONS (reused in Diagnostic + Session) ───────────────────────
-function Options({options,correct,selected,answered,onAnswer}) {
+function Options({options,correct,selected,answered,onAnswer,hinted}) {
   const A=useGameA11y();
   const cols = ["#E53E3E","#3182CE","#D69E2E","#38A169"];
   const isGrid = (options?.length||0) === 4 && !A.largeTapTargets;
@@ -1033,22 +505,23 @@ function Options({options,correct,selected,answered,onAnswer}) {
         const right=opt.charAt(0)===correct,isSel=opt===selected;
         const isCorrect=answered&&right;
         const isWrong=answered&&isSel&&!right;
-        const isDim=answered&&!right&&!isSel;
+        const isHinted=!answered&&hinted?.includes(opt);
+        const isDim=(answered&&!right&&!isSel)||isHinted;
         const col=cols[i%4];
         return (
-          <button key={opt} onClick={()=>!answered&&onAnswer(opt)} disabled={answered}
+          <button key={opt} onClick={()=>!answered&&!isHinted&&onAnswer(opt)} disabled={answered||isHinted}
             style={{padding:A.largeTapTargets?"19px 16px":"15px 12px",borderRadius:16,border:"none",
               background:isCorrect?"#22C55E":isWrong?(A.noRedFeedback?"#64748B":"#EF4444"):isDim?"#F1F5F9":`linear-gradient(135deg,${col},${col}DD)`,
               color:isDim?"#94A3B8":"#fff",
               fontSize:(A.largeText?16:14),fontWeight:A.dyslexiaFont?700:900,textAlign:"center",lineHeight:1.4,
               fontFamily:A.dyslexiaFont?FDYS:F,letterSpacing:A.dyslexiaFont?"0.04em":undefined,
-              cursor:answered?"default":"pointer",
-              opacity:isDim?0.45:1,
+              cursor:(answered||isHinted)?"default":"pointer",
+              opacity:isDim?0.4:1,
               boxShadow:answered?"none":`0 4px 14px ${col}50`,
               transform:isCorrect?"scale(1.04)":isWrong?"scale(0.97)":"scale(1)",
               transition:"all 0.2s cubic-bezier(0.34,1.56,0.64,1)",
               animation:isCorrect?"correctPop 0.4s cubic-bezier(0.34,1.56,0.64,1)":isWrong?"wrongShake 0.4s ease":"none"}}>
-            {isCorrect?"✅ ":isWrong?"❌ ":""}{opt.replace(/^[A-D]\)\s*/,"")}
+            {isCorrect?"✅ ":isWrong?"❌ ":isHinted?"✕ ":""}{opt.replace(/^[A-D]\)\s*/,"")}
           </button>
         );
       })}
@@ -1450,7 +923,7 @@ function ChildDash({child,isParentView,onSession,onGames,onBadges,onParentView,o
         <div style={{padding:"0 16px",marginBottom:8}}>
           <p id="adapt-subjects" style={{fontSize:11,fontWeight:900,color:"#4338CA",textTransform:"uppercase",letterSpacing:"0.14em",marginBottom:12,scrollMarginTop:16,textShadow:"0 1px 0 rgba(255,255,255,0.6)"}}>✨ Your Subjects</p>
           <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,marginBottom:12}}>
-            {getSubjects(child.country||"UK").map(s=>{
+            {getSubjects(child.country||"UK",child.age).map(s=>{
               const sc=SUB[s]||{emoji:"📚",color:C.primary,light:C.pLight};
               const lvl=child.level[s]||1;
               const diff=getDifficultyLabel(lvl);
@@ -1651,7 +1124,7 @@ function MasteryTest({child,subject,topic,level,onPass,onFail}) {
 Child: age ${child.age}, ${child.yearGroup||"Year 3"}, ${child.country||"UK"} curriculum, Level ${level}.
 Test full understanding. Mix easy medium hard. Need ${PASS}/${TOTAL} to pass.
 ${a11yPromptRules(child)} Return ONLY JSON: {"questions":[{"q":"...","options":["A) ...","B) ...","C) ...","D) ..."],"correct":"A","explanation":"..."}]}`,
-    "Mastery test.").then(d=>{if(d?.questions?.length)setQs(d.questions);});
+    "Mastery test.").then(d=>{const clean=sanitizeQs(d?.questions);if(clean.length)setQs(clean);});
   },[]);
   const answer=(opt)=>{
     if(ans||!qs)return;setSel(opt);setAns(true);
@@ -1710,6 +1183,8 @@ function Session({child,startSubject,startTopic,onComplete,onUpdate,onExit,a11y=
   const [loading,setLoading]=useState(true);
   const [sel,setSel]=useState(null);
   const [ans,setAns]=useState(false);
+  const [hintsLeft,setHintsLeft]=useState(a11y.extraHints?3:2);
+  const [hinted,setHinted]=useState([]);
   const [sC,setSC]=useState(0);  // session correct
   const [sT,setST]=useState(0);  // session total
   const [sXP,setSXP]=useState(0);
@@ -1773,12 +1248,13 @@ function Session({child,startSubject,startTopic,onComplete,onUpdate,onExit,a11y=
   const load=async(sub,m)=>{
     setLoading(true);setSel(null);setAns(false);
     const cm=m??mRef.current;
-    const r=await claude(
+    const r0=await claude(
       sessionSys({...child,level:child.level},sub,topic,cm,sC,sT,askedQs),
       "Generate the next question. Make it different from: "+askedQs.slice(-5).join(", ")
     );
+    const r=sanitizeLessonQ(r0,child.age); // never trust a raw AI response — this is what fixes "lessons don't load"
     if(r?.question&&askedQs.includes(r.question)){
-      const r2=await claude(sessionSys({...child,level:child.level},sub,topic,cm,sC,sT,askedQs),"Generate a completely NEW different question.");
+      const r2=sanitizeLessonQ(await claude(sessionSys({...child,level:child.level},sub,topic,cm,sC,sT,askedQs),"Generate a completely NEW different question."),child.age);
       setQ(r2||r);
     }else{
       setQ(r);
@@ -1787,6 +1263,16 @@ function Session({child,startSubject,startTopic,onComplete,onUpdate,onExit,a11y=
     if(cm==="audio"&&r) setTimeout(()=>speak(r.question,child.tutor),400);
   };
   useEffect(()=>{load(subject,mode);},[]);
+  useEffect(()=>{setHinted([]);},[q?.question]);
+  const useLessonHint=()=>{
+    if(ans||hintsLeft<=0)return;
+    const already=new Set(hinted);
+    const nextWrong=(q?.options||[]).find(o=>!(o===q.correct||String(o).charAt(0)===q.correct)&&!already.has(o));
+    if(!nextWrong)return;
+    setHinted(h=>[...h,nextWrong]);
+    setHintsLeft(h=>h-1);
+    playSound('tap');
+  };
 
   const answer=(opt)=>{
     if(ans)return;
@@ -2020,7 +1506,11 @@ function Session({child,startSubject,startTopic,onComplete,onUpdate,onExit,a11y=
               <p style={{fontSize:a11y.largeText?22:19,fontWeight:700,color:C.text,lineHeight:1.8,marginBottom:20,fontFamily:a11y.dyslexiaFont?FDYS:F,letterSpacing:a11y.dyslexiaFont?"0.05em":undefined}}>{q.question}</p>
               {q.hint&&!ans&&<div style={{marginBottom:14,padding:"10px 14px",borderRadius:10,fontSize:13,fontWeight:600,color:"#92400E",background:"#FFFBEB",border:"1px solid #FDE68A"}}>💡 {q.hint}</div>}
               {mode==="audio"&&<button onClick={()=>speak(q.question,child.tutor)} style={{marginBottom:14,padding:"7px 14px",borderRadius:8,cursor:"pointer",border:`2px solid ${tutor.color}`,background:tutor.light,fontFamily:F,color:tutor.color,fontWeight:800,fontSize:13}}>🔊 Hear again</button>}
-              <Options options={q.options} correct={q.correct} selected={sel} answered={ans} onAnswer={answer}/>
+              {!ans&&<button onClick={useLessonHint} disabled={hintsLeft<=0} aria-label={`Use a hint, ${hintsLeft} left`}
+                style={{display:"block",marginBottom:14,padding:"7px 15px",borderRadius:10,cursor:hintsLeft>0?"pointer":"default",
+                fontFamily:F,fontSize:12.5,fontWeight:900,border:`2px solid ${hintsLeft>0?"#FDE68A":C.border}`,
+                background:hintsLeft>0?"#FFFBEB":"#F8FAFC",color:hintsLeft>0?"#92400E":C.muted}}>💡 Hint ×{hintsLeft}</button>}
+              <Options options={q.options} correct={q.correct} selected={sel} answered={ans} onAnswer={answer} hinted={hinted}/>
               {ans&&(
                 <div style={{marginTop:16,animation:"pop 0.22s ease"}}>
                   <div style={{display:"flex",gap:12,alignItems:"flex-start",padding:"12px 14px",borderRadius:12,marginBottom:10,background:isRight?C.gLight:(a11y.noRedFeedback?"#F1F5F9":C.rLight),border:`1px solid ${isRight?C.green:(a11y.noRedFeedback?"#94A3B8":C.red)}`}}>
@@ -2678,7 +2168,7 @@ Write a personalised paragraph for the parent.`
           <SectionHeader k="subjects" title="Subject Breakdown" emoji="📚"/>
           {expanded.subjects&&(
             <div style={{animation:"fadeUp 0.2s ease"}}>
-              {getSubjects(child.country||"UK").map(subj=>{
+              {getSubjects(child.country||"UK",child.age).map(subj=>{
                 // Map US/CA subject names to display config
                 const displaySubj=SUB_ALIASES[subj]||subj;
                 const sc=SUB[displaySubj]||SUB[subj]||{color:C.primary,light:C.pLight,emoji:"📚"};
@@ -2900,7 +2390,7 @@ Write a personalised paragraph for the parent.`
                   Average level: {avgLevel.toFixed(1)} · Expected for age {child.age}: {expectedLevel.toFixed(1)}
                 </p>
               </div>
-              {getSubjects(child.country||"UK").map(subj=>{
+              {getSubjects(child.country||"UK",child.age).map(subj=>{
                 // Map US/CA subject names to display config
                 const displaySubj=SUB_ALIASES[subj]||subj;
                 const sc=SUB[displaySubj]||SUB[subj]||{color:C.primary,light:C.pLight,emoji:"📚"};
@@ -3135,219 +2625,6 @@ function ParentName({onNext,onBack}) {
 // MINI GAMES SYSTEM
 // ═════════════════════════════════════════════════════════════════
 
-const GAMES = [
-  // Maths / Math / Mathematics
-  { id:"frogJump",     name:"Frog Number Jump", emoji:"🐸",
-    subjects:["Maths","Math","Mathematics"], topics:["number_sense","counting","operations"],
-    desc:"ARCADE! Hop the frog to where the answer lives!", minAge:4,
-    levelDesc:["Numbers to 10","Numbers to 20","Adding jumps","Numbers to 50","Numbers to 100"] },
-  { id:"balanceScale", name:"Balance Scale",    emoji:"⚖️",
-    subjects:["Maths","Math","Mathematics"], topics:["operations","number_sense","addition"],
-    desc:"ARCADE! Stack weights until both sides balance!", minAge:5,
-    levelDesc:["Small totals","Bigger totals","Using 5s","Using 10s","Balance master"] },
-  { id:"oddEvenSort",  name:"Odd & Even Sort",  emoji:"🧮",
-    subjects:["Maths","Math","Mathematics"], topics:["number_sense","counting"],
-    desc:"ARCADE! Flick numbers into the right bucket — fast!", minAge:5,
-    levelDesc:["Numbers to 20","Numbers to 50","Bigger numbers","Speed sorting","Sort champion"] },
-  { id:"roboRescue",   name:"Robo Rescue",      emoji:"🤖",
-    subjects:["Computing","Computer Studies"], topics:["algorithms","programming"],
-    desc:"ARCADE! Program the robot to reach the star!", minAge:6,
-    levelDesc:["Straight lines","Simple turns","Around walls","Tricky mazes","Master coder"] },
-  { id:"livingSort",   name:"Living or Not?",   emoji:"🌱",
-    subjects:["Science","Science & Technology"], topics:["living_things","biology"],
-    desc:"ARCADE! Sort the world into living and not living!", minAge:4,
-    levelDesc:["Easy sorting","Trickier things","Speed round","Expert eye","Science sorter"] },
-  { id:"nounVerbSort", name:"Noun or Verb?",    emoji:"📖",
-    subjects:["English","English Language Arts","Language"], topics:["grammar","vocabulary"],
-    desc:"ARCADE! Flick each word into noun or verb!", minAge:6,
-    levelDesc:["Easy words","Everyday words","Tricky words","Speed round","Grammar great"] },
-  { id:"numberBridge",  name:"Number Bridge",        emoji:"🌉",
-    subjects:["Maths","Math","Mathematics"], topics:["number_sense","counting","operations"],
-    desc:"NEW! Tap planks in order to build the bridge!", minAge:4,
-    levelDesc:["Order small numbers","Counting patterns","Bigger steps","Tricky sequences","Speed sequencing"] },
-  { id:"tableMatch",    name:"Times Table Match",    emoji:"🃏",
-    subjects:["Maths","Math","Mathematics"], topics:["multiplication","operations"],
-    desc:"NEW! Flip cards to pair sums with answers!", minAge:6,
-    levelDesc:["2s and 5s pairs","Mixed easy tables","All tables","Harder mixes","Memory master"] },
-  { id:"alphabetBridge",name:"Alphabet Bridge",      emoji:"🔤",
-    subjects:["English","English Language Arts","Language"], topics:["phonics","spelling","vocabulary"],
-    desc:"NEW! Build the bridge in alphabetical order!", minAge:5,
-    levelDesc:["First letters","A-Z ordering","Trickier words","Close letters","Alphabet ace"] },
-  { id:"wordPicMatch",  name:"Word & Picture Match", emoji:"🖼️",
-    subjects:["English","English Language Arts","Language"], topics:["vocabulary","phonics","reading"],
-    desc:"NEW! Match each word to its picture!", minAge:4,
-    levelDesc:["Simple words","Everyday words","New vocabulary","Tricky words","Word wizard"] },
-  { id:"meteorMaths",     name:"Meteor Maths",      emoji:"🌠",
-    subjects:["Maths","Math","Mathematics"],
-    topics:["operations","addition","multiplication","number_sense"],
-    desc:"ARCADE! Tap the right meteor before it smashes the shield!", minAge:5,
-    levelDesc:["Add and subtract to 25","Bigger sums and easy tables","Mixed tables and sums","Fast mixed arithmetic","Rapid-fire calculations"] },
-  { id:"wordMeteors",     name:"Word Meteors",      emoji:"☄️",
-    subjects:["English","English Language Arts","Language"],
-    topics:["spelling","phonics","vocabulary"],
-    desc:"ARCADE! Zap the correctly spelled word before it lands!", minAge:6,
-    levelDesc:["Simple common words","Tricky letter patterns","Homophone traps","Harder spelling rules","Challenge words"] },
-  { id:"numberBlaster",   name:"Number Blaster",    emoji:"🔢",
-    subjects:["Maths","Math","Mathematics"],
-    topics:["number_place","addition","operations","base_ten","counting","number_sense"],
-    desc:"Race the clock — answer equations before time runs out!", minAge:4,
-    levelDesc:["Simple addition to 10","Mixed +/- to 20","Multiplication and division","Multi-step calculations","Algebra and advanced operations"] },
-  { id:"timesTableRace",  name:"Times Table Race",  emoji:"⏱️",
-    subjects:["Maths","Math","Mathematics"],
-    topics:["multiplication","operations"],
-    desc:"How fast can you recall your times tables?", minAge:7,
-    levelDesc:["2, 5 and 10 times tables","3, 4 and 8 times tables","All tables to 12","Mixed tables under pressure","Random tables up to 15"] },
-  { id:"fractionChef",    name:"Fraction Chef",     emoji:"🍕",
-    subjects:["Maths","Math","Mathematics"],
-    topics:["fractions","number_sense"],
-    desc:"Slice the pizza to show the correct fraction!", minAge:6,
-    levelDesc:["Halves and quarters","Thirds and sixths","Equivalent fractions","Add and subtract fractions","Multiply fractions and decimals"] },
-  // English / ELA / Language
-  { id:"wordScramble",    name:"Word Scramble",     emoji:"🔤",
-    subjects:["English","English Language Arts","Language"],
-    topics:["spelling","phonics","foundational","reading_ca"],
-    desc:"Unscramble the letters to find the hidden word!", minAge:6,
-    levelDesc:["CVC words and simple phonics","Common sight words","Year 3-4 vocabulary","Year 5-6 vocabulary","Academic and technical vocabulary"] },
-  { id:"spellingBee",     name:"Spelling Bee",      emoji:"🐝",
-    subjects:["English","English Language Arts","Language"],
-    topics:["spelling","phonics","foundational","reading_ca"],
-    desc:"Listen carefully and spell each word correctly.", minAge:7,
-    levelDesc:["Phase 3-4 phonics words","KS1 common exception words","Year 3-4 statutory word list","Year 5-6 statutory word list","Advanced vocabulary and etymology"] },
-  { id:"sentenceBuilder", name:"Sentence Builder",  emoji:"✏️",
-    subjects:["English","English Language Arts","Language"],
-    topics:["grammar","language_us","writing_ca"],
-    desc:"Arrange the words to build a correct sentence.", minAge:5,
-    levelDesc:["Simple subject-verb sentences","Add adjectives and adverbs","Compound sentences with conjunctions","Complex sentences with clauses","Formal writing and sophisticated structures"] },
-  // Science
-  { id:"scienceSort",     name:"Science Sort",      emoji:"🔬",
-    subjects:["Science","Science & Technology"],
-    topics:["living","animals","life_science","life_systems","plants"],
-    desc:"Sort the items into the correct scientific categories!", minAge:5,
-    levelDesc:["Living vs non-living, basic animal groups","Vertebrates and invertebrates, plant parts","Food chains, classification keys, habitats","Ecosystems, adaptation, classification systems","Evolution, genetics, complex classification"] },
-  { id:"statesOfMatter",  name:"States of Matter",  emoji:"💧",
-    subjects:["Science","Science & Technology"],
-    topics:["materials","matter_ca","physical_sci"],
-    desc:"Is it a solid, liquid or gas? Sort them correctly!", minAge:6,
-    levelDesc:["Identify solids, liquids and gases","Properties of each state, examples","Changes of state: melting, freezing, evaporating","Particle model, temperature and state changes","Chemical changes vs physical changes"] },
-  { id:"planetPatrol",    name:"Planet Patrol",     emoji:"🪐",
-    subjects:["Science","Science & Technology"],
-    topics:["earth","earth_ca","earth_space_us"],
-    desc:"Identify the planets from their clues and facts!", minAge:7,
-    levelDesc:["Name the 8 planets in order","Key facts about each planet","Comparing planets: size, distance, moons","Solar system structure, asteroids, comets","Space exploration, stars, galaxies"] },
-  // History / Social Studies
-  { id:"timelineSort",    name:"Timeline Sorter",   emoji:"📅",
-    subjects:["History","Social Studies"],
-    topics:["chronology","us_history","british","living_memory","canadian"],
-    desc:"Place historical events in the correct order!", minAge:6,
-    levelDesc:["Order events from own lifetime","Order events from last 100 years","Order events in British/American/Canadian history","Ancient to modern timeline challenges","World history chronology across civilisations"] },
-  { id:"historyMatch",    name:"History Match",     emoji:"🏛️",
-    subjects:["History","Social Studies"],
-    topics:["ancient","us_history","british","world_history","world_hist_us","canadian"],
-    desc:"Match historical figures, dates and events!", minAge:7,
-    levelDesc:["Match simple facts about local/national history","Famous people and their achievements","Events and their dates and causes","Complex cause and effect matching","Historical sources and interpretations"] },
-  // Geography
-  { id:"mapQuiz",         name:"Map Explorer",      emoji:"🗺️",
-    subjects:["Geography","Social Studies"],
-    topics:["uk_geo","us_geography","ca_geography","world_geo","maps"],
-    desc:"Find countries, capitals and features on the map!", minAge:5,
-    levelDesc:["UK countries / US regions / Canadian provinces","Capital cities and major landmarks","Physical features: rivers, mountains, seas","World continents, oceans and major countries","Advanced world geography and geopolitical knowledge"] },
-  // Computing / Computer Studies
-  { id:"algorithmSort",   name:"Algorithm Sort",    emoji:"🔢",
-    subjects:["Computing","Computer Studies"],
-    topics:["algorithms","comp_thinking","comp_think_ca"],
-    desc:"Put the steps in the right order to solve the problem!", minAge:6,
-    levelDesc:["Everyday algorithm sequences","Simple Scratch program steps","Loops and conditions in sequence","Debugging and correcting algorithms","Complex algorithms with functions and data"] },
-  { id:"debugDetective",  name:"Debug Detective",   emoji:"🔍",
-    subjects:["Computing","Computer Studies"],
-    topics:["coding","programming_us","coding_ca"],
-    desc:"Find and fix the bug in the broken program!", minAge:7,
-    levelDesc:["Spot the missing step in a sequence","Fix a loop or condition error","Debug variables and data errors","Find logical errors in functions","Debug complex multi-procedure programs"] },
-  // NEW FUN GAMES
-  { id:"mathFishing",     name:"Maths Fishing",     emoji:"🎣",
-    subjects:["Maths","Math","Mathematics"],
-    topics:["addition","operations","number_place","base_ten","number_sense"],
-    desc:"Cast your line and reel in the right answer!", minAge:4,
-    levelDesc:["Fish for answers to simple addition","Mixed +/- with numbers to 20","Multiplication fish in the pond","Multi-step equation fishing","Algebra and advanced equation angling"] },
-  { id:"spaceBlaster",    name:"Space Blaster",     emoji:"🚀",
-    subjects:["Maths","Math","Mathematics"],
-    topics:["multiplication","operations","fractions","algebra","expressions"],
-    desc:"Blast the alien ships by solving equations!", minAge:6,
-    levelDesc:["Shoot aliens with times table answers","Mixed operations under fire","Fractions and decimals invade!","Multi-step equations in space","Algebra aliens — hardest mission"] },
-  { id:"gemHunter",       name:"Gem Hunter",        emoji:"💎",
-    subjects:["English","English Language Arts","Language"],
-    topics:["spelling","phonics","vocabulary","foundational","reading_ca"],
-    desc:"Answer correctly to dig up sparkling gems!", minAge:5,
-    levelDesc:["Dig for CVC words and phonics gems","Unearth sight word treasures","Mine Year 3-4 vocabulary gems","Year 5-6 deep mine spellings","Rare gem — advanced vocabulary challenge"] },
-  { id:"wordRunner",      name:"Word Runner",        emoji:"🏃",
-    subjects:["English","English Language Arts","Language"],
-    topics:["grammar","language_us","writing_ca","vocabulary"],
-    desc:"Run and collect the correct word before time runs out!", minAge:6,
-    levelDesc:["Collect nouns and verbs","Grab adjectives and adverbs","Chase conjunctions and prepositions","Collect formal vs informal word choices","Sprint for sophisticated vocabulary"] },
-  { id:"volcanoEscape",   name:"Volcano Escape",    emoji:"🌋",
-    subjects:["Science","Science & Technology"],
-    topics:["earth","forces","materials","earth_ca","earth_space_us","physical_sci"],
-    desc:"Answer science questions to climb to safety!", minAge:6,
-    levelDesc:["Escape with basic science facts","Climb using forces and materials knowledge","Scale the volcano with earth science","Answer harder questions higher up","Expert science knowledge — reach the summit!"] },
-  { id:"treasureMap",     name:"Treasure Hunt",     emoji:"🗺️",
-    subjects:["History","Geography","Social Studies"],
-    topics:["chronology","maps","uk_geo","us_geography","ca_geography","us_history","british","canadian"],
-    desc:"Follow clues to find the buried treasure!", minAge:6,
-    levelDesc:["Simple map and history clues","Local history and basic geography","National history and geography clues","World history and geography trails","Expert historian and geographer challenge"] },
-  // ── MATHS GAMES ──────────────────────────────────────────────────────────
-  { id:"grandPrix",       name:"Grand Prix Racing",  emoji:"🏎️", subjects:["Maths","Math","Mathematics"], topics:["measurement","measurement_us","spatial"], desc:"Race the track — answer measurement questions to speed up!", minAge:5, levelDesc:["Compare lengths and weights","Measure in cm, m, kg, litres","Convert units and calculate perimeter","Area, volume and compound measures","Speed, distance and time calculations"] },
-  { id:"candyShop",       name:"Candy Shop",         emoji:"🍭", subjects:["Maths","Math","Mathematics"], topics:["measurement","financial","number_sense"], desc:"Run your sweet shop — get the money right!", minAge:5, levelDesc:["Count coins and make amounts to 50p","Give correct change from £1","Calculate totals and change from £5","Profit, loss and discount percentages","Financial planning and budgeting"] },
-  { id:"basketballMaths", name:"Basketball Maths",   emoji:"🏀", subjects:["Maths","Math","Mathematics"], topics:["statistics","measurement_us","data_ca"], desc:"Shoot hoops! Answer data questions to score!", minAge:7, levelDesc:["Read simple bar charts and pictograms","Interpret bar charts with scales","Calculate averages: mean, median, mode","Interpret line graphs and pie charts","Statistical analysis and probability"] },
-  { id:"trainGame",       name:"Number Train",       emoji:"🚂", subjects:["Maths","Math","Mathematics"], topics:["number_place","counting","base_ten","number_sense"], desc:"Drive the train — connect carriages with number sequences!", minAge:4, levelDesc:["Count and order numbers to 20","Number sequences and patterns to 100","Place value to 1000, skip counting","Number patterns, factors and multiples","Complex sequences, nth term, algebra"] },
-  { id:"supermarketMath", name:"Supermarket Sweep",  emoji:"🛒", subjects:["Maths","Math","Mathematics","Economics"], topics:["measurement","financial","number_sense"], desc:"Shop smart — calculate prices, change and totals!", minAge:6, levelDesc:["Add prices under £1, make change","Calculate totals and change from £5/£10","Multi-item totals, percentage discounts","Unit prices, best value comparisons","Budgets, taxes and financial planning"] },
-  { id:"rocketMaths",     name:"Rocket Launch",      emoji:"🛸", subjects:["Maths","Mathematics"], topics:["algebra_ca","expressions","algebra"], desc:"Count down and launch! Solve algebra to reach orbit!", minAge:9, levelDesc:["Missing number problems and sequences","Simple equations with one variable","Two-step equations and substitution","Solve equations and express unknowns","Systems of equations and complex algebra"] },
-  // ── ENGLISH GAMES ─────────────────────────────────────────────────────────
-  { id:"spellBingo",      name:"Spelling Bingo",     emoji:"🎱", subjects:["English","English Language Arts","Language"], topics:["spelling","phonics","foundational"], desc:"Dab the right word on your bingo card!", minAge:5, levelDesc:["CVC and simple phonics words","KS1 common exception words","Year 3-4 statutory spelling list","Year 5-6 statutory spelling list","Advanced etymology and word origins"] },
-  { id:"wordShake",       name:"WordShake",          emoji:"🎲", subjects:["English","English Language Arts","Language"], topics:["vocabulary","language_us","vocabulary"], desc:"Shake the letters — make as many words as you can!", minAge:6, levelDesc:["Make 2-3 letter words from a set","Make 3-4 letter words, score for length","Make words with prefixes and suffixes","Make formal and subject vocabulary words","Make the most complex words from letters"] },
-  { id:"spotDifference",  name:"Spot the Difference",emoji:"🔍", subjects:["English","English Language Arts","Language"], topics:["reading","reading_lit","reading_ca"], desc:"Find what changed in the story — reading comprehension!", minAge:6, levelDesc:["Spot changed words in simple sentences","Find changed details in short paragraphs","Identify differences in story retellings","Spot subtle changes in complex texts","Analyse how author changes affect meaning"] },
-  { id:"puzzleWords",     name:"Word Puzzle",        emoji:"🧩", subjects:["English","English Language Arts","Language"], topics:["writing_us","writing_ca","writing"], desc:"Complete the crossword-style word puzzle!", minAge:7, levelDesc:["Simple crossword with picture clues","Crossword using definitions and examples","Themed crossword with subject vocabulary","Advanced crossword with inference clues","Complex crossword with figurative language"] },
-  { id:"schoolRun",       name:"School Run",         emoji:"🏃", subjects:["English","English Language Arts","Language"], topics:["writing_ca","writing_us","writing"], desc:"Race to school — build your story as you run!", minAge:6, levelDesc:["Sequence story events in correct order","Choose best words to continue a story","Select the best sentence to add to a paragraph","Choose the most effective narrative device","Evaluate and select sophisticated writing choices"] },
-  { id:"memoryWords",     name:"Memory Match",       emoji:"🧠", subjects:["English","English Language Arts","Language"], topics:["foundational","reading_ca","reading_lit"], desc:"Flip cards and match words to their meanings!", minAge:5, levelDesc:["Match pictures to CVC words","Match words to simple definitions","Match words to synonyms and antonyms","Match formal words to informal equivalents","Match words to their etymological roots"] },
-  // ── SCIENCE GAMES ─────────────────────────────────────────────────────────
-  { id:"dinosaurGame",    name:"Dino Dig",           emoji:"🦕", subjects:["Science","Science & Technology"], topics:["evolution","life_science","life_systems"], desc:"Excavate fossils — learn about evolution and extinct life!", minAge:8, levelDesc:["Identify basic dinosaurs and prehistoric life","Match fossils to time periods","Understand adaptation and natural selection","Evidence for evolution from the fossil record","Compare extinct and modern species, genetics"] },
-  { id:"jungleExplorer",  name:"Jungle Explorer",    emoji:"🌴", subjects:["Science","Science & Technology"], topics:["living","life_science","life_systems","plants"], desc:"Explore the rainforest — identify plants and animals!", minAge:5, levelDesc:["Name jungle animals and their features","Classify animals by vertebrate/invertebrate","Identify adaptations for jungle survival","Explore food webs and ecosystem interdependence","Biodiversity, human impact and conservation"] },
-  { id:"oceanGame",       name:"Ocean Adventure",    emoji:"🌊", subjects:["Science","Science & Technology"], topics:["animals","life_science","life_systems"], desc:"Dive deep — sort ocean creatures and food chains!", minAge:5, levelDesc:["Name sea creatures and basic features","Sort by vertebrate/invertebrate, size","Build ocean food chains and webs","Explore deep sea zones and adaptations","Marine ecosystems, pressure, light and survival"] },
-  { id:"bubbleBuster",    name:"Bubble Buster",      emoji:"🫧", subjects:["Science","Science & Technology"], topics:["materials","matter_ca","physical_sci"], desc:"Pop the right bubbles — sort materials by properties!", minAge:5, levelDesc:["Sort hard/soft, rough/smooth, waterproof","Identify solids, liquids and gases","Properties of materials: conductors, insulators","Reversible and irreversible changes","Chemical vs physical change, particle model"] },
-  { id:"colourScience",   name:"Colour Lab",         emoji:"🎨", subjects:["Science","Science & Technology"], topics:["light","physical_sci","energy_ca"], desc:"Mix colours and explore the science of light!", minAge:7, levelDesc:["Primary and secondary colours mixing","Light sources, reflection and shadows","Refraction, prisms and the spectrum","Wavelengths, filters and colour perception","Optics, lenses and real-world light applications"] },
-  { id:"astronautGame",   name:"Astronaut Training", emoji:"👨‍🚀", subjects:["Science","Science & Technology"], topics:["earth","earth_ca","earth_space_us"], desc:"Train to be an astronaut — master Earth and Space facts!", minAge:7, levelDesc:["Name planets, describe day/night and seasons","Solar system facts: order, size, moons","Moon phases, Earth-Moon-Sun relationships","Space exploration history and technology","Gravity, orbits, telescopes and the universe"] },
-  // ── HISTORY / SOCIAL STUDIES GAMES ────────────────────────────────────────
-  { id:"pyramidsGame",    name:"Pyramid Builder",    emoji:"🏛️", subjects:["History","Social Studies"], topics:["ancient","world_hist_us","world_hist_ca"], desc:"Build the pyramids — answer questions about ancient civilisations!", minAge:7, levelDesc:["Basic facts about ancient Egypt","Compare ancient Egypt, Greece and Rome","Daily life, gods, pharaohs and achievements","Trade, conquest and empire building","Legacy of ancient civilisations on today's world"] },
-  { id:"inspectorGame",   name:"History Inspector",  emoji:"🕵️", subjects:["History","Social Studies"], topics:["chronology","us_history","living_memory"], desc:"Investigate the past — sort clues and solve the mystery!", minAge:6, levelDesc:["Order events in a simple story of the past","Use picture clues to identify historical periods","Examine primary sources to answer questions","Compare different accounts of the same event","Evaluate historical significance and reliability"] },
-  { id:"hideSeekHistory", name:"History Hide & Seek",emoji:"🫣", subjects:["History","Social Studies"], topics:["significant","us_history","canadian"], desc:"Famous figures are hiding in history — find them from clues!", minAge:5, levelDesc:["Identify famous people from simple clues","Match achievements to historical figures","Understand why people were historically significant","Compare significance of different historical figures","Analyse how individuals changed the course of history"] },
-  { id:"tenableGame",     name:"Tenable Challenge",  emoji:"📋", subjects:["History","Social Studies"], topics:["world_history","world_hist_us","world_hist_ca"], desc:"Name 5 answers from the category before time runs out!", minAge:8, levelDesc:["Name 3 items from simple history categories","Name 5 items from national history topics","Name 5 items from world history categories","Name 5 from complex thematic history topics","Expert level — obscure history knowledge challenge"] },
-  { id:"footballHistory", name:"Penalty Shootout",   emoji:"⚽", subjects:["History","Social Studies"], topics:["british","us_history","canadian"], desc:"Answer history questions to take your penalty — score or save!", minAge:6, levelDesc:["Basic national history facts","Key events and their dates","Causes and consequences of events","Comparing historical periods and significance","Complex historical analysis and argument"] },
-  // ── GEOGRAPHY GAMES ───────────────────────────────────────────────────────
-  { id:"worldMapGame",    name:"World Map Quest",    emoji:"🌍", subjects:["Geography","Social Studies"], topics:["world_geo","world_geo_us","world_hist_ca"], desc:"Place countries, capitals and features on the world map!", minAge:6, levelDesc:["Locate 7 continents and 5 oceans","Identify major countries and capital cities","Place countries in correct regions/continents","Locate physical features: rivers, mountains, deserts","Advanced world geography and geopolitical knowledge"] },
-  { id:"geographyGuesser", name:"Geography Guesser",  emoji:"📍", subjects:["Geography","Social Studies"], topics:["uk_geo","us_geography","ca_geography"], desc:"Guess the place from the photo clues — GeoGuessr style!", minAge:7, levelDesc:["Identify UK/US/CA regions from clues","Name countries from capital or landmark clues","Identify continents from climate and landscape clues","Advanced country identification from subtle clues","Expert geographer — obscure places worldwide"] },
-  { id:"skiingGeo",       name:"Ski Slope Race",     emoji:"⛷️", subjects:["Geography","Social Studies"], topics:["physical","human","world_geo"], desc:"Ski down the mountain — answer physical geography questions!", minAge:7, levelDesc:["Name physical features: mountains, rivers, valleys","Describe how physical features are formed","Explain weathering, erosion and deposition","Analyse climate zones and their causes","Complex physical processes and human impact"] },
-  { id:"skateboardGeo",   name:"Skatepark City",     emoji:"🛹", subjects:["Geography","Social Studies"], topics:["human","human_geography","economics_us"], desc:"Skate the city — learn about human geography!", minAge:7, levelDesc:["Compare village, town and city differences","Identify land use types in settlements","Explain how cities grow and change","Analyse economic activities and trade","Urbanisation, globalisation and global development"] },
-  { id:"pirateGeo",       name:"Pirate Voyage",      emoji:"🏴‍☠️", subjects:["Geography","Social Studies"], topics:["maps","fieldwork","map_skills"], desc:"Use map skills to navigate to the pirate treasure!", minAge:5, levelDesc:["Follow compass directions N/S/E/W","Use a simple grid to find locations","Read 4-figure grid references on OS maps","Use 6-figure grid references and contour lines","Analyse complex OS maps and plan routes"] },
-  { id:"busGame",         name:"Eco Bus Driver",     emoji:"🚌", subjects:["Geography","Social Studies"], topics:["environment","environmental","economics_ca"], desc:"Drive your eco bus — learn about environmental geography!", minAge:8, levelDesc:["Identify types of pollution and their causes","Understand deforestation and habitat loss","Explain climate change and greenhouse gases","Evaluate renewable vs non-renewable energy","Assess global sustainability solutions and trade-offs"] },
-  // ── COMPUTING GAMES ───────────────────────────────────────────────────────
-  { id:"codeGame",        name:"Code Breaker",       emoji:"🔐", subjects:["Computing","Computer Studies"], topics:["data","data_us","data_ca2"], desc:"Crack the code — learn binary and how computers store data!", minAge:7, levelDesc:["Binary 0s and 1s, simple on/off patterns","Convert small binary numbers to decimal","Understand bytes, files and file sizes","Binary arithmetic and hexadecimal basics","Data compression, encryption and storage systems"] },
-  { id:"flippingFood",    name:"Recipe Robot",       emoji:"🍳", subjects:["Computing","Computer Studies"], topics:["comp_thinking","comp_think_ca","comp_thinking"], desc:"Program the robot chef — sequence algorithms to cook meals!", minAge:5, levelDesc:["Order simple cooking instructions correctly","Identify the error in a cooking algorithm","Add loops to repeat cooking steps efficiently","Write conditional steps: if burnt then remove","Create efficient cooking algorithms with functions"] },
-  // ── MISSING TOPIC GAMES ──────────────────────────────────────────────────
-  { id:"shapeShooter",    name:"Shape Shooter",      emoji:"📐", subjects:["Maths","Math","Mathematics"], topics:["geometry","geometry_us","spatial"], desc:"Shoot the correct shapes and angles!", minAge:5, levelDesc:["Name 2D and 3D shapes","Properties of shapes: sides, vertices, angles","Angles: right, acute, obtuse — classify triangles","Area and perimeter of polygons","Circles, compound shapes, geometric reasoning"] },
-  { id:"coordinateQuest", name:"Coordinate Quest",   emoji:"🧭", subjects:["Maths","Math","Mathematics"], topics:["position","geometry_us","spatial"], desc:"Navigate the grid and plot coordinates!", minAge:6, levelDesc:["Describe position: left, right, up, down","First quadrant coordinates (x,y)","Translate and reflect shapes on a grid","Four-quadrant coordinates, negative numbers","Transformations: rotation, reflection, translation"] },
-  { id:"ratioRecipe",     name:"Ratio Kitchen",      emoji:"⚖️", subjects:["Maths","Math","Mathematics"], topics:["ratio","number_system","fractions"], desc:"Scale recipes up and down using ratio!", minAge:9, levelDesc:["Simple ratios — share in given parts","Simplify ratios, equivalent ratios","Scale factor problems in recipes and maps","Ratio and proportion word problems","Percentage, fraction and ratio combined problems"] },
-  { id:"poetrySlam",      name:"Poetry Slam",        emoji:"🎤", subjects:["English","English Language Arts","Language"], topics:["poetry","writing","writing_us","writing_ca"], desc:"Perform the poem! Identify rhyme, rhythm and poetic devices!", minAge:7, levelDesc:["Identify rhyming words and simple rhyme schemes","Spot alliteration and onomatopoeia","Identify similes and metaphors","Analyse personification, repetition and imagery","Evaluate poetic form, structure and voice"] },
-  { id:"mediaDetective",  name:"Media Detective",    emoji:"📱", subjects:["English","English Language Arts","Language"], topics:["media","reading_info","media_ca"], desc:"Investigate adverts and news — spot fact from opinion!", minAge:7, levelDesc:["Spot the difference between fact and opinion","Identify the purpose of different media texts","Analyse how adverts persuade","Evaluate reliability of online sources","Examine bias, representation and media influence"] },
-  { id:"seasonsGame",     name:"Seasons Explorer",   emoji:"🌤️", subjects:["Science","Science & Technology"], topics:["seasons","earth_ca","earth_space_us"], desc:"Travel through the seasons — match weather, plants and animals!", minAge:4, levelDesc:["Name the four seasons and their weather","Match seasonal changes: trees, animals, day length","Explain why seasons happen — Earth's tilt","Compare climates and seasons around the world","Seasonal adaptations and biomes by latitude"] },
-  { id:"soundWaves",      name:"Sound Waves",        emoji:"🎵", subjects:["Science","Science & Technology"], topics:["sound","energy_ca","physical_sci"], desc:"Create sound waves — answer questions about pitch and volume!", minAge:7, levelDesc:["Sounds are made by vibrations","Loud/quiet: volume; high/low: pitch","How sound travels through materials","Insulation, echoes and the ear drum","Speed of sound, ultrasound and real-world uses"] },
-  { id:"circuitBuilder",  name:"Circuit Builder",    emoji:"⚡", subjects:["Science","Science & Technology"], topics:["electricity","energy_ca","physical_sci"], desc:"Build circuits by answering questions correctly!", minAge:8, levelDesc:["Identify everyday uses of electricity, safety rules","Build a simple circuit: battery, bulb, wire, switch","Conductors and insulators — test materials","Series circuits: voltage, brightness, resistance","Circuit diagrams, symbols and electrical calculations"] },
-  { id:"chemistryLab",    name:"Chemistry Lab",      emoji:"🧫", subjects:["Science","Science & Technology"], topics:["properties2","matter_ca","physical_sci"], desc:"Mix chemicals safely — identify reversible and irreversible changes!", minAge:9, levelDesc:["Reversible changes: dissolving, melting, freezing","Separating mixtures: filtering, evaporating, sieving","Irreversible changes: burning, rusting, cooking","Particles in reactions, new substances formed","Combustion, oxidation and chemical equations intro"] },
-  { id:"timeMachine",     name:"Time Machine",       emoji:"⏰", subjects:["History","Social Studies"], topics:["beyond_memory","living_memory","chronology"], desc:"Jump in the time machine — explore events beyond living memory!", minAge:5, levelDesc:["Recent events from the last 100 years","Great Fire, Titanic, WW2 — significant past events","Compare life in different historical periods","Understand how historical events shaped today","Evaluate significance of events across different eras"] },
-  { id:"localHero",       name:"Local Hero Quest",   emoji:"🏘️", subjects:["History","Social Studies"], topics:["local_history","living_memory","community"], desc:"Discover the history hidden in your local area!", minAge:6, levelDesc:["What has changed in our town or village?","Identify old and new buildings from photographs","Research how local area developed using maps","Use local archives and census records as evidence","Connect local history to national and world events"] },
-  { id:"safetyShield",    name:"Safety Shield",      emoji:"🛡️", subjects:["Computing","Computer Studies"], topics:["esafety","digital_citizen","digital_cit_ca"], desc:"Build your safety shield — master online safety!", minAge:5, levelDesc:["What is personal information? What stays private?","Recognise cyberbullying — how to respond and report","Reliable vs unreliable information online","Passwords, privacy settings and staying secure","Digital footprint, rights, and responsible use"] },
-  { id:"creativeStudio",  name:"Creative Studio",    emoji:"🎨", subjects:["Computing","Computer Studies"], topics:["creative","impacts","digital_cit_ca"], desc:"Design digital art, music and animations — creative computing!", minAge:7, levelDesc:["Create simple digital drawings and patterns","Animate a sprite or character step by step","Record, edit and improve a digital sound clip","Design a multi-page digital presentation","Create and publish an original multimedia project"] },
-  { id:"spellingRun",    name:"Spelling Sprint",   emoji:"✏️", subjects:["English","English Language Arts","Language"], topics:["spelling","phonics","foundational"], desc:"Type the correct spelling as fast as you can!", minAge:5, levelDesc:["CVC words and basic phonics","Year 1-2 common exception words","Year 3-4 statutory spelling list","Year 5-6 statutory spelling list","Etymology and advanced spelling patterns","Prefixes and suffixes from Latin/Greek","Homophones and near-homophones","Silent letters and double letters","Subject-specific vocabulary","Advanced morphological spelling patterns"] },
-  { id:"mathSprint",     name:"Maths Sprint",       emoji:"⚡", subjects:["Maths","Math","Mathematics"], topics:["addition","multiplication","number_place","statistics"], desc:"Type the answer to maths questions as fast as you can!", minAge:5, levelDesc:["Addition and subtraction within 20","Times tables: 2s 5s 10s","All times tables to 12×12","Mental division and inverse operations","Mixed operations with decimals","Fraction arithmetic","Percentage calculations","Algebra: find the unknown","Multi-step mental maths","Speed maths: GL Assessment style"] },
-  { id:"memoryComputer",  name:"Computer Memory",    emoji:"💾", subjects:["Computing","Computer Studies"], topics:["networks","networks_us","networks_ca"], desc:"Match hardware to its function — memory game style!", minAge:7, levelDesc:["Match basic hardware: keyboard, screen, mouse","Match components to their functions: CPU, RAM","Match network devices to their roles","Match internet terms to their meanings","Match cybersecurity terms to their descriptions"] },
-];
 
 // Get games for a child based on their country and level
 function getGamesForChild(child) {
@@ -3689,6 +2966,29 @@ function genMathQs(kind,lvl=1,count=15){
 }
 
 // ── QUALITY GUARD: a malformed AI question must never reach a child ─
+// Single-question version of the guard above — the main lesson flow fetches
+// one question at a time (not a batch), and until now was the ONE place in
+// the app that used a raw AI response with zero shape validation. A subtly
+// malformed reply (missing options, correct answer not among them, a leaked
+// JSON fragment) would silently render a broken or blank question with no
+// error and no retry — this is what "the lesson doesn't load" looks like
+// from a child's seat, even though nothing technically crashed.
+function sanitizeLessonQ(r,age=8){
+  if(!r)return null;
+  const text=String(r.question||"").trim();
+  if(!text||text.startsWith("{")||text.startsWith("[")||text.includes('"options"')||text.includes("```"))return null;
+  if(!Array.isArray(r.options)||r.options.length<2||r.options.length>6)return null;
+  if(!r.options.every(o=>typeof o==="string"&&o.length>0&&o.length<120&&!o.includes("{")&&!o.includes("}")))return null;
+  if(!r.correct)return null;
+  if(!r.options.some(o=>o===r.correct||String(o).charAt(0)===r.correct))return null;
+  // Code-level wordiness cap, not just a prompt hope — a hard ceiling per
+  // age tier so an overly long question is treated as invalid and retried,
+  // the same way a malformed one is, rather than silently reaching a child.
+  const wordCap=age<=6?18:age<=8?26:age<=10?36:46;
+  const wordCount=text.split(/\s+/).filter(Boolean).length;
+  if(wordCount>wordCap)return null;
+  return r;
+}
 function sanitizeQs(qs){
   return (qs||[]).filter(q=>{
     if(!q)return false;
@@ -3766,27 +3066,37 @@ function useLivesGame(fetchFn, initialLevel = 1, maxLives = 3) {
   const [won, setWon] = useState(false);
   const fetching = useRef(false);
 
-  const fetchBatch = useCallback(async (level) => {
+  const fetchBatch = useCallback(async (level, isInitial=false) => {
     if (fetching.current) return;
     fetching.current = true;
-    setLoading(true);
-    const t = setTimeout(() => { setLoadErr(true); setLoading(false); fetching.current = false; }, 15000);
+    if(isInitial) setLoading(true); // only the FIRST load shows the loading screen — background top-ups are silent
+    const t = setTimeout(() => { if(isInitial){setLoadErr(true);} setLoading(false); fetching.current = false; }, 15000);
     try {
       const batch = await fetchFn(level);
       clearTimeout(t);
       const clean = sanitizeQs(batch?.questions);
       if (clean.length) setQuestions(prev => [...prev, ...clean]);
-      else setLoadErr(true);
-    } catch (e) { clearTimeout(t); setLoadErr(true); }
+      else if(isInitial) setLoadErr(true); // a transient top-up miss is NOT fatal — only a failed first load is
+    } catch (e) { clearTimeout(t); if(isInitial) setLoadErr(true); }
     setLoading(false);
     fetching.current = false;
   }, [fetchFn]);
 
-  useEffect(() => { fetchBatch(initialLevel); }, []);
-  // Prefetch next batch when running low
+  useEffect(() => { fetchBatch(initialLevel, true); }, []);
+  // Prefetch next batch when running low — retries forever, never blocked by a
+  // past hiccup, so one bad AI response can never end a child's game mid-play.
   useEffect(() => {
-    if (questions.length > 0 && qIdx >= questions.length - 3 && !fetching.current && !done && !loadErr) fetchBatch(lvl);
-  }, [qIdx, questions.length, lvl, done, loadErr]);
+    if (questions.length > 0 && qIdx >= questions.length - 3 && !fetching.current && !done) fetchBatch(lvl, false);
+  }, [qIdx, questions.length, lvl, done]);
+  // Graceful fallback: if content genuinely can't keep up (repeated network
+  // trouble), end the run cleanly with the score so far instead of a stuck
+  // blank screen or a scary mid-game error.
+  useEffect(() => {
+    if (!loading && !loadErr && !done && questions.length>0 && qIdx>=questions.length) {
+      const t=setTimeout(()=>{ if(qIdx>=questions.length) setDone(true); },4000);
+      return ()=>clearTimeout(t);
+    }
+  }, [loading, loadErr, done, questions.length, qIdx]);
 
   const q = questions[qIdx] || null;
 
@@ -3812,26 +3122,8 @@ function useLivesGame(fetchFn, initialLevel = 1, maxLives = 3) {
 }
 
 // ── World themes — each engine is a different place ───────────────
-const WORLDS = {
-  cosmic: { role:"Space Cadet", roleEmoji:"🚀", hook:"Every right answer powers the rocket!", verb:"BLAST OFF",
-    sky:"linear-gradient(180deg,#050818 0%,#0D1230 45%,#1B1464 80%,#2D1B69 100%)", accent:"#7C6CFF", accent2:"#FFD166" },
-  grove:  { role:"Gem Keeper", roleEmoji:"🦉", hook:"Catch a magic gem for every right answer!", verb:"START THE HUNT",
-    sky:"linear-gradient(180deg,#0A1030 0%,#14205A 40%,#1D3A6E 75%,#274B63 100%)", accent:"#4ADE80", accent2:"#FDE68A" },
-  turbo:  { role:"Turbo Racer", roleEmoji:"🏎️", hook:"Right answers make your kart go faster!", verb:"START YOUR ENGINE",
-    sky:"linear-gradient(180deg,#2B1055 0%,#7A2E6F 40%,#E85D75 72%,#FFB65C 100%)", accent:"#FF5D73", accent2:"#FFD166" },
-  meteor: { role:"Sky Defender", roleEmoji:"🛡️", hook:"Tap the right meteor before it hits the shield!", verb:"DEFEND",
-    sky:"linear-gradient(180deg,#1A0B2E 0%,#3B1155 45%,#6B1E63 80%,#93326B 100%)", accent:"#F0ABFC", accent2:"#FFD166" },
-  starmap:{ role:"Star Pilot", roleEmoji:"🛸", hook:"Fly planet to planet — answer to jump!", verb:"LAUNCH",
-    sky:"radial-gradient(ellipse at 50% 0%,#2D1B69 0%,#120A38 45%,#04030F 100%)", accent:"#60A5FA", accent2:"#F0ABFC" },
-};
 
 // ── Answer tile palette: friendly toy colours + darker "clay" base ─
-const TILE = [
-  { top:"#FF6B81", base:"#D14059", glow:"rgba(255,107,129,0.45)" },
-  { top:"#4D9DF7", base:"#2C6FC4", glow:"rgba(77,157,247,0.45)" },
-  { top:"#FFB020", base:"#CC7F00", glow:"rgba(255,176,32,0.45)" },
-  { top:"#34C77B", base:"#1F9457", glow:"rgba(52,199,123,0.45)" },
-];
 const LETTERS = ["A","B","C","D","E","F"];
 
 // ── Shared FX (kept API-compatible with older code) ────────────────
@@ -4610,7 +3902,8 @@ function EngineCore({child,name,emoji,subject,world,scene,fetchFn,initialLevel=1
   // Question bank: AI-generated batches are banked per (game, cohort, level)
   // so repeat plays start instantly. Personal decks (Tricky Ones) skip this.
   const cacheKey=`${name}|${child.yearGroup||""}|${child.country||""}`;
-  const effFetch=useCallback((lvl)=>noCache?fetchFn(lvl):cachedFetch(cacheKey,lvl,fetchFn),[fetchFn,noCache,cacheKey]);
+  const skipCache=noCache||hasA11yNeeds(child); // personalised content must never come from a shared bank
+  const effFetch=useCallback((lvl)=>skipCache?fetchFn(lvl):cachedFetch(cacheKey,lvl,fetchFn),[fetchFn,skipCache,cacheKey]);
   const littleOne=(child.age||8)<=6; // early years: more forgiveness builds persistence
   const game=useLivesGame(effFetch,initialLevel,littleOne?5:3);
   const [phase,setPhase]=useState("intro");
@@ -4783,8 +4076,22 @@ function RunnerEngine({child,name,emoji,subject,color,fetchFn,runnerChar,sceneBg
 
 // ── ENGINE 4: STAR MAP QUEST — Science / Computing ─────────────────
 function SpaceExplorer({child,name,emoji,subject,color,fetchFn,initialLevel=1,onComplete,onQuit,onRetry,onQResult,noCache}) {
-  return <EngineCore child={child} name={name} emoji={emoji} subject={subject} world={WORLDS.starmap}
-    scene={p=><SceneStarmap qIdx={p.qIdx} hurt={p.hurt} sector={p.sector}/>} scoreLabel="STARS" popText="+STAR" onQResult={onQResult} noCache={noCache}
+  // Was hardcoded to the sci-fi Star Pilot world for ALL 23 games using this
+  // engine — a train game, English word games and memory-match all showed
+  // "Fly planet to planet" regardless of subject. Now it picks a world that
+  // actually fits, the same sensible mapping GameShell already uses.
+  const world=({Maths:WORLDS.cosmic,Math:WORLDS.cosmic,Mathematics:WORLDS.cosmic,
+    English:WORLDS.grove,"English Language Arts":WORLDS.grove,Language:WORLDS.grove,
+    History:WORLDS.turbo,Geography:WORLDS.turbo,"Social Studies":WORLDS.turbo,
+    Science:WORLDS.starmap,"Science & Technology":WORLDS.starmap,
+    Computing:WORLDS.starmap,"Computer Studies":WORLDS.starmap,Review:WORLDS.starmap})[subject]||WORLDS.starmap;
+  const scene=world===WORLDS.cosmic?(p=><SceneCosmic boost={p.boost} hurt={p.hurt} sector={p.sector}/>)
+    :world===WORLDS.grove?(p=><SceneGrove score={p.score} hurt={p.hurt} streak={p.streak}/>)
+    :world===WORLDS.turbo?(p=><SceneTurbo streak={p.streak} boost={p.boost} hurt={p.hurt} sector={p.sector}/>)
+    :(p=><SceneStarmap qIdx={p.qIdx} hurt={p.hurt} sector={p.sector}/>);
+  return <EngineCore child={child} name={name} emoji={emoji} subject={subject} world={world}
+    scene={scene} scoreLabel={world===WORLDS.grove?"GEMS":world===WORLDS.turbo?"PTS":"STARS"}
+    popText={world===WORLDS.grove?"+GEM":world===WORLDS.turbo?"+BOOST":"+STAR"} onQResult={onQResult} noCache={noCache}
     fetchFn={fetchFn} initialLevel={initialLevel} onComplete={onComplete} onQuit={onQuit} onRetry={onRetry}/>;
 }
 
@@ -5000,7 +4307,8 @@ function MeteorEngine({child,name,emoji,subject,fetchFn,initialLevel=1,onComplet
   const A=useGameA11y();
   const AS=useAgeStyle();
   const cacheKey=`${name}|${child.yearGroup||""}|${child.country||""}`;
-  const effFetch=useCallback((lvl)=>noCache?fetchFn(lvl):cachedFetch(cacheKey,lvl,fetchFn),[fetchFn,noCache,cacheKey]);
+  const skipCache=noCache||hasA11yNeeds(child); // personalised content must never come from a shared bank
+  const effFetch=useCallback((lvl)=>skipCache?fetchFn(lvl):cachedFetch(cacheKey,lvl,fetchFn),[fetchFn,skipCache,cacheKey]);
   const littleOne=(child.age||8)<=6;
   const game=useLivesGame(effFetch,initialLevel,littleOne?5:3);
   const [phase,setPhase]=useState("intro");
@@ -6044,6 +5352,18 @@ function PlanetPatrol({child,mode,onComplete,onQuit,onRetry,level=1}) {
   return <SpaceExplorer child={child} name="Planet Patrol" emoji="🪐" subject="Science" color="#7C3AED" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit} onRetry={onRetry}/>;
 }
 
+function TimelineSorter({child,mode,onComplete,onQuit,onRetry,level=1}) {
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 "put these historical events in the correct order" questions for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Focus on chronology within the child's own history curriculum (British/American/Canadian as appropriate). Short options max 20 chars each. ${a11yPromptRules(child)} Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Timeline Sorter questions."),[child]);
+  return <ShooterEngine child={child} name="Timeline Sorter" emoji="📅" subject="History" color="#B45309" bg="#FFFBEB" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit} onRetry={onRetry}/>;
+}
+function HistoryMatch({child,mode,onComplete,onQuit,onRetry,level=1}) {
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 questions matching historical figures, events and dates for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. ${a11yPromptRules(child)} Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"History Match questions."),[child]);
+  return <ShooterEngine child={child} name="History Match" emoji="🏛️" subject="History" color="#92400E" bg="#FFFBEB" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit} onRetry={onRetry}/>;
+}
+function MapQuiz({child,mode,onComplete,onQuit,onRetry,level=1}) {
+  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 questions about maps, countries, capitals and geographical features for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. ${a11yPromptRules(child)} Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Map Explorer questions."),[child]);
+  return <ShooterEngine child={child} name="Map Explorer" emoji="🗺️" subject="Geography" color="#0891B2" bg="#ECFEFF" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit} onRetry={onRetry}/>;
+}
 function AlgorithmSort({child,mode,onComplete,onQuit,onRetry,level=1}) {
   const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 computational thinking, algorithm sequencing, order of steps for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. ${a11yPromptRules(child)} Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Algorithm Sort questions."),[child]);
   return <ShooterEngine child={child} name="Algorithm Sort" emoji="🔢" subject="Computing" color="#7C3AED" bg="#F5F3FF" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit} onRetry={onRetry}/>;
@@ -6865,7 +6185,7 @@ function GamePlayer({child,gameId,mode,onComplete,onQuit}) {
 
   const props={child,mode,onComplete:handleComplete,onQuit,onRetry:()=>setResetKey(k=>k+1),level:gameLevel};
   const best=(child.gameHighScores||{})[gameId]||0;
-  const map={trickyReview:<TrickyReview {...props}/>,meteorMaths:<MeteorMaths {...props}/>,wordMeteors:<WordMeteors {...props}/>,numberBridge:<NumberBridge {...props}/>,frogJump:<FrogJump {...props}/>,balanceScale:<BalanceScale {...props}/>,oddEvenSort:<OddEvenSort {...props}/>,livingSort:<LivingSort {...props}/>,nounVerbSort:<NounVerbSort {...props}/>,roboRescue:<RoboRescue {...props}/>,alphabetBridge:<AlphabetBridge {...props}/>,tableMatch:<TableMatch {...props}/>,wordPicMatch:<WordPicMatch {...props}/>,numberBlaster:<NumberBlaster {...props}/>,timesTableRace:<TimesTableRace {...props}/>,fractionChef:<FractionChef {...props}/>,wordScramble:<WordScramble {...props}/>,spellingBee:<SpellingBee {...props}/>,sentenceBuilder:<SentenceBuilder {...props}/>,scienceSort:<ScienceSort {...props}/>,statesOfMatter:<StatesOfMatter {...props}/>,planetPatrol:<PlanetPatrol {...props}/>,algorithmSort:<AlgorithmSort {...props}/>,debugDetective:<DebugDetective {...props}/>,wordMatch:<WordMatch {...props}/>,mathFishing:<MathFishing {...props}/>,spaceBlaster:<SpaceBlaster {...props}/>,gemHunter:<GemHunter {...props}/>,wordRunner:<WordRunner {...props}/>,volcanoEscape:<VolcanoEscape {...props}/>,treasureMap:<TreasureMap {...props}/>,grandPrix:<GrandPrix {...props}/>,candyShop:<CandyShop {...props}/>,basketballMaths:<BasketballMaths {...props}/>,trainGame:<TrainGame {...props}/>,supermarketMath:<SupermarketMath {...props}/>,rocketMaths:<RocketMaths {...props}/>,spellBingo:<SpellBingo {...props}/>,wordShake:<WordShake {...props}/>,spotDifference:<SpotDifference {...props}/>,puzzleWords:<PuzzleWords {...props}/>,schoolRun:<SchoolRun {...props}/>,memoryWords:<MemoryWords {...props}/>,dinosaurGame:<DinosaurGame {...props}/>,jungleExplorer:<JungleExplorer {...props}/>,oceanGame:<OceanGame {...props}/>,bubbleBuster:<BubbleBuster {...props}/>,colourScience:<ColourScience {...props}/>,astronautGame:<AstronautGame {...props}/>,pyramidsGame:<PyramidsGame {...props}/>,inspectorGame:<InspectorGame {...props}/>,hideSeekHistory:<HideSeekHistory {...props}/>,tenableGame:<TenableGame {...props}/>,footballHistory:<FootballHistory {...props}/>,worldMapGame:<WorldMapGame {...props}/>,geographyGuesser:<GeographyGuesser {...props}/>,skiingGeo:<SkiingGeo {...props}/>,skateboardGeo:<SkateboardGeo {...props}/>,pirateGeo:<PirateGeo {...props}/>,busGame:<BusGame {...props}/>,codeGame:<CodeGame {...props}/>,flippingFood:<FlippingFood {...props}/>,memoryComputer:<MemoryComputer {...props}/>,spellingRun:<SpellingRun {...props}/>,mathSprint:<MathSprint {...props}/>,shapeShooter:<ShapeShooter {...props}/>,coordinateQuest:<CoordinateQuest {...props}/>,ratioRecipe:<RatioRecipe {...props}/>,poetrySlam:<PoetrySlam {...props}/>,mediaDetective:<MediaDetective {...props}/>,seasonsGame:<SeasonsGame {...props}/>,soundWaves:<SoundWaves {...props}/>,circuitBuilder:<CircuitBuilder {...props}/>,chemistryLab:<ChemistryLab {...props}/>,timeMachine:<TimeMachine {...props}/>,localHero:<LocalHero {...props}/>,safetyShield:<SafetyShield {...props}/>,creativeStudio:<CreativeStudio {...props}/>,timelineSort:<AlgorithmSort {...props}/>,historyMatch:<ScienceSort {...props}/>,mapQuiz:<ScienceSort {...props}/>};
+  const map={trickyReview:<TrickyReview {...props}/>,meteorMaths:<MeteorMaths {...props}/>,wordMeteors:<WordMeteors {...props}/>,numberBridge:<NumberBridge {...props}/>,frogJump:<FrogJump {...props}/>,balanceScale:<BalanceScale {...props}/>,oddEvenSort:<OddEvenSort {...props}/>,livingSort:<LivingSort {...props}/>,nounVerbSort:<NounVerbSort {...props}/>,roboRescue:<RoboRescue {...props}/>,alphabetBridge:<AlphabetBridge {...props}/>,tableMatch:<TableMatch {...props}/>,wordPicMatch:<WordPicMatch {...props}/>,numberBlaster:<NumberBlaster {...props}/>,timesTableRace:<TimesTableRace {...props}/>,fractionChef:<FractionChef {...props}/>,wordScramble:<WordScramble {...props}/>,spellingBee:<SpellingBee {...props}/>,sentenceBuilder:<SentenceBuilder {...props}/>,scienceSort:<ScienceSort {...props}/>,statesOfMatter:<StatesOfMatter {...props}/>,planetPatrol:<PlanetPatrol {...props}/>,algorithmSort:<AlgorithmSort {...props}/>,debugDetective:<DebugDetective {...props}/>,wordMatch:<WordMatch {...props}/>,mathFishing:<MathFishing {...props}/>,spaceBlaster:<SpaceBlaster {...props}/>,gemHunter:<GemHunter {...props}/>,wordRunner:<WordRunner {...props}/>,volcanoEscape:<VolcanoEscape {...props}/>,treasureMap:<TreasureMap {...props}/>,grandPrix:<GrandPrix {...props}/>,candyShop:<CandyShop {...props}/>,basketballMaths:<BasketballMaths {...props}/>,trainGame:<TrainGame {...props}/>,supermarketMath:<SupermarketMath {...props}/>,rocketMaths:<RocketMaths {...props}/>,spellBingo:<SpellBingo {...props}/>,wordShake:<WordShake {...props}/>,spotDifference:<SpotDifference {...props}/>,puzzleWords:<PuzzleWords {...props}/>,schoolRun:<SchoolRun {...props}/>,memoryWords:<MemoryWords {...props}/>,dinosaurGame:<DinosaurGame {...props}/>,jungleExplorer:<JungleExplorer {...props}/>,oceanGame:<OceanGame {...props}/>,bubbleBuster:<BubbleBuster {...props}/>,colourScience:<ColourScience {...props}/>,astronautGame:<AstronautGame {...props}/>,pyramidsGame:<PyramidsGame {...props}/>,inspectorGame:<InspectorGame {...props}/>,hideSeekHistory:<HideSeekHistory {...props}/>,tenableGame:<TenableGame {...props}/>,footballHistory:<FootballHistory {...props}/>,worldMapGame:<WorldMapGame {...props}/>,geographyGuesser:<GeographyGuesser {...props}/>,skiingGeo:<SkiingGeo {...props}/>,skateboardGeo:<SkateboardGeo {...props}/>,pirateGeo:<PirateGeo {...props}/>,busGame:<BusGame {...props}/>,codeGame:<CodeGame {...props}/>,flippingFood:<FlippingFood {...props}/>,memoryComputer:<MemoryComputer {...props}/>,spellingRun:<SpellingRun {...props}/>,mathSprint:<MathSprint {...props}/>,shapeShooter:<ShapeShooter {...props}/>,coordinateQuest:<CoordinateQuest {...props}/>,ratioRecipe:<RatioRecipe {...props}/>,poetrySlam:<PoetrySlam {...props}/>,mediaDetective:<MediaDetective {...props}/>,seasonsGame:<SeasonsGame {...props}/>,soundWaves:<SoundWaves {...props}/>,circuitBuilder:<CircuitBuilder {...props}/>,chemistryLab:<ChemistryLab {...props}/>,timeMachine:<TimeMachine {...props}/>,localHero:<LocalHero {...props}/>,safetyShield:<SafetyShield {...props}/>,creativeStudio:<CreativeStudio {...props}/>,timelineSort:<TimelineSorter {...props}/>,historyMatch:<HistoryMatch {...props}/>,mapQuiz:<MapQuiz {...props}/>};
   return <GameCtx.Provider value={{gameId,best}}><div key={`${gameId}-${resetKey}`}>{map[gameId]||<div style={{padding:40,textAlign:"center"}}><p>Game not found: {gameId}</p></div>}</div></GameCtx.Provider>;
 }
 
@@ -6940,10 +6260,18 @@ function TopicPicker({child,subject,onStart,onBack,onLearn}) {
           <h2 style={{fontSize:26,fontWeight:900,color:C.text}}>{subject}</h2>
         </div>
         <p style={{fontSize:13,fontWeight:700,color:C.muted,marginBottom:22}}>Pick a topic to practise</p>
+        {topics.filter(t=>t.minAge<=child.age).length===0&&(
+          <Card style={{textAlign:"center",padding:"28px 20px"}}>
+            <p style={{fontSize:36,marginBottom:10}}>🔒</p>
+            <p style={{fontSize:15,fontWeight:900,color:C.text,marginBottom:6}}>Not quite yet!</p>
+            <p style={{fontSize:13,fontWeight:600,color:C.muted,lineHeight:1.6}}>
+              {subject} unlocks at age {Math.min(...topics.map(t=>t.minAge))} — keep learning and it'll be ready for you soon.
+            </p>
+          </Card>
+        )}
         <div style={{display:"flex",flexDirection:"column",gap:12}}>
           {topics.filter(t=>t.minAge<=child.age).map(topic=>{
             const lvl = tLevels[topic.id] || 1;
-            const pct = ((lvl-1)/4)*100;
             const lvlDescs = getTopicLevels(topic);
             const topicWithLevels = {...topic, levels: lvlDescs};
             return (
@@ -6955,7 +6283,7 @@ function TopicPicker({child,subject,onStart,onBack,onLearn}) {
                     <p style={{fontSize:12,fontWeight:600,color:C.muted,lineHeight:1.4}}>{lvlDescs[lvl-1]||""}</p>
                   </div>
                   <div style={{textAlign:"right",flexShrink:0}}>
-                    <p style={{fontSize:15,fontWeight:900,color:getDifficultyLabel(lvl).color}}>Lv.{lvl}</p>
+                    <p style={{fontSize:15,fontWeight:900,color:getDifficultyLabel(lvl).color}}>Level {lvl} of {lvlDescs.length||10}</p>
                     <p style={{fontSize:10,fontWeight:700,color:getDifficultyLabel(lvl).color}}>{getDifficultyLabel(lvl).emoji} {getDifficultyLabel(lvl).label}</p>
                   </div>
                 </div>
@@ -7076,6 +6404,13 @@ function A11ySync({a11y}) {
   return null;
 }
 // Prompt directives so the AI itself adapts questions to the child's needs
+// Any active accessibility need means this child's content must be
+// personalised, not pulled from a bank built for the "average" child in
+// their year/country. Used to bypass the shared question cache below.
+function hasA11yNeeds(child){
+  const a=child?.accessibility||{};
+  return Object.values(a).some(v=>v===true);
+}
 function a11yPromptRules(child) {
   const a = child?.accessibility || {};
   const rules = [];
