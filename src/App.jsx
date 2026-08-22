@@ -8,6 +8,7 @@ import {
 } from './data/content.js';
 import { GAMES } from './data/games.js';
 import { WORLDS, TILE } from './data/worlds.js';
+import { YEAR_GROUP_CONTENT, getYearGroupContent, a11yPromptRules, sessionSys } from './data/prompts.js';
 
 // Simple password hasher for child accounts
 async function hashPassword(pass) {
@@ -234,78 +235,10 @@ Return ONLY valid JSON no markdown:
 {"question":"...","options":["A) ...","B) ...","C) ...","D) ..."],"correct":"A","explanation":"simple 1-sentence","difficulty":"easy"}`;
 
 
-const YEAR_GROUP_CONTENT = {
-  UK:{
-    "Reception":{Maths:"Count to 20, recognise numerals, add subtract single digits, simple shapes, measure compare",English:"Phonics Phase 2-3, CVC words, simple sentences, listening to stories, rhyme",Science:"Seasons, plants animals local environment, everyday materials, senses"},
-    "Year 1":{Maths:"Count to 100, place value to 100, add subtract to 20, 2s 5s 10s times tables, halves quarters, basic measurements, 2D 3D shapes",English:"Phase 3-5 phonics, common exception words, capital letters full stops, nouns verbs adjectives, simple joined sentences",Science:"Seasonal changes, wild and garden plants, fish amphibians reptiles birds mammals, everyday materials properties",History:"Changes within living memory, significant events beyond living memory",Geography:"UK four countries capitals, hot cold areas of world, compass points",Computing:"Simple programs, logical reasoning, use technology safely"},
-    "Year 2":{Maths:"Numbers to 100, column addition subtraction, 2 5 10 times tables, halves thirds quarters, standard measurements, 2D 3D shapes",English:"Year 2 exception words, nouns pronouns verbs adjectives adverbs, subordination coordination, apostrophes",Science:"Living things habitats food chains, plants growth, animals nutrition exercise hygiene, materials properties",History:"Great Fire of London, significant explorers, local history",Geography:"UK regions rivers mountains, world continents oceans"},
-    "Year 3":{Maths:"4-digit numbers, column add subtract, 3 4 8 times tables, fractions shapes, 12 24 hour time, perimeter, angles, bar charts",English:"Prefixes suffixes, apostrophes, speech punctuation, paragraphs, conjunctions adverbs prepositions",Science:"Plants pollination life cycle. Light reflection shadows. Forces magnets. Rocks fossils soil.",History:"Ancient Egypt. Stone Age to Iron Age.",Geography:"Europe countries capitals rivers. Trade links.",Computing:"Algorithms Scratch programming, online safety"},
-    "Year 4":{Maths:"Numbers to 10000, all 12 times tables, decimals 2dp, equivalent fractions, area perimeter, Roman numerals, coordinates, line graphs",English:"Year 3-4 spelling list, fronted adverbials, noun phrases, determiners, Standard English, paragraph cohesion",Science:"Digestion teeth. Sound vibrations pitch volume. Electricity circuits. States of matter.",History:"Ancient Greece democracy legacy. Roman Britain.",Geography:"UK rivers, OS maps, grid references, settlements",Computing:"Scratch with user input, databases, internet"},
-    "Year 5":{Maths:"Numbers to million, negative, BODMAS, 4-digit x 2-digit, fractions mixed numbers, percentages, area triangles, converting units, volume",English:"Year 5-6 spelling list, relative clauses, modal verbs, passive voice, semi-colons colons dashes",Science:"Life cycles plants mammals birds amphibians. Dissolving separating mixtures. Earth space solar system.",History:"Anglo-Saxons Vikings. WWII causes effects.",Geography:"World biomes, climate zones, water cycle, trade",Computing:"Python variables input output conditions loops. Networks."},
-    "Year 6":{Maths:"Algebra, ratio proportion, all fraction operations, percentages, area circles, volume, mean, negative numbers, equations",English:"Complex sentences, literary techniques, argument debate, report journalism, critical reading, authorial intent",Science:"Evolution adaptation inheritance. Light refraction. Circulatory system. Electricity voltage.",History:"WW2 in depth, post-war Britain, chronological history",Geography:"Fair trade, development, map skills 6-figure references",Computing:"Advanced Python, cybersecurity, AI intro"},
-  },
-  US:{
-    "Kindergarten":{Math:"Count to 100, compare numbers, add subtract within 10, shapes, measurement comparison","English Language Arts":"Letter-sound correspondence, sight words, retell stories, describe characters",Science:"Pushes pulls, living non-living things, weather, needs of plants animals","Social Studies":"Self family classroom, community helpers, basic maps"},
-    "Grade 1":{Math:"Count to 120, add subtract within 20, place value, measure lengths, tell time","English Language Arts":"Decode words, sight words, ask answer questions, write opinion sentences",Science:"Sound light vibrations reflection. Plants animals structures. Sky patterns.","Social Studies":"Families communities, goods services, historical figures"},
-    "Grade 2":{Math:"Add subtract within 100, place value to 1000, standard measurement, time, money, arrays","English Language Arts":"Multisyllabic words, main topic key details, compare texts, write informative narrative",Science:"Solid liquid gas. Animals habitats. Earth materials.","Social Studies":"Communities government economics, US regions"},
-    "Grade 3":{Math:"Multiply divide within 100, fractions number line, area perimeter, time intervals, bar graphs","English Language Arts":"Chapter books, message or lesson, compare characters settings, opinion writing with evidence",Science:"Heredity traits. Life cycles. Weather climate. Magnets.","Social Studies":"Geography continents oceans, US regions, supply demand"},
-    "Grade 4":{Math:"Multi-digit multiplication division, fractions same denominator, decimal notation, classify shapes","English Language Arts":"Infer from text, determine theme, compare narrators, multi-paragraph essays",Science:"Energy transfer waves sound light. Rocks weathering. Plant animal structures.","Social Studies":"US regions, state history, Native American cultures, government branches"},
-    "Grade 5":{Math:"Multiply divide fractions, decimals thousandths, volume, coordinate plane, data analysis","English Language Arts":"Figurative language, cite textual evidence, argument with counterclaims",Science:"Matter properties states changes. Ecosystems food webs. Earth systems.","Social Studies":"US history Constitution, Civil War, immigration, westward expansion"},
-  },
-  CA:{
-    "Kindergarten":{Mathematics:"Count to 20, compare groups, simple patterns, basic shapes",Language:"Letter recognition, retell stories, print concepts","Science & Technology":"Needs of living things, seasonal changes, materials","Social Studies":"Self family classroom, community, Indigenous peoples intro"},
-    "Grade 1":{Mathematics:"Count to 50, add subtract to 20, simple fractions, 2D 3D shapes, non-standard measurement",Language:"Phonics, sight words, retell texts, simple sentences","Science & Technology":"Living things, seasonal change, properties of objects","Social Studies":"Family community traditions, Canada's diverse communities"},
-    "Grade 2":{Mathematics:"Count to 200, add subtract to 100, multiplication patterns, fractions, standard measurement",Language:"Decoding strategies, main idea, compare texts, write recounts","Science & Technology":"Animals growth changes, liquids solids, simple machines","Social Studies":"Canadian communities, Indigenous peoples, local geography"},
-    "Grade 3":{Mathematics:"Numbers to 1000, multiplication division facts, fractions, perimeter area, bar graphs",Language:"Chapter books, structured paragraphs, research, oral presentations","Science & Technology":"Plants. Matter materials. Forces movement. Soils.","Social Studies":"Urban rural communities, natural resources, provincial regions"},
-    "Grade 4":{Mathematics:"Numbers to 10000, all multiplication facts, decimals, fractions, area perimeter, probability",Language:"Infer interpret, structured essays, research, persuasive writing","Science & Technology":"Habitats communities. Matter materials. Light sound. Rocks minerals.","Social Studies":"Medieval societies, Indigenous peoples, Canada's regions"},
-    "Grade 5":{Mathematics:"Integers, fractions operations, percent, surface area volume, data analysis",Language:"Critical literacy, literary techniques, argument writing, research","Science & Technology":"Human organ systems. Properties of matter. Forces on structures.","Social Studies":"First contact, Treaties, Confederation, rights governance"},
-    "Grade 6":{Mathematics:"Rational numbers, ratio proportion, algebra, geometric relationships, statistics",Language:"Authorial intent, literary analysis, debate argument, complex research","Science & Technology":"Biodiversity. Flight. Space. Electricity.","Social Studies":"Canada in world, globalisation, human rights, sustainability"},
-  },
-};
 
-function getYearGroupContent(child, subject) {
-  const country = child.country||"UK";
-  const yg = child.yearGroup||YEAR[country]?.[child.age]||"Year 3";
-  return YEAR_GROUP_CONTENT[country]?.[yg]?.[subject]||null;
-}
 
-const sessionSys = (child, subject, topic, mode, sC, sT, askedQs=[]) => {
-  const t = TUTORS[child.tutor];
-  const acc = sT>0 ? sC/sT : 0.5;
-  const easier = acc<0.45 && sT>=3;
-  const harder = acc>0.82 && sT>=3;
-  const country = child.country||"UK";
-  const yearGroup = child.yearGroup||YEAR[country]?.[child.age]||"Year 3";
-  const topicLevel = topic ? (child.topicLevels?.[subject]?.[topic.id]||1) : (child.level?.[subject]||1);
-  const yearContent = getYearGroupContent(child, subject);
-  const levelObj = topic?.levels?.[topicLevel-1]||topic?.desc||yearContent||"age-appropriate content";
-  const lang = country==="US"?"American English (math, color, grade)":country==="CA"?"Canadian English (math, colour, grade)":"British English (maths, colour, year group)";
-  return `You are ${child.tutor}. Style: ${t.style}
 
-CHILD: ${child.name} | ${yearGroup} | Age ${child.age} | ${country}
-SUBJECT: ${subject} | TOPIC: ${topic?.name||subject} | LANGUAGE: ${lang}
-${a11yPromptRules(child)}
 
-${yearGroup} ${subject} CURRICULUM (${country}) — questions MUST stay within this:
-"${yearContent||levelObj}"
-TOPIC LEVEL ${topicLevel}/10: "${levelObj}"
-
-RULES (no exceptions):
-1. Pitch question at exactly ${yearGroup} level — not above, not below
-2. READING LEVEL for age ${child.age}: ${child.age<=6?"very short sentences (max 8 words each), only common everyday words, no idioms":child.age<=8?"short sentences (max 12 words each), simple familiar words, no idioms":child.age<=10?"clear sentences (max 16 words each), plain language":"clear direct language"}
-2b. Total question text under ${child.age<=6?15:child.age<=8?22:30} words. Ask the question DIRECTLY — no chatty preamble like "Here's a tricky one!" before it.
-3. Examples from a ${child.age}-year-old's everyday life in ${country} — toys, pets, snacks, playground, family, not abstract objects
-4. ${lang} throughout
-5. TEACH LIKE A KIND TEACHER, NOT A TEXTBOOK: if you must use a subject word a ${child.age}-year-old might not know (e.g. "denominator", "century", "habitat"), explain it in the SAME sentence in brackets using a simpler word, e.g. "the denominator (the bottom number)"
-6. One idea per question — never stack two concepts in a single question
-${easier?"7. Simplify — child struggling. Add a hint.":""}${harder?"7. Slightly more challenging — still within ${yearGroup}":""}
-
-Do NOT repeat: ${askedQs.slice(-8).join(" | ")||"none yet"}
-Vary formats: multiple choice, true/false, fill-blank, word problems, spot-mistake
-
-Return ONLY valid JSON:
-{"question":"...","options":["A) ...","B) ...","C) ...","D) ..."],"correct":"A","explanation":"brief, ${child.tutor} style","hint":"${easier?"helpful hint":""}","encouragement":"short cheer","difficulty":"${topicLevel<=3?"easy":topicLevel<=7?"medium":"hard"}"}`;
-};
 
 
 // ── SPEECH ────────────────────────────────────────────────────────────────
@@ -1498,11 +1431,11 @@ function Session({child,startSubject,startTopic,onComplete,onUpdate,onExit,a11y=
               <TeachVisual key={q.question} visual={pickTeachVisual(subject,topic?.id,q.question)}/>
               <p style={{fontSize:a11y.largeText?22:19,fontWeight:700,color:C.text,lineHeight:1.8,marginBottom:20,fontFamily:a11y.dyslexiaFont?FDYS:F,letterSpacing:a11y.dyslexiaFont?"0.05em":undefined}}>{q.question}</p>
               {q.hint&&!ans&&<div style={{marginBottom:14,padding:"10px 14px",borderRadius:10,fontSize:13,fontWeight:600,color:"#92400E",background:"#FFFBEB",border:"1px solid #FDE68A"}}>💡 {q.hint}</div>}
-              <button onClick={()=>speak(q.question,child.tutor)} aria-label="Read the question aloud" style={{marginBottom:14,padding:"7px 14px",borderRadius:8,cursor:"pointer",border:`2px solid ${tutor.color}`,background:tutor.light,fontFamily:F,color:tutor.color,fontWeight:800,fontSize:13}}>🔊 Read aloud</button>
+              <button onClick={()=>speak(q.question,child.tutor)} aria-label="Read the question aloud" style={{display:"flex",alignItems:"center",gap:6,marginBottom:14,padding:"7px 14px",borderRadius:8,cursor:"pointer",border:`2px solid ${tutor.color}`,background:tutor.light,fontFamily:F,color:tutor.color,fontWeight:800,fontSize:13}}><Icon name="sound" size={15} color={tutor.color}/>Read aloud</button>
               {!ans&&<button onClick={useLessonHint} disabled={hintsLeft<=0} aria-label={`Use a hint, ${hintsLeft} left`}
-                style={{display:"block",marginBottom:14,padding:"7px 15px",borderRadius:10,cursor:hintsLeft>0?"pointer":"default",
+                style={{display:"flex",alignItems:"center",gap:6,marginBottom:14,padding:"7px 15px",borderRadius:10,cursor:hintsLeft>0?"pointer":"default",
                 fontFamily:F,fontSize:12.5,fontWeight:900,border:`2px solid ${hintsLeft>0?"#FDE68A":C.border}`,
-                background:hintsLeft>0?"#FFFBEB":"#F8FAFC",color:hintsLeft>0?"#92400E":C.muted}}>💡 Hint ×{hintsLeft}</button>}
+                background:hintsLeft>0?"#FFFBEB":"#F8FAFC",color:hintsLeft>0?"#92400E":C.muted}}><Icon name="hint" size={15} color={hintsLeft>0?"#92400E":C.muted}/>Hint ×{hintsLeft}</button>}
               <Options options={q.options} correct={q.correct} selected={sel} answered={ans} onAnswer={answer} hinted={hinted}/>
               {ans&&(
                 <div style={{marginTop:16,animation:"pop 0.22s ease"}}>
@@ -2825,22 +2758,34 @@ function pickTeachVisual(subject,topicId,questionText=""){
   if(!isMaths)return null;
   // Multiplication: showing "6 objects to count" for "6 × 7" is WRONG —
   // it visually teaches addition, not multiplication. Show real groups.
-  if(/×|\*|times|multiplied by/.test(q)&&nums.length>=2&&nums[0]<=10&&nums[1]<=12)
-    return {kind:"groups",groups:nums[0],each:nums[1]};
+  // Catches both symbolic ("6 × 7", "6 times 7") AND natural word-problem
+  // phrasing ("4 bags with 5 marbles in each", "3 groups of 6") — the
+  // AI writes far more word problems than symbolic multiplication, and
+  // missing that phrasing was letting the generic "how many" rule below
+  // wrongly steal the visual and show a plain, misleading undercount.
+  const groupsOf=q.match(/(\d+)\s*(?:groups|sets|rows|bags|boxes|baskets|packs|teams|shelves)\s*(?:of|with)?\s*(\d+)/);
+  const timesWord=q.match(/(\d+)\s*(?:×|\*|times|multiplied by)\s*(\d+)/);
+  if((groupsOf||timesWord)&&!/how many.*(left|remain)|altogether.{0,3}subtract/.test(q)){
+    const m=groupsOf||timesWord;
+    if(+m[1]<=10&&+m[2]<=12)return {kind:"groups",groups:+m[1],each:+m[2]};
+  }
+  // Subtraction/addition MUST be checked before the generic "how many"
+  // catch-all below — nearly every word problem contains "how many", so
+  // checking it first was stealing the visual from more specific and
+  // more useful operation language ("ate", "left", "gave away", "plus").
+  if(/\+|−|-|plus|minus|\badd\b|\badded\b|subtract|take away|\bate\b|\bleft\b|gave away|\bspent\b|\bused\b/.test(q)&&nums.length>=1){
+    const target=nums[nums.length-1];
+    return {kind:"line",target,max:Math.max(10,target+5)};
+  }
   // Comparison needs real comparison language, not just "two numbers
   // happen to be present" — an addition question has two numbers too,
   // and showing a "which is bigger" bar chart for "14 + 9" is misleading.
   if(/bigger|smaller|greater|less than|more than|fewer|compare/.test(q)&&nums.length>=2&&nums[0]<=20&&nums[1]<=20)
     return {kind:"compare",a:nums[0],b:nums[1]};
-  // Counting: only for genuinely small, concrete "how many" style counts.
+  // Counting: the last resort, only for genuinely small "how many" counts
+  // with no more specific operation language already matched above.
   if(/how many|count/.test(q)&&nums.length&&nums[0]<=20)
     return {kind:"count",n:Math.max(1,Math.min(20,nums[0]))};
-  // Number line: only for real addition/subtraction language, so a
-  // random number in an unrelated maths question doesn't trigger it.
-  if(/\+|−|-|plus|minus|add|subtract|take away/.test(q)&&nums.length){
-    const target=nums[nums.length-1];
-    return {kind:"line",target,max:Math.max(10,target+5)};
-  }
   return null; // nothing concrete and certain to show — never guess
 }
 function TeachVisual({visual,color="#6366F1"}){
@@ -3314,8 +3259,8 @@ function GameHeader({name,emoji,score,lives,maxLives=3,level,onQuit,narrative,qI
           <p style={{fontSize:AS.tileMin>=104?14.5:13,fontWeight:900,color:"#fff",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",maxWidth:118,fontFamily:F,textShadow:"0 1px 3px rgba(0,0,0,0.5)"}}>{name}</p>
           <div style={{display:"flex",alignItems:"center",gap:5}}>
             <HeartRow lives={lives} max={maxLives}/>
-            {streak>=2&&<span style={{fontSize:11,fontWeight:900,color:"#FDBA45",fontFamily:F,
-              animation:"flameFlicker 0.7s ease infinite",textShadow:"0 0 8px rgba(253,186,69,0.8)"}}>🔥{streak}</span>}
+            {streak>=2&&<span style={{display:"flex",alignItems:"center",gap:2,fontSize:11,fontWeight:900,color:"#FDBA45",fontFamily:F,
+              animation:"flameFlicker 0.7s ease infinite",textShadow:"0 0 8px rgba(253,186,69,0.8)"}}><Icon name="streak" size={13} color="#FDBA45"/>{streak}</span>}
           </div>
         </div>
       </div>
@@ -3378,11 +3323,11 @@ function QuestionCard({question,narrative,qIdx,lvl,mascot,mascotMood,total=MISSI
           letterSpacing:A.dyslexiaFont?"0.05em":undefined,textShadow:"0 2px 8px rgba(0,0,0,0.55)"}}>{question}</p>
         {onFlag&&<button onClick={onFlag} aria-label="Report this question"
           style={{position:"absolute",top:8,right:10,background:"none",border:"none",cursor:"pointer",
-          fontSize:12,opacity:0.4,padding:4}} title="Something wrong with this question?">⚑</button>}
+          opacity:0.4,padding:4,display:"flex"}} title="Something wrong with this question?"><Icon name="flag" size={14} color="#fff"/></button>}
         {onSpeak&&<button onClick={onSpeak} aria-label="Read the question aloud"
-          style={{marginTop:11,padding:"8px 16px",borderRadius:12,cursor:"pointer",fontFamily:F,
+          style={{display:"flex",alignItems:"center",gap:6,marginTop:11,padding:"8px 16px",borderRadius:12,cursor:"pointer",fontFamily:F,
           border:"2px solid rgba(255,209,102,0.6)",background:"rgba(255,209,102,0.14)",
-          color:"#FFD166",fontWeight:900,fontSize:13,animation:tier==="little"&&!A.noMotion?"pulse 2.2s ease-in-out infinite":"none"}}>🔊 Read aloud</button>}
+          color:"#FFD166",fontWeight:900,fontSize:13,animation:tier==="little"&&!A.noMotion?"pulse 2.2s ease-in-out infinite":"none"}}><Icon name="sound" size={15} color="#FFD166"/>Read aloud</button>}
       </div>
     </div>
   );
@@ -3521,8 +3466,8 @@ function MuteBtn(){
     <button onClick={()=>{const m=!muted;setMuted(m);setM(m);if(!m)playSound('tap');}}
       aria-label={muted?"Unmute sounds":"Mute sounds"}
       style={{background:"rgba(0,0,0,0.35)",border:"1.5px solid rgba(255,255,255,0.18)",
-      borderRadius:11,width:32,height:32,cursor:"pointer",fontSize:14,backdropFilter:"blur(6px)"}}>
-      {muted?"🔇":"🔊"}
+      borderRadius:11,width:32,height:32,cursor:"pointer",backdropFilter:"blur(6px)",display:"flex",alignItems:"center",justifyContent:"center"}}>
+      <Icon name={muted?"mute":"sound"} size={17} color="rgba(255,255,255,0.85)"/>
     </button>
   );
 }
@@ -3744,47 +3689,105 @@ function useParallax(){
 function GameBackdrop({gameName,accent,noMotion}){
   const motif=pickMotif(gameName);
   const tilt=useParallax();
-  const shift=(depth)=>noMotion?{}:{transform:`translate(${tilt.x*depth}px,${tilt.y*depth*0.5}px)`,transition:"transform 0.4s ease-out"};
-  const far=accent+"22", mid=accent+"3D", near=accent+"66";
+  const shift=(depth)=>noMotion?{}:{transform:`translate(${tilt.x*depth}px,${tilt.y*depth*0.4}px)`,transition:"transform 0.5s ease-out"};
+  const gid=_hashStr(gameName||"g")%100000; // unique gradient/glow ids so multiple mounted SVGs never collide
+  // Each motif is a 3-layer atmospheric landscape (far/mid/near) plus one
+  // glow accent (moon, sun, fireflies) — the same composition real 2D
+  // mobile games use: a horizon sitting in the LOWER portion of a tall
+  // screen so it frames the gameplay UI instead of fighting it, colours
+  // pulled from the game's own accent so it feels designed, not generic.
+  const glow=accent;
+  const far=accent, mid=accent, near="#00000055";
   const layers={
     mountains:(<>
-      <path d="M0,220 L60,150 L110,190 L180,110 L250,200 L320,140 L400,220 Z" fill={far} style={shift(6)}/>
-      <path d="M0,240 L80,175 L150,215 L230,140 L300,225 L400,170 L400,240 Z" fill={mid} style={shift(12)}/>
+      <radialGradient id={`g${gid}a`} cx="80%" cy="18%" r="45%"><stop offset="0%" stopColor="#FFF6D8" stopOpacity="0.85"/><stop offset="100%" stopColor={glow} stopOpacity="0"/></radialGradient>
+      <circle cx="320" cy="150" r="70" fill={`url(#g${gid}a)`} style={shift(2)}/>
+      <circle cx="320" cy="150" r="18" fill="#FFF6D8" style={shift(2)}/>
+      <path d="M-20,560 L70,430 L150,510 L230,380 L320,530 L400,440 L420,560 L420,844 L-20,844 Z" fill={far} opacity="0.42" style={shift(6)}/>
+      <path d="M-20,620 L90,470 L180,560 L260,420 L340,590 L420,480 L420,844 L-20,844 Z" fill={mid} opacity="0.62" style={shift(12)}/>
+      <path d="M-20,700 L110,540 L210,640 L300,500 L400,660 L420,620 L420,844 L-20,844 Z" fill={near} style={shift(20)}/>
     </>),
     city:(<>
-      {[...Array(7)].map((_,i)=><rect key={i} x={i*58+10} y={240-((i*37)%110+50)} width={34} height={(i*37)%110+50} fill={i%2?far:mid} style={shift(6+i%3*2)}/>)}
+      <radialGradient id={`g${gid}b`} cx="50%" cy="55%" r="45%"><stop offset="0%" stopColor="#FFF3C4" stopOpacity="0.8"/><stop offset="100%" stopColor={glow} stopOpacity="0"/></radialGradient>
+      <circle cx="200" cy="520" r="95" fill={`url(#g${gid}b)`} style={shift(2)}/>
+      {[10,60,105,165,215,270,320,375].map((x,i)=>{const y=560-((i*29)%80+120);return <rect key={'f'+i} x={x} y={y} width={i%3===0?46:36} height={844-y} fill={far} opacity="0.4" style={shift(5+i%3)}/>;})}
+      {[0,45,85,140,185,235,280,330,368].map((x,i)=>{const y=620-((i*23)%70+100);return <rect key={'n'+i} x={x} y={y} width={i%2===0?36:30} height={844-y} fill={near} style={shift(10+i%4*2)}/>;})}
     </>),
     waves:(<>
-      <path d="M0,210 Q50,190 100,210 T200,210 T300,210 T400,210 L400,260 L0,260 Z" fill={far} style={shift(5)}/>
-      <path d="M0,230 Q50,215 100,230 T200,230 T300,230 T400,230 L400,260 L0,260 Z" fill={mid} style={shift(10)}/>
+      <radialGradient id={`g${gid}c`} cx="50%" cy="30%" r="40%"><stop offset="0%" stopColor="#E0F7FF" stopOpacity="0.7"/><stop offset="100%" stopColor={glow} stopOpacity="0"/></radialGradient>
+      <circle cx="280" cy="220" r="80" fill={`url(#g${gid}c)`} style={shift(2)}/>
+      <path d="M-20,560 Q60,500 150,555 T330,545 T420,560 L420,844 L-20,844 Z" fill={far} opacity="0.45" style={shift(6)}/>
+      <path d="M-20,640 Q90,580 200,635 T400,620 L420,640 L420,844 L-20,844 Z" fill={mid} opacity="0.65" style={shift(11)}/>
+      <path d="M-20,730 Q110,670 230,725 T420,710 L420,844 L-20,844 Z" fill={near} style={shift(18)}/>
     </>),
     forest:(<>
-      {[...Array(9)].map((_,i)=><polygon key={i} points={`${i*45+10},${235-((i*13)%40)} ${i*45-8},240 ${i*45+28},240`} fill={i%2?far:mid} style={shift(4+i%4*2)}/>)}
+      <radialGradient id={`g${gid}d`} cx="30%" cy="70%" r="8%"><stop offset="0%" stopColor="#FDE68A" stopOpacity="0.9"/><stop offset="100%" stopColor="#FDE68A" stopOpacity="0"/></radialGradient>
+      <radialGradient id={`g${gid}e`} cx="75%" cy="76%" r="7%"><stop offset="0%" stopColor="#FDE68A" stopOpacity="0.9"/><stop offset="100%" stopColor="#FDE68A" stopOpacity="0"/></radialGradient>
+      <path d="M-20,620 L40,500 L90,570 L140,470 L200,560 L260,480 L320,580 L380,490 L420,600 L420,844 L-20,844 Z" fill={far} opacity="0.42" style={shift(5)}/>
+      <path d="M-20,680 L60,540 L120,620 L180,510 L240,610 L300,520 L360,630 L420,540 L420,844 L-20,844 Z" fill={mid} opacity="0.65" style={shift(10)}/>
+      <path d="M-20,740 L80,580 L150,670 L220,560 L290,670 L360,580 L420,680 L420,844 L-20,844 Z" fill={near} style={shift(16)}/>
+      <circle cx="100" cy="640" r="10" fill={`url(#g${gid}d)`} style={shift(14)}/>
+      <circle cx="290" cy="680" r="8" fill={`url(#g${gid}e)`} style={shift(14)}/>
     </>),
     dunes:(<>
-      <path d="M0,225 Q100,175 200,220 T400,210 L400,260 L0,260 Z" fill={far} style={shift(5)}/>
-      <path d="M0,245 Q120,205 240,238 T400,235 L400,260 L0,260 Z" fill={mid} style={shift(11)}/>
+      <radialGradient id={`g${gid}f`} cx="60%" cy="25%" r="42%"><stop offset="0%" stopColor="#FFF3C4" stopOpacity="0.75"/><stop offset="100%" stopColor={glow} stopOpacity="0"/></radialGradient>
+      <circle cx="250" cy="240" r="85" fill={`url(#g${gid}f)`} style={shift(2)}/>
+      <path d="M-20,580 Q100,510 220,565 T420,540 L420,844 L-20,844 Z" fill={far} opacity="0.4" style={shift(5)}/>
+      <path d="M-20,660 Q130,600 260,650 T420,630 L420,844 L-20,844 Z" fill={mid} opacity="0.62" style={shift(10)}/>
+      <path d="M-20,750 Q150,690 290,745 T420,725 L420,844 L-20,844 Z" fill={near} style={shift(16)}/>
     </>),
     castle:(<>
-      <rect x="130" y="150" width="140" height="100" fill={mid} style={shift(8)}/>
-      {[0,1,2,3,4].map(i=><rect key={i} x={130+i*28} y="140" width="16" height="16" fill={mid} style={shift(8)}/>)}
-      <rect x="185" y="120" width="30" height="130" fill={far} style={shift(5)}/>
+      <radialGradient id={`g${gid}g`} cx="50%" cy="20%" r="38%"><stop offset="0%" stopColor="#FFF3C4" stopOpacity="0.7"/><stop offset="100%" stopColor={glow} stopOpacity="0"/></radialGradient>
+      <circle cx="200" cy="220" r="75" fill={`url(#g${gid}g)`} style={shift(2)}/>
+      <path d="M-20,660 L400,660 L400,844 L-20,844 Z" fill={far} opacity="0.35" style={shift(4)}/>
+      <g style={shift(9)} opacity="0.7" fill={mid}>
+        <rect x="130" y="560" width="140" height="284"/>
+        {[0,1,2,3,4].map(i=><rect key={i} x={130+i*28} y="548" width="16" height="16"/>)}
+        <rect x="185" y="510" width="30" height="334"/>
+      </g>
+      <g style={shift(15)} fill={near}>
+        <rect x="60" y="620" width="80" height="224"/>
+        <rect x="260" y="600" width="90" height="244"/>
+        {[0,1,2].map(i=><rect key={i} x={65+i*26} y="608" width="14" height="14"/>)}
+      </g>
     </>),
     factory:(<>
-      <rect x="40" y="170" width="320" height="80" fill={mid} style={shift(7)}/>
-      {[80,160,240,300].map((x,i)=><rect key={i} x={x} y={100+i%2*20} width="14" height={70-i%2*20} fill={far} style={shift(4+i)}/>)}
+      <radialGradient id={`g${gid}h`} cx="55%" cy="30%" r="35%"><stop offset="0%" stopColor="#FFE8B8" stopOpacity="0.6"/><stop offset="100%" stopColor={glow} stopOpacity="0"/></radialGradient>
+      <circle cx="230" cy="260" r="70" fill={`url(#g${gid}h)`} style={shift(2)}/>
+      <path d="M-20,660 L420,660 L420,844 L-20,844 Z" fill={far} opacity="0.35" style={shift(4)}/>
+      <g style={shift(9)} opacity="0.72" fill={mid}>
+        <rect x="40" y="580" width="90" height="264"/><rect x="150" y="540" width="70" height="304"/>
+        <rect x="240" y="600" width="100" height="244"/><rect x="350" y="560" width="50" height="284"/>
+        <rect x="60" y="520" width="16" height="70"/><rect x="270" y="540" width="16" height="70"/>
+      </g>
+      <g style={shift(16)} fill={near}>
+        <rect x="0" y="640" width="70" height="204"/><rect x="100" y="610" width="80" height="234"/>
+        <rect x="210" y="660" width="90" height="184"/><rect x="320" y="620" width="80" height="224"/>
+      </g>
     </>),
     ruins:(<>
-      {[...Array(5)].map((_,i)=><rect key={i} x={i*75+20} y={190-(i%3)*25} width={22} height={(i%3)*25+50} fill={i%2?far:mid} style={shift(5+i)}/>)}
+      <radialGradient id={`g${gid}i`} cx="45%" cy="22%" r="40%"><stop offset="0%" stopColor="#FFE8B8" stopOpacity="0.65"/><stop offset="100%" stopColor={glow} stopOpacity="0"/></radialGradient>
+      <circle cx="180" cy="230" r="80" fill={`url(#g${gid}i)`} style={shift(2)}/>
+      <path d="M-20,680 L420,680 L420,844 L-20,844 Z" fill={far} opacity="0.35" style={shift(4)}/>
+      <g style={shift(9)} opacity="0.68" fill={mid}>
+        <rect x="30" y="600" width="26" height="244"/><rect x="90" y="560" width="22" height="284"/>
+        <rect x="150" y="620" width="28" height="224"/><rect x="230" y="580" width="24" height="264"/>
+        <rect x="300" y="610" width="26" height="234"/><rect x="360" y="570" width="20" height="274"/>
+      </g>
+      <g style={shift(15)} fill={near}>
+        <rect x="10" y="660" width="30" height="184"/><rect x="70" y="700" width="24" height="144"/>
+        <rect x="190" y="670" width="32" height="174"/><rect x="330" y="690" width="26" height="154"/>
+      </g>
     </>),
   };
   return(
-    <svg viewBox="0 0 400 260" preserveAspectRatio="xMidYMax slice"
-      style={{position:"absolute",inset:0,width:"100%",height:"100%",pointerEvents:"none",opacity:0.8}}>
+    <svg viewBox="0 0 400 844" preserveAspectRatio="xMidYMax slice"
+      style={{position:"absolute",inset:0,width:"100%",height:"100%",pointerEvents:"none"}}>
       {layers[motif]}
     </svg>
   );
 }
+
 
 // ── GameShell — chrome for the standalone arcade games ─────────────
 function GameShell({name,emoji,subject,score,maxScore,round,total,streak,onQuit,lives,level,children}) {
@@ -4156,9 +4159,9 @@ function EngineCore({child,name,emoji,subject,world,scene,fetchFn,initialLevel=1
         <button onClick={useHint} disabled={hints<=0||locked} aria-label={`Use a hint, ${hints} left`}
           style={{background:hints>0?"rgba(255,209,102,0.16)":"rgba(255,255,255,0.06)",
           border:`1.5px solid ${hints>0?"rgba(255,209,102,0.55)":"rgba(255,255,255,0.12)"}`,
-          borderRadius:999,padding:"5px 13px",cursor:hints>0?"pointer":"default",fontFamily:F,
+          borderRadius:999,padding:"5px 13px",cursor:hints>0?"pointer":"default",fontFamily:F,display:"flex",alignItems:"center",gap:5,
           fontSize:11.5,fontWeight:900,color:hints>0?"#FFD166":"rgba(255,255,255,0.35)"}}>
-          💡 Hint ×{hints}
+          <Icon name="hint" size={13} color={hints>0?"#FFD166":"rgba(255,255,255,0.35)"}/>Hint ×{hints}
         </button>
       </div>
       {/* Spacer pushes Q&A below the scene's hero area */}
@@ -4551,9 +4554,9 @@ function MeteorEngine({child,name,emoji,subject,fetchFn,initialLevel=1,onComplet
         <button onClick={useHint} disabled={hints<=0||locked} aria-label={`Use a hint, ${hints} left`}
           style={{background:hints>0?"rgba(255,209,102,0.16)":"rgba(255,255,255,0.06)",
           border:`1.5px solid ${hints>0?"rgba(255,209,102,0.55)":"rgba(255,255,255,0.12)"}`,
-          borderRadius:999,padding:"5px 13px",cursor:hints>0?"pointer":"default",fontFamily:F,
+          borderRadius:999,padding:"5px 13px",cursor:hints>0?"pointer":"default",fontFamily:F,display:"flex",alignItems:"center",gap:5,
           fontSize:11.5,fontWeight:900,color:hints>0?"#FFD166":"rgba(255,255,255,0.35)"}}>
-          💡 Hint ×{hints}
+          <Icon name="hint" size={13} color={hints>0?"#FFD166":"rgba(255,255,255,0.35)"}/>Hint ×{hints}
         </button>
       </div>
       <QuestionCard question={game.q?.question||game.q?.q} narrative={WORLDS.meteor} qIdx={game.qIdx} lvl={game.lvl}
@@ -4599,6 +4602,33 @@ function genSequenceQs(kind,lvl=1,count=10){
   const L=Math.max(1,Math.min(10,lvl));
   const qs=[];
   const WORDS=["ant","bear","cat","dog","egg","fox","goat","hat","ice","jam","kite","lion","moon","nest","owl","pig","queen","rain","sun","tree","umbrella","van","wolf","yak","zebra"];
+  const SPELL_WORDS=["cat","dog","sun","hat","big","run","frog","tree","house","apple","water","happy","friend","school","because","people","beautiful","different","important","especially"];
+  if(kind==="unscramble"){
+    // Words get harder/longer as level rises, matching curriculum pacing
+    const pool=SPELL_WORDS.filter(w=>L<=3?w.length<=4:L<=6?w.length<=7:w.length<=12);
+    for(let i=0;i<count;i++){
+      const word=pool[_ri(0,pool.length-1)];
+      const letters=word.split("");
+      qs.push({prompt:`Build the bridge: spell the word! (${letters.length} letters)`,
+        items:_shuffle(letters),correct:letters,word});
+    }
+    return qs;
+  }
+  if(kind==="sentence"){
+    const SENTENCES=[
+      ["The","cat","sat","on","the","mat"],["I","like","to","read","books"],
+      ["She","runs","to","school","every","day"],["We","played","in","the","park"],
+      ["The","big","dog","barked","loudly"],["He","is","my","best","friend"],
+      ["The","sun","is","shining","brightly","today"],["They","went","to","the","shop","together"],
+    ];
+    const pool=SENTENCES.filter(s=>L<=3?s.length<=5:L<=6?s.length<=6:s.length<=8);
+    for(let i=0;i<count;i++){
+      const words=pool[_ri(0,pool.length-1)];
+      qs.push({prompt:"Build the bridge: put the sentence in order!",
+        items:_shuffle(words),correct:words});
+    }
+    return qs;
+  }
   for(let i=0;i<count;i++){
     if(kind==="numbers"){
       const step=[1,2,5,10,3,4][Math.min(5,Math.floor(L/2))];
@@ -4619,6 +4649,176 @@ function orderStep(correct,placedCount,tapped){
   const ok=correct[placedCount]===tapped;
   return {ok,done:ok&&placedCount+1>=correct.length};
 }
+
+// ══════════════════════════════════════════════════════════════════
+// NEW MECHANIC 7: DRAG-AND-DROP LABELING — "Label It!"
+// Every mechanic so far is TAP-based. This is the first true drag
+// gesture: pick up a label chip, carry it across the screen following
+// your finger, drop it on the right part of a diagram. This is one of
+// the most common, well-loved mechanics in real educational games
+// (label the plant, label the body, label the map) and it teaches
+// spatial/structural knowledge that multiple-choice can't.
+// ══════════════════════════════════════════════════════════════════
+// Hand-crafted diagrams (like Robo Rescue's hand-crafted mazes) — real
+// visual content can't be procedurally generated, so each is designed
+// once and reused. Zones are positioned in a 0-100 percentage grid so
+// they scale to any screen size.
+const LABEL_DIAGRAMS=[
+  {subject:"Science",set:"plant",title:"Label the Plant",
+    draw:(<g>
+      <path d="M50,90 L50,55" stroke="#4ADE80" strokeWidth="3" fill="none"/>
+      <ellipse cx="38" cy="65" rx="11" ry="6" fill="#22C55E" transform="rotate(-25 38 65)"/>
+      <ellipse cx="62" cy="72" rx="11" ry="6" fill="#22C55E" transform="rotate(25 62 72)"/>
+      <circle cx="50" cy="50" r="9" fill="#FDE68A"/>
+      {[0,60,120,180,240,300].map(a=><ellipse key={a} cx={50+Math.cos(a*Math.PI/180)*13} cy={50+Math.sin(a*Math.PI/180)*13} rx="7" ry="4" fill="#F0ABFC" transform={`rotate(${a} ${50+Math.cos(a*Math.PI/180)*13} ${50+Math.sin(a*Math.PI/180)*13})`}/>)}
+      <path d="M50,90 Q42,96 36,94 M50,90 Q58,96 64,94" stroke="#A16207" strokeWidth="2.5" fill="none"/>
+    </g>),
+    zones:[{id:"flower",x:50,y:50,label:"Flower"},{id:"petal",x:38,y:41,label:"Petal"},{id:"leaf",x:38,y:65,label:"Leaf"},{id:"stem",x:50,y:75,label:"Stem"},{id:"roots",x:47,y:93,label:"Roots"}]},
+  {subject:"Science",set:"cycle",title:"Label the Water Cycle",
+    draw:(<g>
+      <ellipse cx="25" cy="20" rx="14" ry="8" fill="#E2E8F0"/>
+      <path d="M40,35 L44,50 M50,32 L54,52 M60,35 L58,48" stroke="#60A5FA" strokeWidth="2" strokeLinecap="round"/>
+      <path d="M20,75 Q50,65 80,75 L80,90 L20,90 Z" fill="#3B82F6"/>
+      <path d="M25,55 L23,45 M75,58 L77,46" stroke="#93C5FD" strokeWidth="2" strokeLinecap="round"/>
+      <circle cx="80" cy="20" r="10" fill="#FDE68A"/>
+    </g>),
+    zones:[{id:"cloud",x:25,y:20,label:"Cloud"},{id:"rain",x:50,y:42,label:"Rain"},{id:"sea",x:50,y:80,label:"Sea"},{id:"evaporation",x:25,y:50,label:"Evaporation"},{id:"sun",x:80,y:20,label:"Sun"}]},
+  {subject:"Science",set:"body",title:"Label the Body",
+    draw:(<g>
+      <circle cx="50" cy="15" r="10" fill="#FBCFE8"/>
+      <rect x="42" y="25" width="16" height="30" rx="6" fill="#93C5FD"/>
+      <rect x="30" y="28" width="10" height="24" rx="4" fill="#93C5FD"/>
+      <rect x="60" y="28" width="10" height="24" rx="4" fill="#93C5FD"/>
+      <rect x="42" y="55" width="7" height="30" rx="3" fill="#3B2E7E"/>
+      <rect x="51" y="55" width="7" height="30" rx="3" fill="#3B2E7E"/>
+    </g>),
+    zones:[{id:"head",x:50,y:15,label:"Head"},{id:"arm",x:35,y:40,label:"Arm"},{id:"chest",x:50,y:38,label:"Chest"},{id:"leg",x:45,y:70,label:"Leg"}]},
+  {subject:"Geography",set:"features",title:"Label the Map",
+    draw:(<g>
+      <path d="M15,60 Q30,40 50,45 Q70,42 85,55 L85,85 L15,85 Z" fill="#86EFAC"/>
+      <path d="M15,85 L85,85 L85,95 L15,95 Z" fill="#60A5FA"/>
+      <path d="M45,45 L55,30 L65,45 Z" fill="#94A3B8"/>
+      <circle cx="60" cy="65" r="8" fill="#3B82F6"/>
+    </g>),
+    zones:[{id:"mountain",x:55,y:38,label:"Mountain"},{id:"river",x:60,y:65,label:"River"},{id:"land",x:30,y:65,label:"Land"},{id:"sea",x:50,y:90,label:"Sea"}]},
+  {subject:"Geography",set:"world",title:"Label the World",
+    draw:(<g>
+      <rect x="5" y="5" width="90" height="90" rx="4" fill="#BAE6FD"/>
+      <path d="M15,25 Q25,18 35,25 L38,40 Q28,45 18,38 Z" fill="#86EFAC"/>
+      <path d="M45,20 Q60,15 70,25 L65,35 Q50,32 45,28 Z" fill="#86EFAC"/>
+      <path d="M45,45 Q58,42 60,55 L52,68 Q42,60 45,45 Z" fill="#FDE68A"/>
+      <path d="M70,45 Q85,42 88,58 L78,70 Q68,60 70,45 Z" fill="#86EFAC"/>
+      <path d="M15,60 Q25,55 22,72 L14,78 Q10,68 15,60 Z" fill="#FCA5A5"/>
+      <path d="M75,15 Q85,12 88,20 L80,24 Q74,20 75,15 Z" fill="#E9D5FF"/>
+    </g>),
+    zones:[{id:"na",x:26,y:30,label:"North America"},{id:"eu",x:57,y:25,label:"Europe"},{id:"af",x:53,y:55,label:"Africa"},{id:"as",x:80,y:52,label:"Asia"},{id:"sa",x:18,y:68,label:"South America"},{id:"oc",x:82,y:19,label:"Oceania"}]},
+];
+function DragLabelEngine({child,mode,onComplete=()=>{},onQuit=()=>{},onRetry,level=1,subjectFilter,setFilter}){
+  const A=useGameA11y();
+  const littleOne=(child.age||8)<=6;
+  const diagrams=LABEL_DIAGRAMS.filter(d=>(!subjectFilter||d.subject===subjectFilter)&&(!setFilter||d.set===setFilter));
+  const [di,setDi]=useState(0);
+  const [placed,setPlaced]=useState({}); // zoneId -> true once correctly labelled
+  const [wrong,setWrong]=useState(null); // zoneId of a just-missed drop, for shake feedback
+  const [score,setScore]=useState(0);
+  const [lives,setLives]=useState(littleOne?5:3);
+  const [done,setDone]=useState(false);
+  const [phase,setPhase]=useState("intro");
+  const [drag,setDrag]=useState(null); // {label, x, y} while a chip is being carried
+  const boardRef=useRef(null);
+  const diagram=diagrams[di%diagrams.length];
+  const labels=useMemo(()=>_shuffle(diagram.zones.map(z=>z.label)),[di]);
+
+  const startDrag=(label,e)=>{
+    if(placed[diagram.zones.find(z=>z.label===label)?.id])return;
+    const t=e.touches?e.touches[0]:e;
+    setDrag({label,x:t.clientX,y:t.clientY});
+  };
+  useEffect(()=>{
+    if(!drag)return;
+    const onMove=(e)=>{
+      const t=e.touches?e.touches[0]:e;
+      setDrag(d=>d?{...d,x:t.clientX,y:t.clientY}:d);
+    };
+    const onUp=(e)=>{
+      const t=e.changedTouches?e.changedTouches[0]:e;
+      const rect=boardRef.current?.getBoundingClientRect();
+      if(rect&&drag){
+        const px=((t.clientX-rect.left)/rect.width)*100;
+        const py=((t.clientY-rect.top)/rect.height)*100;
+        const zone=diagram.zones.find(z=>Math.hypot(z.x-px,z.y-py)<14);
+        if(zone&&zone.label===drag.label&&!placed[zone.id]){
+          playSound('correct');haptic('correct');
+          setPlaced(p=>{
+            const np={...p,[zone.id]:true};
+            if(Object.keys(np).length>=diagram.zones.length){
+              setScore(s=>s+1);
+              setTimeout(()=>{setDi(i=>i+1);setPlaced({});},900);
+            }
+            return np;
+          });
+        } else if(zone&&zone.label!==drag.label){
+          playSound('wrong');haptic('wrong');
+          setWrong(zone.id);setTimeout(()=>setWrong(null),450);
+          setLives(l=>{const nl=l-1;if(nl<=0)setTimeout(()=>setDone(true),500);return nl;});
+        }
+      }
+      setDrag(null);
+    };
+    window.addEventListener("mousemove",onMove);window.addEventListener("touchmove",onMove,{passive:false});
+    window.addEventListener("mouseup",onUp);window.addEventListener("touchend",onUp);
+    return()=>{
+      window.removeEventListener("mousemove",onMove);window.removeEventListener("touchmove",onMove);
+      window.removeEventListener("mouseup",onUp);window.removeEventListener("touchend",onUp);
+    };
+  },[drag,placed,diagram]);
+
+  if(done)return <GameEnd name="Label It!" emoji="🏷️" score={score} max={Math.max(score+((littleOne?5:3)-lives),1)} child={child}
+    xp={score*18} level={Math.min(10,1+score)} sectors={Math.floor(score/4)}
+    onRetry={()=>onRetry?onRetry():onQuit()}
+    onDone={()=>onComplete({score,max:Math.max(score,1),xp:score*18,total:score+((littleOne?5:3)-lives),correct:score,levelReached:Math.min(10,1+score)})}/>;
+  if(phase==="intro")return <MissionIntro world={WORLDS.grove} name="Label It!" emoji="🏷️" child={child} total={diagrams.length} onGo={()=>setPhase("play")}/>;
+
+  return(
+    <GameShell name="Label It!" emoji="🏷️" subject={diagram.subject} score={score} maxScore={null}
+      round={di+1} total={null} streak={0} onQuit={()=>setDone(true)} lives={lives} level={Math.min(10,1+score)}>
+      <p style={{fontSize:14,fontWeight:900,color:"rgba(255,255,255,0.9)",textAlign:"center",marginBottom:10,fontFamily:F}}>{diagram.title}</p>
+      <div ref={boardRef} style={{position:"relative",width:"100%",aspectRatio:"1",borderRadius:20,background:"rgba(255,255,255,0.06)",
+        border:"2px solid rgba(255,255,255,0.14)",marginBottom:16,overflow:"visible"}}>
+        <svg viewBox="0 0 100 100" style={{width:"100%",height:"100%"}}>{diagram.draw}</svg>
+        {diagram.zones.map(z=>(
+          <div key={z.id} style={{position:"absolute",left:`${z.x}%`,top:`${z.y}%`,transform:"translate(-50%,-50%)",
+            width:A.largeTapTargets?46:36,height:A.largeTapTargets?46:36,borderRadius:"50%",
+            border:placed[z.id]?"3px solid #4ADE80":wrong===z.id?"3px solid #EF4444":"2.5px dashed rgba(255,255,255,0.5)",
+            background:placed[z.id]?"rgba(74,222,128,0.25)":"rgba(255,255,255,0.05)",
+            display:"flex",alignItems:"center",justifyContent:"center",pointerEvents:"none",
+            animation:wrong===z.id&&!A.noMotion?"wrongShake 0.4s ease":"none"}}>
+            {placed[z.id]&&<Icon name="check" size={18} color="#4ADE80"/>}
+          </div>
+        ))}
+        {drag&&<div style={{position:"fixed",left:drag.x,top:drag.y,transform:"translate(-50%,-50%)",zIndex:300,pointerEvents:"none",
+          background:"#7C3AED",color:"#fff",padding:"8px 14px",borderRadius:12,fontWeight:900,fontSize:13,fontFamily:F,
+          boxShadow:"0 8px 20px rgba(0,0,0,0.4)"}}>{drag.label}</div>}
+      </div>
+      <p style={{fontSize:11,fontWeight:800,color:"rgba(255,255,255,0.6)",textAlign:"center",marginBottom:10,fontFamily:F}}>Drag each label onto the right spot!</p>
+      <div style={{display:"flex",flexWrap:"wrap",gap:9,justifyContent:"center"}}>
+        {labels.map(label=>{
+          const zoneId=diagram.zones.find(z=>z.label===label)?.id;
+          const isPlaced=placed[zoneId];
+          if(isPlaced)return null;
+          return(
+            <div key={label} onMouseDown={(e)=>startDrag(label,e)} onTouchStart={(e)=>startDrag(label,e)}
+              style={{padding:"10px 16px",borderRadius:12,background:"linear-gradient(135deg,#7C3AED,#6D28D9)",
+              color:"#fff",fontWeight:900,fontSize:13,fontFamily:F,cursor:"grab",userSelect:"none",touchAction:"none",
+              boxShadow:"0 4px 0 #4C1D95",opacity:drag?.label===label?0.3:1}}>{label}</div>
+          );
+        })}
+      </div>
+    </GameShell>
+  );
+}
+function LabelPlant(props){return <DragLabelEngine {...props} subjectFilter="Science"/>;}
+function LabelMap(props){return <DragLabelEngine {...props} subjectFilter="Geography" setFilter="features"/>;}
 
 function OrderEngine({child,name,emoji,subject,kind,onComplete=()=>{},onQuit=()=>{},onRetry=null,level=1}){
   const A=useGameA11y();
@@ -4717,6 +4917,10 @@ function genPairs(kind,lvl=1,pairCount=6){
       seen.add(key);pairs.push({a:`${a} × ${b}`,b:String(a*b)});
     }
     return pairs;
+  }
+  if(kind==="computing"){
+    const TERMS=[["loop","🔁"],["variable","📦"],["algorithm","📋"],["debug","🐛"],["code","💻"],["input","⌨️"],["output","🖨️"],["network","🌐"],["password","🔑"],["internet","🕸️"],["hardware","🖥️"],["software","💿"],["robot","🤖"],["binary","0️⃣"],["mouse","🖱️"],["keyboard","⌨️"]];
+    return _shuffle(TERMS).slice(0,n).map(([w,e])=>({a:w,b:e}));
   }
   const EMOJI_WORDS=[["dog","🐶"],["cat","🐱"],["sun","☀️"],["star","⭐"],["fish","🐟"],["tree","🌳"],["apple","🍎"],["moon","🌙"],["car","🚗"],["book","📚"],["frog","🐸"],["cake","🎂"],["ball","⚽"],["bee","🐝"],["boat","⛵"],["king","👑"]];
   return _shuffle(EMOJI_WORDS).slice(0,n).map(([w,e])=>({a:w,b:e}));
@@ -4931,6 +5135,86 @@ function genLineQ(lvl){
   if(mode===1){const a=ticks[_ri(0,ticks.length-3)];const t=a+step*_ri(1,2);return {prompt:`Jump to ${a} + ${t-a}!`,target:t,max,step,ticks};}
   const b=ticks[_ri(2,ticks.length-1)];const t=b-step*_ri(1,2);return {prompt:`Jump to ${b} − ${b-t}!`,target:t,max,step,ticks};
 }
+// ══════════════════════════════════════════════════════════════════
+// NEW MECHANIC: COORDINATE GRID — tap the exact point, no options at all
+// Same "no multiple choice" philosophy as Frog Jump, applied to (x,y)
+// coordinate plotting — a genuine curriculum topic that was previously
+// hiding behind a quiz asking about coordinates instead of using them.
+// ══════════════════════════════════════════════════════════════════
+function genCoordQ(lvl){
+  const L=Math.max(1,Math.min(10,lvl));
+  const size=L<=3?5:L<=6?7:9;
+  const x=_ri(0,size),y=_ri(0,size);
+  return {x,y,size};
+}
+function CoordinateGrid({child,mode,onComplete=()=>{},onQuit=()=>{},onRetry,level=1}){
+  const A=useGameA11y();
+  const littleOne=(child.age||8)<=6;
+  const [q,setQ]=useState(()=>genCoordQ(level));
+  const [tapped,setTapped]=useState(null);
+  const [result,setResult]=useState(null);
+  const [score,setScore]=useState(0);
+  const [streak,setStreak]=useState(0);
+  const [lives,setLives]=useState(littleOne?5:3);
+  const [lvl,setLvl]=useState(level);
+  const [done,setDone]=useState(false);
+  const [phase,setPhase]=useState("intro");
+  const tapCell=(x,y)=>{
+    if(result)return;
+    setTapped({x,y});
+    const ok=x===q.x&&y===q.y;
+    setResult(ok?"ok":"bad");
+    if(ok){playSound('correct');haptic('correct');setScore(s=>s+1);
+      setStreak(st=>{const ns=st+1;if(ns%4===0)setLvl(l=>Math.min(10,l+1));return ns;});}
+    else{playSound('wrong');haptic('wrong');setStreak(0);
+      setLives(l=>{const nl=l-1;if(nl<=0)setTimeout(()=>setDone(true),700);return nl;});}
+    setTimeout(()=>{setResult(null);setTapped(null);setQ(genCoordQ(lvl));},ok?800:1400);
+  };
+  if(done)return <GameEnd name="Coordinate Quest" emoji="🧭" score={score} max={Math.max(score+((littleOne?5:3)-lives),1)} child={child}
+    xp={score*15} level={lvl} sectors={Math.floor(score/6)}
+    onRetry={()=>onRetry?onRetry():onQuit()}
+    onDone={()=>onComplete({score,max:Math.max(score,1),xp:score*15,total:score+((littleOne?5:3)-lives),correct:score,levelReached:lvl})}/>;
+  if(phase==="intro")return <MissionIntro world={WORLDS.cosmic} name="Coordinate Quest" emoji="🧭" child={child} total={12} onGo={()=>setPhase("play")}/>;
+  const cells=[...Array(q.size+1)].map((_,i)=>q.size-i); // top row = highest y
+  return(
+    <GameShell name="Coordinate Quest" emoji="🧭" subject="Maths" score={score} maxScore={null}
+      round={score+1} total={null} streak={streak} onQuit={()=>setDone(true)} lives={lives} level={lvl}>
+      <div style={{background:"rgba(8,12,30,0.5)",backdropFilter:"blur(10px)",borderRadius:20,padding:"14px 16px",marginBottom:16,border:"2px solid rgba(255,255,255,0.14)"}}>
+        <p style={{fontSize:A.largeText?19:17,fontWeight:900,color:"#fff",textAlign:"center",fontFamily:A.dyslexiaFont?FDYS:F}}>Tap the point at ({q.x}, {q.y})!</p>
+      </div>
+      <div style={{display:"flex"}}>
+        <div style={{display:"flex",flexDirection:"column",justifyContent:"space-between",paddingRight:4,paddingBottom:22}}>
+          {cells.map(y=><p key={y} style={{fontSize:9,fontWeight:800,color:"rgba(255,255,255,0.5)",height:`${100/(q.size+1)}%`,display:"flex",alignItems:"center"}}>{y}</p>)}
+        </div>
+        <div style={{flex:1}}>
+          <div style={{display:"grid",gridTemplateColumns:`repeat(${q.size+1},1fr)`,gridTemplateRows:`repeat(${q.size+1},1fr)`,
+            aspectRatio:"1",background:"rgba(255,255,255,0.05)",borderRadius:12,border:"2px solid rgba(255,255,255,0.15)",overflow:"hidden"}}>
+            {cells.map(y=>[...Array(q.size+1)].map((_,x)=>{
+              const isTarget=result&&x===q.x&&y===q.y;
+              const isTapped=tapped&&x===tapped.x&&y===tapped.y;
+              return(
+                <button key={x+","+y} onClick={()=>tapCell(x,y)} disabled={!!result}
+                  style={{border:"1px solid rgba(255,255,255,0.08)",background:isTarget?"#2FBF71":isTapped&&result==="bad"?(A.noRedFeedback?"#64748B":"#E5484D"):"transparent",
+                  cursor:result?"default":"pointer",display:"flex",alignItems:"center",justifyContent:"center",
+                  animation:isTapped&&result==="bad"&&!A.noMotion?"wrongShake 0.4s ease":"none"}}>
+                  {isTarget&&<Icon name="check" size={14} color="#fff"/>}
+                </button>
+              );
+            }))}
+          </div>
+          <div style={{display:"flex",justifyContent:"space-between",marginTop:4}}>
+            {[...Array(q.size+1)].map((_,x)=><p key={x} style={{fontSize:9,fontWeight:800,color:"rgba(255,255,255,0.5)",flex:1,textAlign:"center"}}>{x}</p>)}
+          </div>
+        </div>
+      </div>
+      <p style={{fontSize:11,fontWeight:800,color:"rgba(255,255,255,0.6)",textAlign:"center",marginTop:12,fontFamily:F}}>x goes across, y goes up — tap where they meet!</p>
+    </GameShell>
+  );
+}
+function CoordinateQuest({child,mode,onComplete,onQuit,onRetry,level=1}) {
+  return <CoordinateGrid child={child} mode={mode} onComplete={onComplete} onQuit={onQuit} onRetry={onRetry} level={level}/>;
+}
+
 function FrogJump({child,mode,onComplete=()=>{},onQuit=()=>{},onRetry,level=1}){
   const A=useGameA11y();
   const littleOne=(child.age||8)<=6;
@@ -5291,13 +5575,49 @@ function SpellingRun({child,mode,onComplete,onQuit,onRetry,level=1}) {
 }
 
 // ── Bottom navigation (referenced by ChildDash, previously undefined)
+// ══════════════════════════════════════════════════════════════════
+// ICON SET — replaces system emoji in core UI chrome (nav, buttons,
+// controls). Emoji render differently per OS/device and read as
+// "default app," not a designed product — Duolingo doesn't use a 🦉
+// emoji, it has its OWN owl, drawn once, identical everywhere. This is
+// a small set of consistent line icons for the highest-visibility
+// recurring chrome (nav, mute, hint, exit, streak, trophy, lock,
+// settings). Subject/avatar/tutor emoji stay as-is — that's deliberate
+// playful personality appropriate for young children, not "AI-coded."
+// ══════════════════════════════════════════════════════════════════
+function Icon({name,size=22,color="currentColor",strokeWidth=2}){
+  const p={fill:"none",stroke:color,strokeWidth,strokeLinecap:"round",strokeLinejoin:"round"};
+  const paths={
+    home:<path {...p} d="M4 11.5 12 4l8 7.5M6 10v9h5v-5h2v5h5v-9"/>,
+    learn:<path {...p} d="M4 6.5C6 5 9 5 12 6.5c3-1.5 6-1.5 8 0v12c-2-1.5-5-1.5-8 0-3-1.5-6-1.5-8 0z M12 6.5v12"/>,
+    games:<><rect {...p} x="3" y="8" width="18" height="10" rx="4"/><path {...p} d="M8 11v4M6 13h4M15.5 12.2h.01M18 14.2h.01"/></>,
+    trophy:<path {...p} d="M7 4h10v4a5 5 0 0 1-10 0zM7 5H4v2a3 3 0 0 0 3 3M17 5h3v2a3 3 0 0 1-3 3M10 17v3h4v-3M8 20h8"/>,
+    mute:<><path {...p} d="M5 10v4h4l5 4V6l-5 4z"/><path {...p} d="M17 9l4 6M21 9l-4 6"/></>,
+    sound:<><path {...p} d="M5 10v4h4l5 4V6l-5 4z"/><path {...p} d="M16.5 9.5a4 4 0 0 1 0 5M19 7.5a7 7 0 0 1 0 9"/></>,
+    hint:<path {...p} d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.6 10.8c.6.5 1 1.2 1.1 2h5c.1-.8.5-1.5 1.1-2A6 6 0 0 0 12 3z"/>,
+    exit:<path {...p} d="M15 4H6v16h9M11 12H21m0 0-3.5-3.5M21 12l-3.5 3.5"/>,
+    back:<path {...p} d="M19 12H5m0 0 6-6m-6 6 6 6"/>,
+    settings:<><circle {...p} cx="12" cy="12" r="3.2"/><path {...p} d="M19.4 13.5a7.6 7.6 0 0 0 0-3l1.9-1.5-2-3.4-2.2.9a7.6 7.6 0 0 0-2.6-1.5L14 2h-4l-.5 2.5a7.6 7.6 0 0 0-2.6 1.5l-2.2-.9-2 3.4L4.6 10a7.6 7.6 0 0 0 0 3l-1.9 1.5 2 3.4 2.2-.9c.8.7 1.7 1.2 2.6 1.5L10 22h4l.5-2.5a7.6 7.6 0 0 0 2.6-1.5l2.2.9 2-3.4z"/></>,
+    flag:<path {...p} d="M6 3v18M6 4h12l-3 4 3 4H6"/>,
+    streak:<path {...p} d="M8.5 14.5a2.5 2.5 0 0 0 2.5-2.5c0-1.4-.5-2-1-3-1.1-2.1-.2-4 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.2.4-2.3 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>,
+    lock:<><rect {...p} x="5" y="11" width="14" height="9" rx="2"/><path {...p} d="M8 11V7a4 4 0 0 1 8 0v4"/></>,
+    star:<path {...p} d="m12 3 2.6 5.9 6.4.6-4.8 4.3 1.4 6.3L12 17l-5.6 3.1 1.4-6.3-4.8-4.3 6.4-.6z"/>,
+    heart:<path {...p} d="M12 20s-7-4.6-9.3-9C1 7.5 2.5 4 6 4c2 0 3.4 1 6 3.6C14.6 5 16 4 18 4c3.5 0 5 3.5 3.3 7-2.3 4.4-9.3 9-9.3 9z"/>,
+    check:<path {...p} d="M4 12.5 9 18 20 6"/>,
+    x:<path {...p} d="M6 6l12 12M18 6 6 18"/>,
+    book:<><path {...p} d="M4 5.5A2.5 2.5 0 0 1 6.5 3H19v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path {...p} d="M4 5.5v15"/></>,
+    parent:<><circle {...p} cx="12" cy="8" r="3.2"/><path {...p} d="M5 20c1-4 4-6 7-6s6 2 7 6"/></>,
+  };
+  return <svg width={size} height={size} viewBox="0 0 24 24">{paths[name]||null}</svg>;
+}
+
 function BottomNav({active,onHome,onLearn,onGames,onBadges}) {
   const AS=useAgeStyle();
   const items=[
-    {id:"home",  label:"Home",   emoji:"🏠", fn:onHome},
-    {id:"learn", label:"Learn",  emoji:"📚", fn:onLearn},
-    {id:"games", label:"Games",  emoji:"🎮", fn:onGames},
-    {id:"badges",label:"Badges", emoji:"🏆", fn:onBadges},
+    {id:"home",  label:"Home",   icon:"home", fn:onHome},
+    {id:"learn", label:"Learn",  icon:"learn", fn:onLearn},
+    {id:"games", label:"Games",  icon:"games", fn:onGames},
+    {id:"badges",label:"Badges", icon:"trophy", fn:onBadges},
   ];
   return(
     <div style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:"min(94vw, 720px)",
@@ -5305,8 +5625,10 @@ function BottomNav({active,onHome,onLearn,onGames,onBadges}) {
       display:"flex",justifyContent:"space-around",padding:"8px 8px calc(10px + env(safe-area-inset-bottom))",zIndex:50}}>
       {items.map(it=>(
         <button key={it.id} onClick={it.fn} style={{background:"transparent",border:"none",cursor:"pointer",
-          fontFamily:F,padding:"4px 14px",borderRadius:14,position:"relative"}}>
-          <p style={{fontSize:AS.navIcon,marginBottom:1,transform:active===it.id?"translateY(-2px) scale(1.12)":"none",transition:"transform 0.2s"}}>{it.emoji}</p>
+          fontFamily:F,padding:"4px 14px",borderRadius:14,position:"relative",display:"flex",flexDirection:"column",alignItems:"center",gap:1}}>
+          <div style={{transform:active===it.id?"translateY(-2px) scale(1.1)":"none",transition:"transform 0.2s"}}>
+            <Icon name={it.icon} size={AS.navIcon} color={active===it.id?C.primary:C.muted} strokeWidth={active===it.id?2.4:2}/>
+          </div>
           <p style={{fontSize:AS.navLabel,fontWeight:900,color:active===it.id?C.primary:C.muted}}>{it.label}</p>
           {active===it.id&&<div style={{position:"absolute",bottom:-2,left:"50%",transform:"translateX(-50%)",width:18,height:3.5,borderRadius:2,background:C.primary}}/>}
         </button>
@@ -5380,8 +5702,8 @@ function FractionChef({child,mode,onComplete,onQuit,onRetry,level=1}) {
 
 
 function WordScramble({child,mode,onComplete,onQuit,onRetry,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 spelling, unscrambling words at curriculum Level for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. ${a11yPromptRules(child)} Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Word Scramble questions."),[child]);
-  return <CatcherEngine child={child} name="Word Scramble" emoji="🔤" subject="English" color="#0EA5E9" bg="#F0F9FF" catcherChar="🧺" sceneBg="linear-gradient(180deg,#EEF2FF,#BFDBFE)" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit} onRetry={onRetry}/>;
+  // Converted to REAL unscrambling — the name promised it, the quiz never delivered it.
+  return <OrderEngine child={child} name="Word Scramble" emoji="🔤" subject="English" kind="unscramble" level={level} onComplete={onComplete} onQuit={onQuit} onRetry={onRetry}/>;
 }
 
 function SpellingBee({child,mode,onComplete,onQuit,onRetry,level=1}) {
@@ -5458,8 +5780,7 @@ function SpellingBee({child,mode,onComplete,onQuit,onRetry,level=1}) {
 
 
 function SentenceBuilder({child,mode,onComplete,onQuit,onRetry,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 grammar, sentence structure, correct word order for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. ${a11yPromptRules(child)} Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Sentence Builder questions."),[child]);
-  return <ShooterEngine child={child} name="Sentence Builder" emoji="✏️" subject="English" color="#16A34A" bg="#F0FDF4" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit} onRetry={onRetry}/>;
+  return <OrderEngine child={child} name="Sentence Builder" emoji="✏️" subject="English" kind="sentence" level={level} onComplete={onComplete} onQuit={onQuit} onRetry={onRetry}/>;
 }
 
 function ScienceSort({child,mode,onComplete,onQuit,onRetry,level=1}) {
@@ -5878,8 +6199,9 @@ function SchoolRun({child,mode,onComplete,onQuit,onRetry,level=1}) {
 }
 
 function MemoryWords({child,mode,onComplete,onQuit,onRetry,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 vocabulary/reading questions for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options. ${a11yPromptRules(child)} Return ONLY JSON: {"questions":[{"q":"What does 'habitat' mean?","options":["A) Food","B) Home of animal","C) Weather","D) Plant"],"correct":"B"}]}`,"Memory words questions."),[child]);
-  return <SpaceExplorer child={child} name="Memory Match" emoji="🧠" subject="English" color="#0EA5E9" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit} onRetry={onRetry}/>;
+  // Converted from a plain quiz to a REAL memory-match game — the name
+  // said "Memory Match" but nothing tested memory until now.
+  return <MatchEngine child={child} name="Memory Match" emoji="🧠" subject="English" kind="words" level={level} onComplete={onComplete} onQuit={onQuit} onRetry={onRetry}/>;
 }
 
 
@@ -5980,8 +6302,9 @@ function FootballHistory({child,mode,onComplete,onQuit,onRetry,level=1}) {
 
 
 function WorldMapGame({child,mode,onComplete,onQuit,onRetry,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 world geography, countries, capitals, continents for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. ${a11yPromptRules(child)} Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"World Map Quest questions."),[child]);
-  return <RunnerEngine child={child} name="World Map Quest" emoji="🌍" subject="Geography" color="#0369A1" bg="#F0F9FF" runnerChar="🌍" sceneBg="linear-gradient(180deg,#F0F9FF,#BAE6FD 50%,#0EA5E9)" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit} onRetry={onRetry}/>;
+  // A different diagram from LabelMap (continents, not physical features) —
+  // genuinely distinct content, not a duplicate under a different name.
+  return <DragLabelEngine child={child} subjectFilter="Geography" setFilter="world" level={level} onComplete={onComplete} onQuit={onQuit} onRetry={onRetry}/>;
 }
 
 function GeographyGuesser({child,mode,onComplete,onQuit,onRetry,level=1}) {
@@ -6020,18 +6343,12 @@ function FlippingFood({child,mode,onComplete,onQuit,onRetry,level=1}) {
 }
 
 function MemoryComputer({child,mode,onComplete,onQuit,onRetry,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 computing terms, networks, hardware for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. ${a11yPromptRules(child)} Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Computer Memory questions."),[child]);
-  return <SpaceExplorer child={child} name="Computer Memory" emoji="💾" subject="Computing" color="#4F46E5" bg="#EEF2FF" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit} onRetry={onRetry}/>;
+  return <MatchEngine child={child} name="Computer Memory" emoji="💾" subject="Computing" kind="computing" level={level} onComplete={onComplete} onQuit={onQuit} onRetry={onRetry}/>;
 }
 
 function ShapeShooter({child,mode,onComplete,onQuit,onRetry,level=1}) {
   const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 geometry questions for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Shapes, angles, symmetry. Options as short labels. ${a11yPromptRules(child)} Return ONLY JSON: {"questions":[{"q":"Sides of a hexagon?","options":["4","5","6","7"],"correct":"6"}]}`,"Shape shooter questions."),[child]);
   return <ShooterEngine child={child} name="Shape Shooter" emoji="📐" subject="Maths" color="#7C3AED" bg="#F5F3FF" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit} onRetry={onRetry}/>;
-}
-
-function CoordinateQuest({child,mode,onComplete,onQuit,onRetry,level=1}) {
-  const fetchFn=useCallback(async(lvl)=>claude(`Generate 10 coordinates, position, translation for ${child.yearGroup||"Year 3"} in ${child.country||"UK"} curriculum, Level ${lvl}/10. Short options max 20 chars each. ${a11yPromptRules(child)} Return ONLY JSON: {"questions":[{"q":"Question?","options":["A","B","C","D"],"correct":"B"}]}`,"Coordinate Quest questions."),[child]);
-  return <SpaceExplorer child={child} name="Coordinate Quest" emoji="🧭" subject="Maths" color="#4F46E5" bg="#EEF2FF" fetchFn={fetchFn} initialLevel={level} onComplete={onComplete} onQuit={onQuit} onRetry={onRetry}/>;
 }
 
 function RatioRecipe({child,mode,onComplete,onQuit,onRetry,level=1}) {
@@ -6310,7 +6627,7 @@ function GamePlayer({child,gameId,mode,onComplete,onQuit}) {
 
   const props={child,mode,onComplete:handleComplete,onQuit,onRetry:()=>setResetKey(k=>k+1),level:gameLevel};
   const best=(child.gameHighScores||{})[gameId]||0;
-  const map={trickyReview:<TrickyReview {...props}/>,meteorMaths:<MeteorMaths {...props}/>,wordMeteors:<WordMeteors {...props}/>,numberBridge:<NumberBridge {...props}/>,frogJump:<FrogJump {...props}/>,balanceScale:<BalanceScale {...props}/>,oddEvenSort:<OddEvenSort {...props}/>,livingSort:<LivingSort {...props}/>,nounVerbSort:<NounVerbSort {...props}/>,roboRescue:<RoboRescue {...props}/>,alphabetBridge:<AlphabetBridge {...props}/>,tableMatch:<TableMatch {...props}/>,wordPicMatch:<WordPicMatch {...props}/>,numberBlaster:<NumberBlaster {...props}/>,timesTableRace:<TimesTableRace {...props}/>,fractionChef:<FractionChef {...props}/>,wordScramble:<WordScramble {...props}/>,spellingBee:<SpellingBee {...props}/>,sentenceBuilder:<SentenceBuilder {...props}/>,scienceSort:<ScienceSort {...props}/>,statesOfMatter:<StatesOfMatter {...props}/>,planetPatrol:<PlanetPatrol {...props}/>,algorithmSort:<AlgorithmSort {...props}/>,debugDetective:<DebugDetective {...props}/>,wordMatch:<WordMatch {...props}/>,mathFishing:<MathFishing {...props}/>,spaceBlaster:<SpaceBlaster {...props}/>,gemHunter:<GemHunter {...props}/>,wordRunner:<WordRunner {...props}/>,volcanoEscape:<VolcanoEscape {...props}/>,treasureMap:<TreasureMap {...props}/>,grandPrix:<GrandPrix {...props}/>,candyShop:<CandyShop {...props}/>,basketballMaths:<BasketballMaths {...props}/>,trainGame:<TrainGame {...props}/>,supermarketMath:<SupermarketMath {...props}/>,rocketMaths:<RocketMaths {...props}/>,spellBingo:<SpellBingo {...props}/>,wordShake:<WordShake {...props}/>,spotDifference:<SpotDifference {...props}/>,puzzleWords:<PuzzleWords {...props}/>,schoolRun:<SchoolRun {...props}/>,memoryWords:<MemoryWords {...props}/>,dinosaurGame:<DinosaurGame {...props}/>,jungleExplorer:<JungleExplorer {...props}/>,oceanGame:<OceanGame {...props}/>,bubbleBuster:<BubbleBuster {...props}/>,colourScience:<ColourScience {...props}/>,astronautGame:<AstronautGame {...props}/>,pyramidsGame:<PyramidsGame {...props}/>,inspectorGame:<InspectorGame {...props}/>,hideSeekHistory:<HideSeekHistory {...props}/>,tenableGame:<TenableGame {...props}/>,footballHistory:<FootballHistory {...props}/>,worldMapGame:<WorldMapGame {...props}/>,geographyGuesser:<GeographyGuesser {...props}/>,skiingGeo:<SkiingGeo {...props}/>,skateboardGeo:<SkateboardGeo {...props}/>,pirateGeo:<PirateGeo {...props}/>,busGame:<BusGame {...props}/>,codeGame:<CodeGame {...props}/>,flippingFood:<FlippingFood {...props}/>,memoryComputer:<MemoryComputer {...props}/>,spellingRun:<SpellingRun {...props}/>,mathSprint:<MathSprint {...props}/>,shapeShooter:<ShapeShooter {...props}/>,coordinateQuest:<CoordinateQuest {...props}/>,ratioRecipe:<RatioRecipe {...props}/>,poetrySlam:<PoetrySlam {...props}/>,mediaDetective:<MediaDetective {...props}/>,seasonsGame:<SeasonsGame {...props}/>,soundWaves:<SoundWaves {...props}/>,circuitBuilder:<CircuitBuilder {...props}/>,chemistryLab:<ChemistryLab {...props}/>,timeMachine:<TimeMachine {...props}/>,localHero:<LocalHero {...props}/>,safetyShield:<SafetyShield {...props}/>,creativeStudio:<CreativeStudio {...props}/>,timelineSort:<TimelineSorter {...props}/>,historyMatch:<HistoryMatch {...props}/>,mapQuiz:<MapQuiz {...props}/>};
+  const map={trickyReview:<TrickyReview {...props}/>,meteorMaths:<MeteorMaths {...props}/>,wordMeteors:<WordMeteors {...props}/>,numberBridge:<NumberBridge {...props}/>,frogJump:<FrogJump {...props}/>,balanceScale:<BalanceScale {...props}/>,oddEvenSort:<OddEvenSort {...props}/>,livingSort:<LivingSort {...props}/>,nounVerbSort:<NounVerbSort {...props}/>,roboRescue:<RoboRescue {...props}/>,alphabetBridge:<AlphabetBridge {...props}/>,tableMatch:<TableMatch {...props}/>,wordPicMatch:<WordPicMatch {...props}/>,numberBlaster:<NumberBlaster {...props}/>,timesTableRace:<TimesTableRace {...props}/>,fractionChef:<FractionChef {...props}/>,wordScramble:<WordScramble {...props}/>,spellingBee:<SpellingBee {...props}/>,sentenceBuilder:<SentenceBuilder {...props}/>,scienceSort:<ScienceSort {...props}/>,statesOfMatter:<StatesOfMatter {...props}/>,planetPatrol:<PlanetPatrol {...props}/>,algorithmSort:<AlgorithmSort {...props}/>,debugDetective:<DebugDetective {...props}/>,wordMatch:<WordMatch {...props}/>,mathFishing:<MathFishing {...props}/>,spaceBlaster:<SpaceBlaster {...props}/>,gemHunter:<GemHunter {...props}/>,wordRunner:<WordRunner {...props}/>,volcanoEscape:<VolcanoEscape {...props}/>,treasureMap:<TreasureMap {...props}/>,grandPrix:<GrandPrix {...props}/>,candyShop:<CandyShop {...props}/>,basketballMaths:<BasketballMaths {...props}/>,trainGame:<TrainGame {...props}/>,supermarketMath:<SupermarketMath {...props}/>,rocketMaths:<RocketMaths {...props}/>,spellBingo:<SpellBingo {...props}/>,wordShake:<WordShake {...props}/>,spotDifference:<SpotDifference {...props}/>,puzzleWords:<PuzzleWords {...props}/>,schoolRun:<SchoolRun {...props}/>,memoryWords:<MemoryWords {...props}/>,dinosaurGame:<DinosaurGame {...props}/>,jungleExplorer:<JungleExplorer {...props}/>,oceanGame:<OceanGame {...props}/>,bubbleBuster:<BubbleBuster {...props}/>,colourScience:<ColourScience {...props}/>,astronautGame:<AstronautGame {...props}/>,pyramidsGame:<PyramidsGame {...props}/>,inspectorGame:<InspectorGame {...props}/>,hideSeekHistory:<HideSeekHistory {...props}/>,tenableGame:<TenableGame {...props}/>,footballHistory:<FootballHistory {...props}/>,worldMapGame:<WorldMapGame {...props}/>,geographyGuesser:<GeographyGuesser {...props}/>,skiingGeo:<SkiingGeo {...props}/>,skateboardGeo:<SkateboardGeo {...props}/>,pirateGeo:<PirateGeo {...props}/>,busGame:<BusGame {...props}/>,codeGame:<CodeGame {...props}/>,flippingFood:<FlippingFood {...props}/>,memoryComputer:<MemoryComputer {...props}/>,spellingRun:<SpellingRun {...props}/>,mathSprint:<MathSprint {...props}/>,shapeShooter:<ShapeShooter {...props}/>,coordinateQuest:<CoordinateQuest {...props}/>,ratioRecipe:<RatioRecipe {...props}/>,poetrySlam:<PoetrySlam {...props}/>,mediaDetective:<MediaDetective {...props}/>,seasonsGame:<SeasonsGame {...props}/>,soundWaves:<SoundWaves {...props}/>,circuitBuilder:<CircuitBuilder {...props}/>,chemistryLab:<ChemistryLab {...props}/>,timeMachine:<TimeMachine {...props}/>,localHero:<LocalHero {...props}/>,safetyShield:<SafetyShield {...props}/>,creativeStudio:<CreativeStudio {...props}/>,timelineSort:<TimelineSorter {...props}/>,historyMatch:<HistoryMatch {...props}/>,mapQuiz:<MapQuiz {...props}/>,labelPlant:<LabelPlant {...props}/>,labelMap:<LabelMap {...props}/>};
   return <GameCtx.Provider value={{gameId,best}}><div key={`${gameId}-${resetKey}`}>{map[gameId]||<div style={{padding:40,textAlign:"center"}}><p>Game not found: {gameId}</p></div>}</div></GameCtx.Provider>;
 }
 
@@ -6535,18 +6852,6 @@ function A11ySync({a11y}) {
 function hasA11yNeeds(child){
   const a=child?.accessibility||{};
   return Object.values(a).some(v=>v===true);
-}
-function a11yPromptRules(child) {
-  const a = child?.accessibility || {};
-  const rules = [];
-  if(a.dyslexia) rules.push("Use short sentences (max 12 words). Simple common words. No dense text.");
-  if(a.processingDifficulties||a.autism) rules.push("Use very clear, literal, unambiguous language. One instruction at a time. No idioms or figures of speech.");
-  if(a.dyscalculia) rules.push("For any maths, include a concrete visual description or real-world objects in the question (e.g. '3 apples and 2 apples'). Always include a step-by-step hint.");
-  if(a.testAnxiety||a.generalAnxiety) rules.push("Use warm, low-pressure wording. Never mention time, speed, tests or scores in the question text.");
-  if(a.adhd) rules.push("Keep questions short and punchy. High-interest, concrete topics.");
-  if(a.visualImpairment) rules.push("Never make the answer depend on describing colours alone.");
-  if(a.hearingImpairment) rules.push("Never make a question depend on sound, listening, or audio.");
-  return rules.length ? `\nACCESSIBILITY REQUIREMENTS (child has additional needs — follow strictly):\n- ${rules.join("\n- ")}` : "";
 }
 
 function AccessibilitySettings({child, onSave, onBack}) {

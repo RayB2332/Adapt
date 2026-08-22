@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "audit-content": "node scripts/generate-audit-sample.mjs"
   },
   "dependencies": {
     "react": "^18.2.0",

@@ -18,8 +18,34 @@ For each subject the country teaches, sample generated questions at three levels
 | Each subject            | 10      | 10      | 10      | 30    |
 
 UK = 6 subjects → 180 questions. US/CA = 5 subjects → 150 questions each.
-Generate samples by playing each subject's games/lessons with a test child set to
-the target year group, or by calling the /api/chat endpoint with the same prompts.
+
+**Generate the sample automatically** — this used to mean playing through
+every subject's games and lessons by hand with a test child, or manually
+constructing prompts. Neither is needed anymore:
+
+```
+export ANTHROPIC_API_KEY=sk-ant-...
+npm run audit-content
+```
+
+This calls `scripts/generate-audit-sample.mjs`, which imports the app's
+*real* production prompt-building code directly from
+`src/data/prompts.js` (the same file `App.jsx` itself imports — they can
+never silently drift apart) and generates real sample questions from the
+live API. It writes `audit-sample-<date>.md`: every question grouped by
+country → subject → level, with the real topic sampled, the AI's marked
+answer, and an empty checkbox row per error category below, ready for a
+teacher to work through directly in the file.
+
+Defaults to 3 questions per subject/level/country cell (fast, cheap, good
+for a spot-check). To match this document's full 10-per-cell plan exactly:
+
+```
+npm run audit-content -- --per-cell=10
+```
+
+Other flags: `--countries=UK,US` and `--levels=2,5,9` to narrow a re-run
+after a prompt fix, without regenerating everything.
 
 ## 3. Error taxonomy (mark each question)
 - **A. Factually wrong** — the marked answer is incorrect.
